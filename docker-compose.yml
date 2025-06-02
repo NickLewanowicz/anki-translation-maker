@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  anki-translation-maker:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    
+  # Optional: Add a development service
+  dev:
+    build: .
+    ports:
+      - "3000:3000"
+      - "5173:5173"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+      - /usr/src/app/packages/backend/node_modules
+      - /usr/src/app/packages/frontend/node_modules
+    environment:
+      - NODE_ENV=development
+    command: pnpm dev
+    profiles:
+      - dev 

@@ -10,8 +10,7 @@
     "strict": true,
     "noImplicitAny": true,
     "skipLibCheck": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "noEmit": true,
     "resolveJsonModule": true,
     "types": ["bun-types"]
   },
