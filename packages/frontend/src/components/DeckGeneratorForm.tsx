@@ -4,7 +4,8 @@ import { deckService } from '../services/deckService'
 
 interface FormData {
     deckType: string
-    prompt: string
+    words: string
+    aiPrompt: string
     targetLanguage: string
     sourceLanguage: string
     replicateApiKey: string
@@ -16,23 +17,25 @@ interface FormData {
 }
 
 const DEFAULT_DECKS = [
-    { id: 'basic-verbs', name: 'Basic Verbs', prompt: 'Common everyday verbs like go, eat, sleep, work, study, play, run, walk, read, write' },
-    { id: 'family', name: 'Family & Relationships', prompt: 'Family members and relationship terms like mother, father, sister, brother, friend, husband, wife, child, grandparent' },
-    { id: 'food', name: 'Food & Drinks', prompt: 'Common foods and beverages like bread, water, coffee, apple, chicken, rice, vegetables, fruit, meat, milk' },
-    { id: 'numbers', name: 'Numbers 1-20', prompt: 'Numbers from one to twenty in order: one, two, three, four, five, six, seven, eight, nine, ten, eleven, twelve, thirteen, fourteen, fifteen, sixteen, seventeen, eighteen, nineteen, twenty' },
-    { id: 'colors', name: 'Colors', prompt: 'Basic colors like red, blue, green, yellow, black, white, purple, orange, pink, brown, gray' },
-    { id: 'clothing', name: 'Clothing', prompt: 'Common clothing items like shirt, pants, dress, shoes, hat, jacket, socks, skirt, sweater, coat' },
-    { id: 'home', name: 'Home & Furniture', prompt: 'Household items and furniture like house, room, bed, table, chair, door, window, kitchen, bathroom, bedroom' },
-    { id: 'transportation', name: 'Transportation', prompt: 'Vehicles and transportation like car, bus, train, plane, bicycle, motorcycle, boat, taxi, subway, walk' },
-    { id: 'time', name: 'Time & Days', prompt: 'Time-related words like today, tomorrow, yesterday, morning, afternoon, evening, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday' },
-    { id: 'emotions', name: 'Emotions & Feelings', prompt: 'Basic emotions and feelings like happy, sad, angry, excited, tired, scared, surprised, confused, proud, nervous' },
-    { id: 'custom', name: 'Custom', prompt: '' },
+    { id: 'basic-verbs', name: 'Basic Verbs', words: 'go, eat, sleep, work, study, play, run, walk, read, write, speak, listen, think, learn, teach, help, give, take, make, see' },
+    { id: 'family', name: 'Family & Relationships', words: 'mother, father, sister, brother, friend, husband, wife, child, parent, grandparent, aunt, uncle, cousin, baby, family, love, marry, daughter, son, grandmother' },
+    { id: 'food', name: 'Food & Drinks', words: 'bread, water, coffee, apple, chicken, rice, vegetables, fruit, meat, milk, cheese, fish, egg, sugar, salt, tea, juice, wine, beer, cake' },
+    { id: 'numbers', name: 'Numbers 1-20', words: 'one, two, three, four, five, six, seven, eight, nine, ten, eleven, twelve, thirteen, fourteen, fifteen, sixteen, seventeen, eighteen, nineteen, twenty' },
+    { id: 'colors', name: 'Colors', words: 'red, blue, green, yellow, black, white, purple, orange, pink, brown, gray, grey, gold, silver, dark, light, bright, pale, deep, vivid' },
+    { id: 'clothing', name: 'Clothing', words: 'shirt, pants, dress, shoes, hat, jacket, socks, skirt, sweater, coat, jeans, t-shirt, shorts, boots, gloves, scarf, belt, tie, underwear, pajamas' },
+    { id: 'home', name: 'Home & Furniture', words: 'house, room, bed, table, chair, door, window, kitchen, bathroom, bedroom, living room, sofa, lamp, refrigerator, stove, shower, toilet, closet, garage, garden' },
+    { id: 'transportation', name: 'Transportation', words: 'car, bus, train, plane, bicycle, motorcycle, boat, taxi, subway, walk, drive, fly, ride, travel, station, airport, ticket, road, street, highway' },
+    { id: 'time', name: 'Time & Days', words: 'today, tomorrow, yesterday, morning, afternoon, evening, night, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, hour, minute, week, month, year, clock' },
+    { id: 'emotions', name: 'Emotions & Feelings', words: 'happy, sad, angry, excited, tired, scared, surprised, confused, proud, nervous, calm, worried, joyful, disappointed, grateful, frustrated, relaxed, anxious, content, hopeful' },
+    { id: 'custom', name: 'Custom', words: '' },
+    { id: 'ai-generated', name: 'AI Generated Deck', words: '' },
 ]
 
 export function DeckGeneratorForm() {
     const [formData, setFormData] = useState<FormData>({
         deckType: 'basic-verbs',
-        prompt: DEFAULT_DECKS[0].prompt,
+        words: DEFAULT_DECKS[0].words,
+        aiPrompt: '',
         targetLanguage: '',
         sourceLanguage: 'en',
         replicateApiKey: '',
@@ -51,11 +54,11 @@ export function DeckGeneratorForm() {
         setError(null)
 
         try {
-            // Use the appropriate prompt based on deck type
+            // Use the appropriate data based on deck type
             const submitData = {
                 ...formData,
-                prompt: formData.deckType === 'custom' ? formData.prompt :
-                    DEFAULT_DECKS.find(deck => deck.id === formData.deckType)?.prompt || formData.prompt
+                words: formData.deckType === 'ai-generated' ? '' : formData.words,
+                aiPrompt: formData.deckType === 'ai-generated' ? formData.aiPrompt : ''
             }
             await deckService.generateDeck(submitData)
         } catch (err) {
@@ -74,7 +77,7 @@ export function DeckGeneratorForm() {
             setFormData(prev => ({
                 ...prev,
                 [name]: value,
-                prompt: selectedDeck?.prompt || prev.prompt
+                words: selectedDeck?.words || prev.words
             }))
         } else if (type === 'checkbox') {
             setFormData(prev => ({ ...prev, [name]: checked }))
@@ -84,6 +87,8 @@ export function DeckGeneratorForm() {
     }
 
     const isCustomDeck = formData.deckType === 'custom'
+    const isAiGeneratedDeck = formData.deckType === 'ai-generated'
+    const isPresetDeck = !isCustomDeck && !isAiGeneratedDeck
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -112,28 +117,47 @@ export function DeckGeneratorForm() {
                         </option>
                     ))}
                 </select>
-                {!isCustomDeck && (
-                    <p className="mt-1 text-sm text-gray-500">
-                        {DEFAULT_DECKS.find(deck => deck.id === formData.deckType)?.prompt}
-                    </p>
-                )}
             </div>
 
-            {isCustomDeck && (
+            {(isPresetDeck || isCustomDeck) && (
                 <div>
-                    <label htmlFor="prompt" className="block text-sm font-medium text-gray-700 mb-2">
-                        Custom Prompt / Topic
+                    <label htmlFor="words" className="block text-sm font-medium text-gray-700 mb-2">
+                        {isPresetDeck ? 'Word List (editable)' : 'Custom Words/Phrases'}
                     </label>
                     <textarea
-                        id="prompt"
-                        name="prompt"
-                        value={formData.prompt}
+                        id="words"
+                        name="words"
+                        value={formData.words}
+                        onChange={handleInputChange}
+                        rows={4}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder={isCustomDeck ? "Enter words/phrases separated by commas (e.g., hello, world, good morning)" : ""}
+                        required
+                    />
+                    <p className="mt-1 text-sm text-gray-500">
+                        {isPresetDeck ? 'Edit the preset words as needed' : 'Enter words or phrases separated by commas'}
+                    </p>
+                </div>
+            )}
+
+            {isAiGeneratedDeck && (
+                <div>
+                    <label htmlFor="aiPrompt" className="block text-sm font-medium text-gray-700 mb-2">
+                        AI Generation Prompt
+                    </label>
+                    <textarea
+                        id="aiPrompt"
+                        name="aiPrompt"
+                        value={formData.aiPrompt}
                         onChange={handleInputChange}
                         rows={3}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="e.g., Common kitchen utensils, Travel vocabulary, Business terms..."
                         required
                     />
+                    <p className="mt-1 text-sm text-gray-500">
+                        Describe what kind of vocabulary you want to generate (AI will create 20 words)
+                    </p>
                 </div>
             )}
 

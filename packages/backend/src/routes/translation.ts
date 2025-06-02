@@ -7,7 +7,8 @@ import type { Env } from '../types/env.js'
 export const translationRouter = new Hono<Env>()
 
 const generateDeckSchema = z.object({
-    prompt: z.string().min(1, 'Prompt is required'),
+    words: z.string().default(''),
+    aiPrompt: z.string().default(''),
     targetLanguage: z.string().min(1, 'Target language is required'),
     sourceLanguage: z.string().default('en'),
     replicateApiKey: z.string().min(1, 'Replicate API key is required'),
@@ -21,7 +22,7 @@ const generateDeckSchema = z.object({
 translationRouter.post('/generate-deck', async (c) => {
     try {
         const body = await c.req.json()
-        const { prompt, targetLanguage, sourceLanguage, replicateApiKey, textModel, voiceModel, useCustomArgs, textModelArgs, voiceModelArgs } = generateDeckSchema.parse(body)
+        const { words, aiPrompt, targetLanguage, sourceLanguage, replicateApiKey, textModel, voiceModel, useCustomArgs, textModelArgs, voiceModelArgs } = generateDeckSchema.parse(body)
 
         // Set API key in context
         c.set('replicateApiKey', replicateApiKey)
@@ -33,17 +34,23 @@ translationRouter.post('/generate-deck', async (c) => {
         const translationService = new TranslationService(replicateApiKey, textModel, voiceModel, parsedTextArgs, parsedVoiceArgs)
         const ankiService = new AnkiService()
 
-        // Step 1: Generate words from prompt
-        console.log('Generating words from prompt...')
-        const words = await translationService.generateWordsFromPrompt(prompt, sourceLanguage)
+        // Step 1: Get words (either from provided list or generate from AI prompt)
+        let wordList: string[]
+        if (aiPrompt) {
+            console.log('Generating words from AI prompt...')
+            wordList = await translationService.generateWordsFromPrompt(aiPrompt, sourceLanguage)
+        } else {
+            console.log('Using provided word list...')
+            wordList = words.split(',').map(word => word.trim()).filter(word => word.length > 0)
+        }
 
         // Step 2: Translate words
         console.log('Translating words...')
-        const translations = await translationService.translateWords(words, sourceLanguage, targetLanguage)
+        const translations = await translationService.translateWords(wordList, sourceLanguage, targetLanguage)
 
         // Step 3: Generate audio for source and target languages
         console.log('Generating audio...')
-        const sourceAudio = await translationService.generateAudio(words, sourceLanguage)
+        const sourceAudio = await translationService.generateAudio(wordList, sourceLanguage)
         const targetAudio = await translationService.generateAudio(translations.map((t: any) => t.translation), targetLanguage)
 
         // Step 4: Create Anki deck

@@ -1,7 +1,8 @@
 import axios from 'axios'
 
 interface GenerateDeckRequest {
-    prompt: string
+    words: string
+    aiPrompt: string
     targetLanguage: string
     sourceLanguage: string
     replicateApiKey: string
