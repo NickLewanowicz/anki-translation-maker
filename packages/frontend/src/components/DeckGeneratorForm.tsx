@@ -46,7 +46,9 @@ export function DeckGeneratorForm() {
         voiceModelArgs: '{}',
     })
     const [isGenerating, setIsGenerating] = useState(false)
+    const [isTesting, setIsTesting] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [testResult, setTestResult] = useState<string | null>(null)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -54,14 +56,49 @@ export function DeckGeneratorForm() {
         setError(null)
 
         try {
+            // Validate custom JSON arguments if enabled
+            if (formData.useCustomArgs) {
+                try {
+                    JSON.parse(formData.textModelArgs)
+                } catch {
+                    throw new Error('Text Model Arguments must be valid JSON')
+                }
+                try {
+                    JSON.parse(formData.voiceModelArgs)
+                } catch {
+                    throw new Error('Voice Model Arguments must be valid JSON')
+                }
+            }
+
+            // Validate deck-specific requirements
+            if (formData.deckType === 'ai-generated' && !formData.aiPrompt.trim()) {
+                throw new Error('AI prompt is required for AI Generated decks')
+            }
+            if (formData.deckType !== 'ai-generated' && !formData.words.trim()) {
+                throw new Error('Word list cannot be empty')
+            }
+
             // Use the appropriate data based on deck type
             const submitData = {
                 ...formData,
                 words: formData.deckType === 'ai-generated' ? '' : formData.words,
                 aiPrompt: formData.deckType === 'ai-generated' ? formData.aiPrompt : ''
             }
+
+            console.log('Submitting deck generation request:', {
+                deckType: submitData.deckType,
+                wordsCount: submitData.words ? submitData.words.split(',').length : 0,
+                aiPrompt: submitData.aiPrompt ? '***provided***' : 'none',
+                sourceLanguage: submitData.sourceLanguage,
+                targetLanguage: submitData.targetLanguage,
+                textModel: submitData.textModel,
+                voiceModel: submitData.voiceModel,
+                useCustomArgs: submitData.useCustomArgs
+            })
+
             await deckService.generateDeck(submitData)
         } catch (err) {
+            console.error('Deck generation error:', err)
             setError(err instanceof Error ? err.message : 'An error occurred')
         } finally {
             setIsGenerating(false)
@@ -86,6 +123,61 @@ export function DeckGeneratorForm() {
         }
     }
 
+    const handleTestConfiguration = async () => {
+        setIsTesting(true)
+        setError(null)
+        setTestResult(null)
+
+        try {
+            // Same validation as submit
+            if (formData.useCustomArgs) {
+                try {
+                    JSON.parse(formData.textModelArgs)
+                } catch {
+                    throw new Error('Text Model Arguments must be valid JSON')
+                }
+                try {
+                    JSON.parse(formData.voiceModelArgs)
+                } catch {
+                    throw new Error('Voice Model Arguments must be valid JSON')
+                }
+            }
+
+            if (formData.deckType === 'ai-generated' && !formData.aiPrompt.trim()) {
+                throw new Error('AI prompt is required for AI Generated decks')
+            }
+            if (formData.deckType !== 'ai-generated' && !formData.words.trim()) {
+                throw new Error('Word list cannot be empty')
+            }
+
+            const submitData = {
+                ...formData,
+                words: formData.deckType === 'ai-generated' ? '' : formData.words,
+                aiPrompt: formData.deckType === 'ai-generated' ? formData.aiPrompt : ''
+            }
+
+            const response = await fetch('/api/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(submitData)
+            })
+
+            const result = await response.json()
+
+            if (response.ok) {
+                setTestResult(`✅ Configuration Valid! ${result.message}`)
+                console.log('Test result:', result)
+            } else {
+                throw new Error(result.error || result.message || 'Validation failed')
+            }
+        } catch (err) {
+            console.error('Test configuration error:', err)
+            setError(err instanceof Error ? err.message : 'Test failed')
+        } finally {
+            setIsTesting(false)
+        }
+    }
+
     const isCustomDeck = formData.deckType === 'custom'
     const isAiGeneratedDeck = formData.deckType === 'ai-generated'
     const isPresetDeck = !isCustomDeck && !isAiGeneratedDeck
@@ -96,6 +188,12 @@ export function DeckGeneratorForm() {
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-2">
                     <AlertCircle className="h-5 w-5 text-red-500" />
                     <span className="text-red-700">{error}</span>
+                </div>
+            )}
+
+            {testResult && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-2">
+                    <span className="text-green-700">{testResult}</span>
                 </div>
             )}
 
@@ -338,23 +436,43 @@ export function DeckGeneratorForm() {
                 </div>
             </div>
 
-            <button
-                type="submit"
-                disabled={isGenerating}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-                {isGenerating ? (
-                    <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Generating Deck...
-                    </>
-                ) : (
-                    <>
-                        <Download className="h-4 w-4" />
-                        Generate Anki Deck
-                    </>
-                )}
-            </button>
+            <div className="space-y-3">
+                <button
+                    type="button"
+                    onClick={handleTestConfiguration}
+                    disabled={isTesting || isGenerating}
+                    className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                    {isTesting ? (
+                        <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Testing Configuration...
+                        </>
+                    ) : (
+                        <>
+                            🧪 Test Configuration (Free)
+                        </>
+                    )}
+                </button>
+
+                <button
+                    type="submit"
+                    disabled={isGenerating || isTesting}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                    {isGenerating ? (
+                        <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Generating Deck...
+                        </>
+                    ) : (
+                        <>
+                            <Download className="h-4 w-4" />
+                            Generate Anki Deck (Uses API Credits)
+                        </>
+                    )}
+                </button>
+            </div>
         </form>
     )
 } 
