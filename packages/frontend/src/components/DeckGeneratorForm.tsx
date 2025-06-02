@@ -8,6 +8,8 @@ interface FormData {
     targetLanguage: string
     sourceLanguage: string
     replicateApiKey: string
+    textModel: string
+    voiceModel: string
 }
 
 const DEFAULT_DECKS = [
@@ -31,6 +33,8 @@ export function DeckGeneratorForm() {
         targetLanguage: '',
         sourceLanguage: 'en',
         replicateApiKey: '',
+        textModel: 'openai/gpt-4o-mini',
+        voiceModel: 'minimax/speech-02-turbo',
     })
     const [isGenerating, setIsGenerating] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -199,6 +203,50 @@ export function DeckGeneratorForm() {
                         replicate.com
                     </a>
                 </p>
+            </div>
+
+            <div className="border-t pt-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Advanced Settings</h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label htmlFor="textModel" className="block text-sm font-medium text-gray-700 mb-2">
+                            Text Model
+                        </label>
+                        <input
+                            type="text"
+                            id="textModel"
+                            name="textModel"
+                            value={formData.textModel}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="openai/gpt-4o-mini"
+                            required
+                        />
+                        <p className="mt-1 text-sm text-gray-500">
+                            Replicate model for text generation (must support streaming)
+                        </p>
+                    </div>
+
+                    <div>
+                        <label htmlFor="voiceModel" className="block text-sm font-medium text-gray-700 mb-2">
+                            Voice Model
+                        </label>
+                        <input
+                            type="text"
+                            id="voiceModel"
+                            name="voiceModel"
+                            value={formData.voiceModel}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="minimax/speech-02-turbo"
+                            required
+                        />
+                        <p className="mt-1 text-sm text-gray-500">
+                            Replicate model for audio/speech generation
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <button

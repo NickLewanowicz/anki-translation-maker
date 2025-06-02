@@ -3,11 +3,15 @@ import type { Translation } from '../types/translation.js'
 
 export class TranslationService {
     private replicate: Replicate
+    private textModel: string
+    private voiceModel: string
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, textModel: string = 'openai/gpt-4o-mini', voiceModel: string = 'minimax/speech-02-turbo') {
         this.replicate = new Replicate({
             auth: apiKey,
         })
+        this.textModel = textModel
+        this.voiceModel = voiceModel
     }
 
     async generateWordsFromPrompt(prompt: string, sourceLanguage: string): Promise<string[]> {
@@ -24,7 +28,7 @@ export class TranslationService {
             }
 
             let fullResponse = ''
-            for await (const event of this.replicate.stream("openai/gpt-4o-mini", { input })) {
+            for await (const event of this.replicate.stream(this.textModel as any, { input })) {
                 fullResponse += event
             }
 
@@ -56,7 +60,7 @@ export class TranslationService {
             }
 
             let fullResponse = ''
-            for await (const event of this.replicate.stream("openai/gpt-4o-mini", { input })) {
+            for await (const event of this.replicate.stream(this.textModel as any, { input })) {
                 fullResponse += event
             }
 
@@ -116,7 +120,7 @@ export class TranslationService {
                         emotion: "neutral"
                     }
 
-                    const output = await this.replicate.run("minimax/speech-02-turbo", { input })
+                    const output = await this.replicate.run(this.voiceModel as any, { input })
 
                     if (output && typeof output === 'string') {
                         // Download the audio file

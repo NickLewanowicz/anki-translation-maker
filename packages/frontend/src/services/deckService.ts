@@ -5,6 +5,8 @@ interface GenerateDeckRequest {
     targetLanguage: string
     sourceLanguage: string
     replicateApiKey: string
+    textModel: string
+    voiceModel: string
 }
 
 export const deckService = {

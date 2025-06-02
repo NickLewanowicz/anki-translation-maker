@@ -11,17 +11,19 @@ const generateDeckSchema = z.object({
     targetLanguage: z.string().min(1, 'Target language is required'),
     sourceLanguage: z.string().default('en'),
     replicateApiKey: z.string().min(1, 'Replicate API key is required'),
+    textModel: z.string().default('openai/gpt-4o-mini'),
+    voiceModel: z.string().default('minimax/speech-02-turbo'),
 })
 
 translationRouter.post('/generate-deck', async (c) => {
     try {
         const body = await c.req.json()
-        const { prompt, targetLanguage, sourceLanguage, replicateApiKey } = generateDeckSchema.parse(body)
+        const { prompt, targetLanguage, sourceLanguage, replicateApiKey, textModel, voiceModel } = generateDeckSchema.parse(body)
 
         // Set API key in context
         c.set('replicateApiKey', replicateApiKey)
 
-        const translationService = new TranslationService(replicateApiKey)
+        const translationService = new TranslationService(replicateApiKey, textModel, voiceModel)
         const ankiService = new AnkiService()
 
         // Step 1: Generate words from prompt
@@ -35,11 +37,11 @@ translationRouter.post('/generate-deck', async (c) => {
         // Step 3: Generate audio for source and target languages
         console.log('Generating audio...')
         const sourceAudio = await translationService.generateAudio(words, sourceLanguage)
-        const targetAudio = await translationService.generateAudio(translations.map(t => t.translation), targetLanguage)
+        const targetAudio = await translationService.generateAudio(translations.map((t: any) => t.translation), targetLanguage)
 
         // Step 4: Create Anki deck
         console.log('Creating Anki deck...')
-        const deckData = translations.map((translation, index) => ({
+        const deckData = translations.map((translation: any, index: number) => ({
             source: translation.source,
             target: translation.translation,
             sourceAudio: sourceAudio[index],
