@@ -3,15 +3,31 @@ import { Download, Loader2, AlertCircle } from 'lucide-react'
 import { deckService } from '../services/deckService'
 
 interface FormData {
+    deckType: string
     prompt: string
     targetLanguage: string
     sourceLanguage: string
     replicateApiKey: string
 }
 
+const DEFAULT_DECKS = [
+    { id: 'basic-verbs', name: 'Basic Verbs', prompt: 'Common everyday verbs like go, eat, sleep, work, study, play, run, walk, read, write' },
+    { id: 'family', name: 'Family & Relationships', prompt: 'Family members and relationship terms like mother, father, sister, brother, friend, husband, wife, child, grandparent' },
+    { id: 'food', name: 'Food & Drinks', prompt: 'Common foods and beverages like bread, water, coffee, apple, chicken, rice, vegetables, fruit, meat, milk' },
+    { id: 'numbers', name: 'Numbers 1-20', prompt: 'Numbers from one to twenty in order: one, two, three, four, five, six, seven, eight, nine, ten, eleven, twelve, thirteen, fourteen, fifteen, sixteen, seventeen, eighteen, nineteen, twenty' },
+    { id: 'colors', name: 'Colors', prompt: 'Basic colors like red, blue, green, yellow, black, white, purple, orange, pink, brown, gray' },
+    { id: 'clothing', name: 'Clothing', prompt: 'Common clothing items like shirt, pants, dress, shoes, hat, jacket, socks, skirt, sweater, coat' },
+    { id: 'home', name: 'Home & Furniture', prompt: 'Household items and furniture like house, room, bed, table, chair, door, window, kitchen, bathroom, bedroom' },
+    { id: 'transportation', name: 'Transportation', prompt: 'Vehicles and transportation like car, bus, train, plane, bicycle, motorcycle, boat, taxi, subway, walk' },
+    { id: 'time', name: 'Time & Days', prompt: 'Time-related words like today, tomorrow, yesterday, morning, afternoon, evening, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday' },
+    { id: 'emotions', name: 'Emotions & Feelings', prompt: 'Basic emotions and feelings like happy, sad, angry, excited, tired, scared, surprised, confused, proud, nervous' },
+    { id: 'custom', name: 'Custom', prompt: '' },
+]
+
 export function DeckGeneratorForm() {
     const [formData, setFormData] = useState<FormData>({
-        prompt: '',
+        deckType: 'basic-verbs',
+        prompt: DEFAULT_DECKS[0].prompt,
         targetLanguage: '',
         sourceLanguage: 'en',
         replicateApiKey: '',
@@ -25,7 +41,13 @@ export function DeckGeneratorForm() {
         setError(null)
 
         try {
-            await deckService.generateDeck(formData)
+            // Use the appropriate prompt based on deck type
+            const submitData = {
+                ...formData,
+                prompt: formData.deckType === 'custom' ? formData.prompt :
+                    DEFAULT_DECKS.find(deck => deck.id === formData.deckType)?.prompt || formData.prompt
+            }
+            await deckService.generateDeck(submitData)
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred')
         } finally {
@@ -35,8 +57,20 @@ export function DeckGeneratorForm() {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target
-        setFormData(prev => ({ ...prev, [name]: value }))
+
+        if (name === 'deckType') {
+            const selectedDeck = DEFAULT_DECKS.find(deck => deck.id === value)
+            setFormData(prev => ({
+                ...prev,
+                [name]: value,
+                prompt: selectedDeck?.prompt || prev.prompt
+            }))
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }))
+        }
     }
+
+    const isCustomDeck = formData.deckType === 'custom'
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -48,20 +82,47 @@ export function DeckGeneratorForm() {
             )}
 
             <div>
-                <label htmlFor="prompt" className="block text-sm font-medium text-gray-700 mb-2">
-                    Prompt / Topic
+                <label htmlFor="deckType" className="block text-sm font-medium text-gray-700 mb-2">
+                    Deck Type
                 </label>
-                <textarea
-                    id="prompt"
-                    name="prompt"
-                    value={formData.prompt}
+                <select
+                    id="deckType"
+                    name="deckType"
+                    value={formData.deckType}
                     onChange={handleInputChange}
-                    rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., Common kitchen utensils, Travel vocabulary, Business terms..."
                     required
-                />
+                >
+                    {DEFAULT_DECKS.map(deck => (
+                        <option key={deck.id} value={deck.id}>
+                            {deck.name}
+                        </option>
+                    ))}
+                </select>
+                {!isCustomDeck && (
+                    <p className="mt-1 text-sm text-gray-500">
+                        {DEFAULT_DECKS.find(deck => deck.id === formData.deckType)?.prompt}
+                    </p>
+                )}
             </div>
+
+            {isCustomDeck && (
+                <div>
+                    <label htmlFor="prompt" className="block text-sm font-medium text-gray-700 mb-2">
+                        Custom Prompt / Topic
+                    </label>
+                    <textarea
+                        id="prompt"
+                        name="prompt"
+                        value={formData.prompt}
+                        onChange={handleInputChange}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="e.g., Common kitchen utensils, Travel vocabulary, Business terms..."
+                        required
+                    />
+                </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
