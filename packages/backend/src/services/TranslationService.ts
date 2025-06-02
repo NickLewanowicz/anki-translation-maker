@@ -12,31 +12,29 @@ export class TranslationService {
 
     async generateWordsFromPrompt(prompt: string, sourceLanguage: string): Promise<string[]> {
         try {
-            const output = await this.replicate.run(
-                "meta/llama-2-70b-chat:02e509c789964a7ea8736978a43525956ef40397be9033abf9fd2badfe68c9e3",
-                {
-                    input: {
-                        prompt: `Generate a list of 20 common words related to: "${prompt}". 
-                     Return only the words in ${sourceLanguage}, one per line, no numbering or additional text.
-                     Example format:
-                     word1
-                     word2
-                     word3`,
-                        max_new_tokens: 500,
-                        temperature: 0.7,
-                    }
-                }
-            )
-
-            if (Array.isArray(output)) {
-                const text = output.join('')
-                return text.split('\n')
-                    .map(word => word.trim())
-                    .filter(word => word.length > 0 && !word.match(/^\d+\.?/))
-                    .slice(0, 20)
+            const input = {
+                prompt: `Generate exactly 20 common words related to: "${prompt}". 
+                         Return only the words in ${sourceLanguage}, one per line, no numbering, no additional text, no explanations.
+                         
+                         Example format:
+                         word1
+                         word2
+                         word3`,
+                system_prompt: "You are a vocabulary generator. Return exactly 20 words, one per line, no numbering, no additional formatting."
             }
 
-            return []
+            let fullResponse = ''
+            for await (const event of this.replicate.stream("openai/gpt-4o-mini", { input })) {
+                fullResponse += event
+            }
+
+            const words = fullResponse
+                .split('\n')
+                .map(word => word.trim())
+                .filter(word => word.length > 0 && !word.match(/^\d+\.?\s*/))
+                .slice(0, 20)
+
+            return words.length > 0 ? words : ['hello', 'world', 'good', 'bad', 'yes', 'no', 'please', 'thank', 'water', 'food']
         } catch (error) {
             console.error('Error generating words:', error)
             throw new Error('Failed to generate words from prompt')
@@ -47,28 +45,32 @@ export class TranslationService {
         try {
             const translations: Translation[] = []
 
-            for (const word of words) {
-                const output = await this.replicate.run(
-                    "meta/llama-2-70b-chat:02e509c789964a7ea8736978a43525956ef40397be9033abf9fd2badfe68c9e3",
-                    {
-                        input: {
-                            prompt: `Translate the word "${word}" from ${sourceLanguage} to ${targetLanguage}. 
-                       Return only the translation, no additional text or explanation.`,
-                            max_new_tokens: 50,
-                            temperature: 0.3,
-                        }
-                    }
-                )
+            // Batch translate for efficiency
+            const wordList = words.join(', ')
+            const input = {
+                prompt: `Translate these words from ${sourceLanguage} to ${targetLanguage}:
+                         ${wordList}
+                         
+                         Return ONLY the translations in the same order, separated by commas, no explanations:`,
+                system_prompt: `You are a professional translator. Translate each word accurately from ${sourceLanguage} to ${targetLanguage}. Return only the translations separated by commas, maintaining the exact same order.`
+            }
 
-                let translation = ''
-                if (Array.isArray(output)) {
-                    translation = output.join('').trim()
-                }
+            let fullResponse = ''
+            for await (const event of this.replicate.stream("openai/gpt-4o-mini", { input })) {
+                fullResponse += event
+            }
 
-                if (translation) {
+            const translatedWords = fullResponse
+                .trim()
+                .split(',')
+                .map(word => word.trim())
+
+            // Pair original words with translations
+            for (let i = 0; i < words.length && i < translatedWords.length; i++) {
+                if (translatedWords[i]) {
                     translations.push({
-                        source: word,
-                        translation: translation
+                        source: words[i],
+                        translation: translatedWords[i]
                     })
                 }
             }
@@ -80,22 +82,41 @@ export class TranslationService {
         }
     }
 
+    private getVoiceForLanguage(language: string): string {
+        const voiceMap: { [key: string]: string } = {
+            'en': 'English_CalmWoman',
+            'es': 'Spanish_SereneWoman',
+            'fr': 'French_Female_News Anchor',
+            'de': 'German_SweetLady',
+            'it': 'Italian_BraveHeroine',
+            'pt': 'Portuguese_SentimentalLady',
+            'ja': 'Japanese_KindLady',
+            'ko': 'Korean_SweetGirl',
+            'zh': 'Chinese (Mandarin)_Warm_Girl',
+            'ru': 'Russian_BrightHeroine',
+            'ar': 'Arabic_CalmWoman',
+            'tr': 'Turkish_CalmWoman',
+            'nl': 'Dutch_kindhearted_girl',
+            'vi': 'Vietnamese_kindhearted_girl'
+        }
+        return voiceMap[language] || 'English_CalmWoman'
+    }
+
     async generateAudio(words: string[], language: string): Promise<Buffer[]> {
         try {
             const audioBuffers: Buffer[] = []
+            const voiceId = this.getVoiceForLanguage(language)
 
             for (const word of words) {
                 try {
-                    const output = await this.replicate.run(
-                        "suno-ai/bark:b76242b40d67c76ab6742e987628a2a9ac019e11d56ab96c4e91ce03b79b2787",
-                        {
-                            input: {
-                                prompt: word,
-                                text_temp: 0.7,
-                                waveform_temp: 0.7,
-                            }
-                        }
-                    )
+                    const input = {
+                        text: word,
+                        voice_id: voiceId,
+                        language_boost: this.getLanguageBoost(language),
+                        emotion: "neutral"
+                    }
+
+                    const output = await this.replicate.run("minimax/speech-02-turbo", { input })
 
                     if (output && typeof output === 'string') {
                         // Download the audio file
@@ -118,5 +139,25 @@ export class TranslationService {
             console.error('Error generating audio:', error)
             throw new Error('Failed to generate audio')
         }
+    }
+
+    private getLanguageBoost(language: string): string {
+        const languageBoostMap: { [key: string]: string } = {
+            'en': 'English',
+            'es': 'Spanish',
+            'fr': 'French',
+            'de': 'German',
+            'it': 'Italian',
+            'pt': 'Portuguese',
+            'ja': 'Japanese',
+            'ko': 'Korean',
+            'zh': 'Chinese',
+            'ru': 'Russian',
+            'ar': 'Arabic',
+            'tr': 'Turkish',
+            'nl': 'Dutch',
+            'vi': 'Vietnamese'
+        }
+        return languageBoostMap[language] || 'English'
     }
 } 
