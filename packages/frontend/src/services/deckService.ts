@@ -7,6 +7,9 @@ interface GenerateDeckRequest {
     replicateApiKey: string
     textModel: string
     voiceModel: string
+    useCustomArgs: boolean
+    textModelArgs: string
+    voiceModelArgs: string
 }
 
 export const deckService = {

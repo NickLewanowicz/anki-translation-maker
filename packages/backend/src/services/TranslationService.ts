@@ -5,18 +5,28 @@ export class TranslationService {
     private replicate: Replicate
     private textModel: string
     private voiceModel: string
+    private textModelArgs: Record<string, any>
+    private voiceModelArgs: Record<string, any>
 
-    constructor(apiKey: string, textModel: string = 'openai/gpt-4o-mini', voiceModel: string = 'minimax/speech-02-turbo') {
+    constructor(
+        apiKey: string,
+        textModel: string = 'openai/gpt-4o-mini',
+        voiceModel: string = 'minimax/speech-02-hd',
+        textModelArgs: Record<string, any> = {},
+        voiceModelArgs: Record<string, any> = {}
+    ) {
         this.replicate = new Replicate({
             auth: apiKey,
         })
         this.textModel = textModel
         this.voiceModel = voiceModel
+        this.textModelArgs = textModelArgs
+        this.voiceModelArgs = voiceModelArgs
     }
 
     async generateWordsFromPrompt(prompt: string, sourceLanguage: string): Promise<string[]> {
         try {
-            const input = {
+            const defaultInput = {
                 prompt: `Generate exactly 20 common words related to: "${prompt}". 
                          Return only the words in ${sourceLanguage}, one per line, no numbering, no additional text, no explanations.
                          
@@ -27,8 +37,11 @@ export class TranslationService {
                 system_prompt: "You are a vocabulary generator. Return exactly 20 words, one per line, no numbering, no additional formatting."
             }
 
+            const input = { ...defaultInput, ...this.textModelArgs }
+
             let fullResponse = ''
-            for await (const event of this.replicate.stream(this.textModel as any, { input })) {
+            const modelName = this.textModel as `${string}/${string}` | `${string}/${string}:${string}`
+            for await (const event of this.replicate.stream(modelName, { input })) {
                 fullResponse += event
             }
 
@@ -51,7 +64,7 @@ export class TranslationService {
 
             // Batch translate for efficiency
             const wordList = words.join(', ')
-            const input = {
+            const defaultInput = {
                 prompt: `Translate these words from ${sourceLanguage} to ${targetLanguage}:
                          ${wordList}
                          
@@ -59,8 +72,11 @@ export class TranslationService {
                 system_prompt: `You are a professional translator. Translate each word accurately from ${sourceLanguage} to ${targetLanguage}. Return only the translations separated by commas, maintaining the exact same order.`
             }
 
+            const input = { ...defaultInput, ...this.textModelArgs }
+
             let fullResponse = ''
-            for await (const event of this.replicate.stream(this.textModel as any, { input })) {
+            const modelName = this.textModel as `${string}/${string}` | `${string}/${string}:${string}`
+            for await (const event of this.replicate.stream(modelName, { input })) {
                 fullResponse += event
             }
 
@@ -113,14 +129,16 @@ export class TranslationService {
 
             for (const word of words) {
                 try {
-                    const input = {
+                    const defaultInput = {
                         text: word,
                         voice_id: voiceId,
                         language_boost: this.getLanguageBoost(language),
                         emotion: "neutral"
                     }
 
-                    const output = await this.replicate.run(this.voiceModel as any, { input })
+                    const input = { ...defaultInput, ...this.voiceModelArgs }
+                    const modelName = this.voiceModel as `${string}/${string}` | `${string}/${string}:${string}`
+                    const output = await this.replicate.run(modelName, { input })
 
                     if (output && typeof output === 'string') {
                         // Download the audio file

@@ -10,6 +10,9 @@ interface FormData {
     replicateApiKey: string
     textModel: string
     voiceModel: string
+    useCustomArgs: boolean
+    textModelArgs: string
+    voiceModelArgs: string
 }
 
 const DEFAULT_DECKS = [
@@ -34,7 +37,10 @@ export function DeckGeneratorForm() {
         sourceLanguage: 'en',
         replicateApiKey: '',
         textModel: 'openai/gpt-4o-mini',
-        voiceModel: 'minimax/speech-02-turbo',
+        voiceModel: 'minimax/speech-02-hd',
+        useCustomArgs: false,
+        textModelArgs: '{}',
+        voiceModelArgs: '{}',
     })
     const [isGenerating, setIsGenerating] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -60,7 +66,8 @@ export function DeckGeneratorForm() {
     }
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target
+        const { name, value, type } = e.target
+        const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined
 
         if (name === 'deckType') {
             const selectedDeck = DEFAULT_DECKS.find(deck => deck.id === value)
@@ -69,6 +76,8 @@ export function DeckGeneratorForm() {
                 [name]: value,
                 prompt: selectedDeck?.prompt || prev.prompt
             }))
+        } else if (type === 'checkbox') {
+            setFormData(prev => ({ ...prev, [name]: checked }))
         } else {
             setFormData(prev => ({ ...prev, [name]: value }))
         }
@@ -239,13 +248,69 @@ export function DeckGeneratorForm() {
                             value={formData.voiceModel}
                             onChange={handleInputChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="minimax/speech-02-turbo"
+                            placeholder="minimax/speech-02-hd"
                             required
                         />
                         <p className="mt-1 text-sm text-gray-500">
                             Replicate model for audio/speech generation
                         </p>
                     </div>
+                </div>
+
+                <div className="mt-6">
+                    <div className="flex items-center gap-2 mb-4">
+                        <input
+                            type="checkbox"
+                            id="useCustomArgs"
+                            name="useCustomArgs"
+                            checked={formData.useCustomArgs}
+                            onChange={handleInputChange}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <label htmlFor="useCustomArgs" className="text-sm font-medium text-gray-700">
+                            Enable custom model arguments
+                        </label>
+                    </div>
+
+                    {formData.useCustomArgs && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label htmlFor="textModelArgs" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Text Model Arguments (JSON)
+                                </label>
+                                <textarea
+                                    id="textModelArgs"
+                                    name="textModelArgs"
+                                    value={formData.textModelArgs}
+                                    onChange={handleInputChange}
+                                    rows={4}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                                    placeholder='{"max_tokens": 100, "temperature": 0.7}'
+                                />
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Custom arguments for text model (JSON format)
+                                </p>
+                            </div>
+
+                            <div>
+                                <label htmlFor="voiceModelArgs" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Voice Model Arguments (JSON)
+                                </label>
+                                <textarea
+                                    id="voiceModelArgs"
+                                    name="voiceModelArgs"
+                                    value={formData.voiceModelArgs}
+                                    onChange={handleInputChange}
+                                    rows={4}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                                    placeholder='{"voice_id": "custom_voice", "speed": 1.0}'
+                                />
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Custom arguments for voice model (JSON format)
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

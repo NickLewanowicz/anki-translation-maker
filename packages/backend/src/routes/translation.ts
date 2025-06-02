@@ -12,18 +12,25 @@ const generateDeckSchema = z.object({
     sourceLanguage: z.string().default('en'),
     replicateApiKey: z.string().min(1, 'Replicate API key is required'),
     textModel: z.string().default('openai/gpt-4o-mini'),
-    voiceModel: z.string().default('minimax/speech-02-turbo'),
+    voiceModel: z.string().default('minimax/speech-02-hd'),
+    useCustomArgs: z.boolean().default(false),
+    textModelArgs: z.string().default('{}'),
+    voiceModelArgs: z.string().default('{}'),
 })
 
 translationRouter.post('/generate-deck', async (c) => {
     try {
         const body = await c.req.json()
-        const { prompt, targetLanguage, sourceLanguage, replicateApiKey, textModel, voiceModel } = generateDeckSchema.parse(body)
+        const { prompt, targetLanguage, sourceLanguage, replicateApiKey, textModel, voiceModel, useCustomArgs, textModelArgs, voiceModelArgs } = generateDeckSchema.parse(body)
 
         // Set API key in context
         c.set('replicateApiKey', replicateApiKey)
 
-        const translationService = new TranslationService(replicateApiKey, textModel, voiceModel)
+        // Parse custom arguments if enabled
+        const parsedTextArgs = useCustomArgs ? JSON.parse(textModelArgs) : {}
+        const parsedVoiceArgs = useCustomArgs ? JSON.parse(voiceModelArgs) : {}
+
+        const translationService = new TranslationService(replicateApiKey, textModel, voiceModel, parsedTextArgs, parsedVoiceArgs)
         const ankiService = new AnkiService()
 
         // Step 1: Generate words from prompt
