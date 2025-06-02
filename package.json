@@ -8,12 +8,15 @@
     ],
     "scripts": {
         "dev": "pnpm --parallel --recursive dev",
-        "build": "pnpm --recursive build",
+        "build": "pnpm -r build",
+        "build:frontend": "cd packages/frontend && pnpm build",
+        "start": "cd packages/backend && pnpm start",
         "lint": "pnpm --recursive lint",
         "test": "pnpm --recursive test",
         "clean": "pnpm --recursive clean && rm -rf node_modules",
         "docker:build": "docker build -t anki-translation-maker .",
-        "docker:run": "docker run -p 3000:3000 anki-translation-maker"
+        "docker:run": "docker run -p 3000:3000 anki-translation-maker",
+        "docker:dev": "docker-compose --profile dev up --build"
     },
     "devDependencies": {
         "@types/node": "^20.10.0",

@@ -14,10 +14,11 @@ A TypeScript monorepo application that generates Anki flashcard decks with AI-po
 
 ## 🏗️ Architecture
 
-This is a monorepo managed with PNPM containing:
+This is a monorepo managed with PNPM that builds into a single Docker container:
 
-- **Backend** (`packages/backend`): Bun + Hono API server
-- **Frontend** (`packages/frontend`): React + Vite + Tailwind CSS
+- **Backend** (`packages/backend`): Bun + Hono API server that serves both API and static frontend
+- **Frontend** (`packages/frontend`): React + Vite + Tailwind CSS (builds to static files)
+- **Deployment**: Single Bun server serves the static frontend on root domain and API on `/api`
 
 ## 📋 Prerequisites
 
@@ -49,7 +50,7 @@ This is a monorepo managed with PNPM containing:
 
 ## 🚀 Development
 
-### Start both frontend and backend in development mode:
+### Option 1: Development mode (separate frontend/backend)
 
 ```bash
 pnpm dev
@@ -58,7 +59,19 @@ pnpm dev
 This will start:
 
 - Backend on `http://localhost:3000`
-- Frontend on `http://localhost:5173`
+- Frontend on `http://localhost:5173` (with API proxy)
+
+### Option 2: Production-like mode (single server)
+
+```bash
+# Build frontend and copy to backend
+./scripts/build-local.sh
+
+# Start the unified server
+cd packages/backend && pnpm start
+```
+
+This serves everything on `http://localhost:3000` (frontend + API)
 
 ### Individual package commands:
 
@@ -120,16 +133,20 @@ docker run -p 3000:3000 anki-translation-maker
 
 ## 📖 Usage
 
-1. **Open the application** in your browser at `http://localhost:3000`
+1. **Open the application** in your browser:
+
+   - Development mode: `http://localhost:5173` (frontend dev server)
+   - Production mode: `http://localhost:3000` (unified Bun server)
+   - Docker: `http://localhost:3000`
 
 2. **Fill out the form:**
 
    - **Prompt/Topic**: Describe what kind of vocabulary you want (e.g., "kitchen utensils", "travel phrases")
    - **Source Language**: The language you know (default: English)
    - **Target Language**: The language you want to learn
-   - **Replicate API Key**: Your API key from replicate.com
+   - **Replicate API Key**: Your API key from replicate.com (required, no environment variables)
 
-3. **Generate the deck**: Click "Generate Anki Deck" and wait for processing
+3. **Generate the deck**: Click "Generate Anki Deck" and wait for processing (may take several minutes)
 
 4. **Download**: The `.apkg` file will automatically download when ready
 

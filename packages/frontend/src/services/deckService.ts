@@ -12,6 +12,7 @@ export const deckService = {
         try {
             const response = await axios.post('/api/generate-deck', data, {
                 responseType: 'blob',
+                timeout: 300000, // 5 minutes timeout for AI processing
             })
 
             // Create download link
@@ -26,7 +27,8 @@ export const deckService = {
         } catch (error) {
             console.error('Error generating deck:', error)
             if (axios.isAxiosError(error)) {
-                throw new Error(error.response?.data?.message || 'Failed to generate deck')
+                const message = error.response?.data?.error || error.response?.data?.message || 'Failed to generate deck'
+                throw new Error(message)
             }
             throw new Error('Failed to generate deck')
         }

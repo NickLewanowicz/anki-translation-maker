@@ -6,9 +6,9 @@ import type { Env } from './types/env.js'
 
 const app = new Hono<Env>()
 
-// CORS middleware
-app.use('*', cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
+// CORS middleware for API routes only
+app.use('/api/*', cors({
+    origin: '*', // Allow all origins since we're serving the frontend from the same domain
     allowHeaders: ['Content-Type', 'Authorization'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 }))
@@ -19,12 +19,14 @@ app.route('/api', translationRouter)
 // Serve static frontend files
 app.use('/*', serveStatic({ root: './public' }))
 
-// Fallback to index.html for SPA routing
-app.get('*', serveStatic({ path: './public/index.html' }))
+// Fallback to index.html for SPA routing (must come after static files)
+app.get('*', serveStatic({ root: './public', path: '/index.html' }))
 
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3000
 
-console.log(`🚀 Server running on http://localhost:${port}`)
+console.log(`🚀 Anki Translation Maker server running on http://localhost:${port}`)
+console.log(`📁 Serving static files from ./public`)
+console.log(`🔌 API available at http://localhost:${port}/api`)
 
 export default {
     port,

@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
     plugins: [react()],
+    base: '/', // Ensure assets are served from root
     server: {
         port: 5173,
         proxy: {
@@ -14,6 +15,15 @@ export default defineConfig({
     },
     build: {
         outDir: 'dist',
-        sourcemap: true
+        sourcemap: true,
+        assetsDir: 'assets', // Keep assets organized
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vendor: ['react', 'react-dom'],
+                    utils: ['axios', 'lucide-react']
+                }
+            }
+        }
     }
 }) 
