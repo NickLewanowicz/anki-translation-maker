@@ -7,13 +7,13 @@
         "packages/*"
     ],
     "scripts": {
-        "dev": "pnpm --parallel --recursive dev",
-        "build": "pnpm -r build",
-        "build:frontend": "cd packages/frontend && pnpm build",
-        "start": "cd packages/backend && pnpm start",
-        "lint": "pnpm --recursive lint",
-        "test": "pnpm --recursive test",
-        "clean": "pnpm --recursive clean && rm -rf node_modules",
+        "dev": "bun run --filter='*' dev",
+        "build": "bun run --filter='*' build",
+        "build:frontend": "cd packages/frontend && bun run build",
+        "start": "cd packages/backend && bun run start",
+        "lint": "bun run --filter='*' lint",
+        "test": "bun run --filter='*' test",
+        "clean": "bun run --filter='*' clean && rm -rf node_modules",
         "docker:build": "docker build -t anki-translation-maker .",
         "docker:run": "docker run -p 3000:3000 anki-translation-maker",
         "docker:dev": "docker-compose --profile dev up --build"

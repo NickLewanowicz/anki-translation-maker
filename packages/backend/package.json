@@ -12,9 +12,11 @@
         "clean": "rm -rf node_modules"
     },
     "dependencies": {
+        "@types/jszip": "^3.4.1",
         "adm-zip": "^0.5.16",
         "archiver": "^6.0.0",
         "hono": "^3.11.0",
+        "jszip": "^3.10.1",
         "mime-types": "^2.1.35",
         "replicate": "^0.25.0",
         "sqlite3": "^5.1.7",
