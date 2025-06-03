@@ -13,7 +13,7 @@ describe('AnkiService Source Audio Support', () => {
     })
 
     describe('Source Audio Only (Target Language without Audio)', () => {
-        it('should include source audio in back field when only source audio is provided', async () => {
+        it('should include source audio in front field when only source audio is provided', async () => {
             const cards: DeckCard[] = [
                 {
                     source: 'hello',
@@ -66,15 +66,15 @@ describe('AnkiService Source Audio Support', () => {
                     }
 
                     try {
-                        // First card: front = target (no audio), back = source + audio
+                        // First card: front = source + audio, back = target (swapped for source audio only)
                         const firstNote = rows[0].flds.split('\x1f')
-                        expect(firstNote[0]).toBe('xin chào') // Front: target text only
-                        expect(firstNote[1]).toBe('hello[sound:0.mp3]') // Back: source + audio (numeric)
+                        expect(firstNote[0]).toBe('hello[sound:0.mp3]') // Front: source + audio (numeric)
+                        expect(firstNote[1]).toBe('xin chào') // Back: target text only
 
                         // Second card: same pattern
                         const secondNote = rows[1].flds.split('\x1f')
-                        expect(secondNote[0]).toBe('tạm biệt') // Front: target text only
-                        expect(secondNote[1]).toBe('goodbye[sound:1.mp3]') // Back: source + audio (numeric)
+                        expect(secondNote[0]).toBe('goodbye[sound:1.mp3]') // Front: source + audio (numeric)
+                        expect(secondNote[1]).toBe('tạm biệt') // Back: target text only
 
                         db.close()
                         fs.unlinkSync(tempPath)
@@ -218,12 +218,12 @@ describe('AnkiService Source Audio Support', () => {
                     }
 
                     try {
-                        // First card: target text only, source with audio  
+                        // First card: source with audio on front, target on back (source audio only)
                         const firstNote = rows[0].flds.split('\x1f')
-                        expect(firstNote[0]).toBe('mèo') // Front: target text only
-                        expect(firstNote[1]).toBe('cat[sound:1.mp3]') // Back: source + audio (sequential numbering)
+                        expect(firstNote[0]).toBe('cat[sound:1.mp3]') // Front: source + audio (sequential numbering)
+                        expect(firstNote[1]).toBe('mèo') // Back: target text only
 
-                        // Second card: target with audio, source text only
+                        // Second card: target with audio on front, source on back (target audio only) 
                         const secondNote = rows[1].flds.split('\x1f')
                         expect(secondNote[0]).toBe('chó[sound:0.mp3]') // Front: target + audio (target audio comes first)
                         expect(secondNote[1]).toBe('dog') // Back: source text only

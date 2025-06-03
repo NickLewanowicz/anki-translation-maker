@@ -352,18 +352,33 @@ export class AnkiService {
             const noteId = baseId + index + 100
             const cardId = baseId + index + 200
 
-            // Build front field (target language with optional audio)
-            let frontField = card.target
-            if (card.targetAudio && card.targetAudio.length > 0) {
+            // Determine card orientation based on which audio is present
+            const hasSourceAudio = card.sourceAudio && card.sourceAudio.length > 0
+            const hasTargetAudio = card.targetAudio && card.targetAudio.length > 0
+
+            let frontField: string
+            let backField: string
+
+            if (hasSourceAudio && !hasTargetAudio) {
+                // Source audio only: Front = source + audio, Back = target
+                const sourceMediaIndex = mediaMapping.sourceAudio[index]
+                frontField = `${card.source}[sound:${sourceMediaIndex}.mp3]`
+                backField = card.target
+            } else if (hasTargetAudio && !hasSourceAudio) {
+                // Target audio only: Front = target + audio, Back = source  
                 const targetMediaIndex = mediaMapping.targetAudio[index]
                 frontField = `${card.target}[sound:${targetMediaIndex}.mp3]`
-            }
-
-            // Build back field (source language with optional audio)  
-            let backField = card.source
-            if (card.sourceAudio && card.sourceAudio.length > 0) {
+                backField = card.source
+            } else if (hasSourceAudio && hasTargetAudio) {
+                // Both audio: Front = target + target audio, Back = source + source audio
+                const targetMediaIndex = mediaMapping.targetAudio[index]
                 const sourceMediaIndex = mediaMapping.sourceAudio[index]
+                frontField = `${card.target}[sound:${targetMediaIndex}.mp3]`
                 backField = `${card.source}[sound:${sourceMediaIndex}.mp3]`
+            } else {
+                // No audio: Front = target, Back = source (default behavior)
+                frontField = card.target
+                backField = card.source
             }
 
             // Simple checksum - just use the length of the target text
