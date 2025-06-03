@@ -277,9 +277,14 @@ export function DeckGeneratorForm() {
                         <option value="de">German</option>
                         <option value="it">Italian</option>
                         <option value="pt">Portuguese</option>
+                        <option value="ru">Russian</option>
                         <option value="ja">Japanese</option>
                         <option value="ko">Korean</option>
                         <option value="zh">Chinese</option>
+                        <option value="ar">Arabic</option>
+                        <option value="tr">Turkish</option>
+                        <option value="nl">Dutch</option>
+                        <option value="vi">Vietnamese</option>
                     </select>
                 </div>
 
@@ -296,15 +301,20 @@ export function DeckGeneratorForm() {
                         required
                     >
                         <option value="">Select target language</option>
+                        <option value="en">English</option>
                         <option value="es">Spanish</option>
                         <option value="fr">French</option>
                         <option value="de">German</option>
                         <option value="it">Italian</option>
                         <option value="pt">Portuguese</option>
+                        <option value="ru">Russian</option>
                         <option value="ja">Japanese</option>
                         <option value="ko">Korean</option>
                         <option value="zh">Chinese</option>
-                        <option value="en">English</option>
+                        <option value="ar">Arabic</option>
+                        <option value="tr">Turkish</option>
+                        <option value="nl">Dutch</option>
+                        <option value="vi">Vietnamese</option>
                     </select>
                 </div>
             </div>
