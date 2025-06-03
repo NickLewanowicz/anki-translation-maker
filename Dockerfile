@@ -1,30 +1,29 @@
 # Multi-stage build for full-stack deployment
-FROM node:18-alpine as frontend-builder
+FROM oven/bun:1-alpine as frontend-builder
+
+# Copy everything first
+WORKDIR /app
+COPY . .
 
 # Build frontend
-WORKDIR /app/frontend
-COPY packages/frontend/package.json packages/frontend/package-lock.json* ./
-RUN npm ci
-COPY packages/frontend/ ./
-RUN npm run build
+WORKDIR /app/packages/frontend
+RUN bun install
+RUN bun run build
 
 # Backend with Bun
 FROM oven/bun:1-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json bun.lockb ./
-COPY packages/backend/package.json ./packages/backend/
+# Copy project files
+COPY package.json bun.lockb* ./
+COPY packages/ ./packages/
 
-# Install backend dependencies
-RUN bun install --frozen-lockfile
-
-# Copy backend source
-COPY packages/backend/ ./packages/backend/
+# Install all dependencies (will install for both backend and frontend workspace)
+RUN bun install
 
 # Copy built frontend to backend public directory
-COPY --from=frontend-builder /app/frontend/dist ./packages/backend/public
+COPY --from=frontend-builder /app/packages/frontend/dist ./packages/backend/public
 
 # Expose port
 EXPOSE 3000
