@@ -1,177 +1,132 @@
 # Anki Translation Maker
 
-A TypeScript monorepo application that generates Anki flashcard decks with AI-powered translations and audio using the Replicate API.
+A TypeScript monorepo application for generating Anki flashcard decks with AI-powered translation and audio generation.
 
-## 🚀 Features
+## Features
 
-- **AI-Powered Word Generation**: Generate vocabulary lists from prompts using LLaMA 2
-- **Multi-Language Translation**: Translate words between multiple languages
-- **Audio Generation**: Create pronunciation audio for both source and target languages using Bark
-- **Anki Integration**: Export directly to Anki-compatible `.apkg` format
-- **Modern UI**: Beautiful, responsive React frontend with Tailwind CSS
-- **Fast Backend**: High-performance Bun backend with Hono framework
-- **Docker Support**: Easy deployment with Docker containers
+- **Multiple Deck Types**: Choose from 20 preset vocabulary categories, create custom word lists, or generate AI-powered decks
+- **AI Translation**: Powered by Replicate API using OpenAI GPT models
+- **Audio Generation**: Text-to-speech for both source and target languages with proper audio placement
+- **Smart Deck Naming**: Optional custom deck names or AI-generated names based on content
+- **Card Directions**: Choose forward-only (Source → Target) or bidirectional (Source ↔ Target) cards
+- **Configurable Models**: Customize text and voice models with advanced settings
+- **Proper Anki Format**: Generates valid `.apkg` files with SQLite databases that import correctly into Anki
+- **Modern UI**: Clean, responsive interface built with React and Tailwind CSS
 
-## 🏗️ Architecture
+## Architecture
 
-This is a monorepo managed with PNPM that builds into a single Docker container:
+- **Monorepo**: PNPM workspace with separate frontend and backend packages
+- **Backend**: Bun + Hono server with TypeScript
+- **Frontend**: React + Vite + Tailwind CSS
+- **Database**: SQLite for Anki deck generation
+- **Containerization**: Docker support for easy deployment
 
-- **Backend** (`packages/backend`): Bun + Hono API server that serves both API and static frontend
-- **Frontend** (`packages/frontend`): React + Vite + Tailwind CSS (builds to static files)
-- **Deployment**: Single Bun server serves the static frontend on root domain and API on `/api`
+## Quick Start
 
-## 📋 Prerequisites
+### Prerequisites
 
-- Node.js 18+
-- PNPM 8+
-- Bun 1.0+ (for backend development)
-- Docker (optional, for containerized deployment)
-- Replicate API key (get one at [replicate.com](https://replicate.com))
+- Node.js 18+ and PNPM
+- Bun runtime
+- Docker (optional)
+- Replicate API key
 
-## 🛠️ Installation
+### Development Setup
 
-1. **Clone the repository**
+1. **Clone and install dependencies:**
 
    ```bash
    git clone <repository-url>
    cd anki-translation-maker
-   ```
-
-2. **Install dependencies**
-
-   ```bash
    pnpm install
    ```
 
-3. **Set up environment variables**
+2. **Start development servers:**
+
    ```bash
-   # No environment file needed - API key is provided via frontend form
+   # Terminal 1: Backend (port 3000)
+   pnpm --filter backend dev
+
+   # Terminal 2: Frontend (port 5173)
+   pnpm --filter frontend dev
    ```
 
-## 🚀 Development
+3. **Access the application:**
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:3000/api
 
-### Option 1: Development mode (separate frontend/backend)
+### Production Deployment
 
-```bash
-pnpm dev
-```
-
-This will start:
-
-- Backend on `http://localhost:3000`
-- Frontend on `http://localhost:5173` (with API proxy)
-
-### Option 2: Production-like mode (single server)
+**Using Docker:**
 
 ```bash
-# Build frontend and copy to backend
-./scripts/build-local.sh
-
-# Start the unified server
-cd packages/backend && pnpm start
-```
-
-This serves everything on `http://localhost:3000` (frontend + API)
-
-### Individual package commands:
-
-**Backend only:**
-
-```bash
-cd packages/backend
-pnpm dev
-```
-
-**Frontend only:**
-
-```bash
-cd packages/frontend
-pnpm dev
-```
-
-## 🏗️ Building
-
-### Build all packages:
-
-```bash
-pnpm build
-```
-
-### Build individual packages:
-
-```bash
-# Backend
-cd packages/backend && pnpm build
-
-# Frontend
-cd packages/frontend && pnpm build
-```
-
-## 🐳 Docker Deployment
-
-### Build and run with Docker:
-
-```bash
-# Build the Docker image
-pnpm docker:build
-
-# Run the container
-pnpm docker:run
-```
-
-The application will be available at `http://localhost:3000`.
-
-### Manual Docker commands:
-
-```bash
-# Build
 docker build -t anki-translation-maker .
-
-# Run
 docker run -p 3000:3000 anki-translation-maker
 ```
 
-## 📖 Usage
+**Manual deployment:**
 
-1. **Open the application** in your browser:
+```bash
+pnpm build
+pnpm --filter backend start
+```
 
-   - Development mode: `http://localhost:5173` (frontend dev server)
-   - Production mode: `http://localhost:3000` (unified Bun server)
-   - Docker: `http://localhost:3000`
+## API Documentation
 
-2. **Fill out the form:**
+### Endpoints
 
-   - **Prompt/Topic**: Describe what kind of vocabulary you want (e.g., "kitchen utensils", "travel phrases")
-   - **Source Language**: The language you know (default: English)
-   - **Target Language**: The language you want to learn
-   - **Replicate API Key**: Your API key from replicate.com (required, no environment variables)
+#### `POST /api/generate-deck`
 
-3. **Generate the deck**: Click "Generate Anki Deck" and wait for processing (may take several minutes)
-
-4. **Download**: The `.apkg` file will automatically download when ready
-
-5. **Import to Anki**: Open Anki and import the downloaded `.apkg` file
-
-## 🔧 API Endpoints
-
-### `POST /api/generate-deck`
-
-Generate an Anki deck with translations and audio.
+Generate an Anki deck package.
 
 **Request Body:**
 
 ```json
 {
-  "prompt": "kitchen utensils",
-  "sourceLanguage": "en",
-  "targetLanguage": "es",
-  "replicateApiKey": "r8_..."
+  "words": "hello, world, test", // Comma-separated words (for word list decks)
+  "aiPrompt": "", // AI prompt (for AI-generated decks)
+  "deckName": "", // Optional custom deck name (auto-generated if empty)
+  "cardDirection": "forward", // "forward" or "both" for bidirectional cards
+  "sourceLanguage": "en", // Source language code
+  "targetLanguage": "es", // Target language code
+  "replicateApiKey": "r8_...", // Your Replicate API key
+  "textModel": "openai/gpt-4o-mini", // Text generation model
+  "voiceModel": "minimax/speech-02-hd", // Voice generation model
+  "useCustomArgs": false, // Enable custom model arguments
+  "textModelArgs": "{}", // Custom text model arguments (JSON)
+  "voiceModelArgs": "{}" // Custom voice model arguments (JSON)
 }
 ```
 
-**Response:** Binary `.apkg` file
+**Response:** Binary `.apkg` file download
 
-### `GET /api/health`
+#### `POST /api/validate`
+
+Validate configuration before deck generation.
+
+**Request Body:** Same as `/api/generate-deck`
+
+**Response:**
+
+```json
+{
+  "status": "valid",
+  "message": "All validations passed! Ready for deck generation.",
+  "summary": {
+    "deckType": "word-list",
+    "wordCount": 3,
+    "deckName": "Custom Vocabulary Deck",
+    "cardDirection": "Forward only",
+    "sourceLanguage": "en",
+    "targetLanguage": "es",
+    "textModel": "openai/gpt-4o-mini",
+    "voiceModel": "minimax/speech-02-hd",
+    "useCustomArgs": false,
+    "customArgsValid": "N/A"
+  }
+}
+```
+
+#### `GET /api/health`
 
 Health check endpoint.
 
@@ -184,141 +139,175 @@ Health check endpoint.
 }
 ```
 
-## 🧪 Testing
+## Testing
+
+The application includes comprehensive test suites:
+
+### Backend Tests
 
 ```bash
+cd packages/backend
+
 # Run all tests
+bun test
+
+# Run specific test suites
+bun test src/services/__tests__/AnkiService.test.ts
+bun test src/services/__tests__/integration.test.ts
+```
+
+**Test Coverage:**
+
+- ✅ SQLite database creation and validation
+- ✅ Anki package (.apkg) generation
+- ✅ ZIP file structure verification
+- ✅ Audio file handling
+- ✅ Empty deck handling
+- ✅ API endpoint validation
+- ✅ Error handling and edge cases
+
+### Frontend Tests
+
+```bash
+cd packages/frontend
 pnpm test
-
-# Run tests for specific package
-cd packages/backend && pnpm test
-cd packages/frontend && pnpm test
 ```
 
-## 🔍 Linting
+## Recent Updates
 
-```bash
-# Lint all packages
-pnpm lint
+### Audio & Card Direction Improvements (v1.2.0)
 
-# Lint specific package
-cd packages/backend && pnpm lint
-cd packages/frontend && pnpm lint
-```
+**New Features:**
 
-## 🧹 Cleanup
+- ✅ **Smart Deck Naming**: Optional custom deck names with AI auto-generation fallback
+- ✅ **Card Direction Options**: Choose forward-only or bidirectional cards
+- ✅ **Fixed Audio Placement**: Target language audio now plays when revealing answers
+- ✅ **Proper Card Templates**: Separate templates for forward and reverse cards
 
-```bash
-# Clean all build artifacts and node_modules
-pnpm clean
-```
+**Audio Fixes:**
 
-## 📁 Project Structure
+- ✅ Forward cards: Show source → reveal target + target audio
+- ✅ Reverse cards: Show target + target audio → reveal source + source audio
+- ✅ Separate audio fields for source and target languages
+- ✅ Proper media file naming and organization
 
-```
-anki-translation-maker/
-├── packages/
-│   ├── backend/                 # Bun + Hono API server
-│   │   ├── src/
-│   │   │   ├── index.ts        # Server entry point
-│   │   │   ├── routes/         # API routes
-│   │   │   ├── services/       # Business logic
-│   │   │   └── types/          # TypeScript types
-│   │   ├── package.json
-│   │   └── tsconfig.json
-│   └── frontend/               # React + Vite frontend
-│       ├── src/
-│       │   ├── components/     # React components
-│       │   ├── services/       # API services
-│       │   ├── App.tsx         # Main app component
-│       │   └── main.tsx        # Entry point
-│       ├── public/
-│       ├── package.json
-│       ├── vite.config.ts
-│       └── tailwind.config.js
-├── Dockerfile                  # Docker configuration
-├── docker-compose.yml          # Docker Compose (optional)
-├── package.json               # Root package.json
-├── pnpm-workspace.yaml        # PNPM workspace config
-└── README.md
-```
+**Technical Improvements:**
 
-## 🔧 Technologies Used
+- ✅ Updated Anki note type with 4 fields: Source, Target, SourceAudio, TargetAudio
+- ✅ Dynamic card template generation based on direction preference
+- ✅ Comprehensive test coverage for both card directions
+- ✅ Enhanced validation with card direction summary
 
-### Backend
+### SQLite Database Generation (v1.1.0)
 
-- **Bun**: Fast JavaScript runtime and package manager
-- **Hono**: Lightweight web framework
-- **Replicate**: AI model API for translations and audio
-- **Archiver**: ZIP file creation for Anki packages
-- **Zod**: Runtime type validation
+**Issue 1:** Generated `.apkg` files were corrupted and couldn't be imported into Anki, showing "file is not a database" error.
 
-### Frontend
+**Root Cause:** The AnkiService was creating JSON files instead of proper SQLite databases for the `collection.anki2` file.
 
-- **React 18**: UI framework
-- **Vite**: Build tool and dev server
-- **Tailwind CSS**: Utility-first CSS framework
-- **Lucide React**: Icon library
-- **Axios**: HTTP client
+**Issue 2:** Missing required database tables causing "no such table: graves" error during Anki import.
 
-### DevOps
+**Root Cause:** Incomplete Anki database schema missing critical tables (`revlog`, `graves`) and indexes.
 
-- **TypeScript**: Type safety
-- **ESLint**: Code linting
-- **PNPM**: Package management
-- **Docker**: Containerization
+**Solution:**
 
-## 🤝 Contributing
+- ✅ Implemented proper SQLite database creation using `sqlite3` package
+- ✅ Added complete Anki database schema with ALL required tables:
+  - `col` - Collection metadata
+  - `notes` - Note data
+  - `cards` - Card data
+  - `revlog` - Review history
+  - `graves` - Deleted items for sync
+- ✅ Added all required indexes for performance
+- ✅ Fixed async schema creation with proper table/index ordering
+- ✅ Added comprehensive unit tests to prevent regression
+- ✅ Verified generated `.apkg` files import successfully into Anki
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+**Technical Details:**
 
-## 📝 License
+- Uses `sqlite3` to create proper database files
+- Implements complete Anki database schema based on official specifications
+- Includes proper field types (`sfld` as INTEGER for numeric sorting)
+- Handles empty card lists and edge cases
+- Includes proper cleanup of temporary files
+- Comprehensive test coverage with actual SQLite validation
+- Schema validation tests ensure compatibility with Anki requirements
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## Supported Languages
 
-## 🙏 Acknowledgments
+The application supports translation between any languages supported by the configured AI models. Common language codes:
 
-- [Replicate](https://replicate.com) for providing AI model APIs
-- [Anki](https://ankiweb.net) for the amazing spaced repetition software
-- [Meta](https://ai.meta.com) for LLaMA 2 language model
-- [Suno AI](https://suno.ai) for Bark audio generation model
+- `en` - English
+- `es` - Spanish
+- `fr` - French
+- `de` - German
+- `it` - Italian
+- `pt` - Portuguese
+- `ru` - Russian
+- `ja` - Japanese
+- `ko` - Korean
+- `zh` - Chinese
+- `ar` - Arabic
+- `hi` - Hindi
+- `vi` - Vietnamese
 
-## 🐛 Troubleshooting
+## Configuration
+
+### Environment Variables
+
+No environment variables required! All configuration is provided through the frontend form.
+
+### Model Configuration
+
+**Default Models:**
+
+- Text: `openai/gpt-4o-mini`
+- Voice: `minimax/speech-02-hd`
+
+**Custom Models:**
+Enable "Advanced Settings" to use custom models and arguments.
+
+## Troubleshooting
 
 ### Common Issues
 
-**"Cannot find module" errors during development:**
+1. **"file is not a database" error in Anki**
 
-- Run `pnpm install` in the root directory
-- Make sure you're using Node.js 18+ and PNPM 8+
+   - ✅ **Fixed in v1.1.0** - Now generates proper SQLite databases
 
-**Build failures:**
+2. **API key errors**
 
-- Clear node_modules: `pnpm clean && pnpm install`
-- Check that all dependencies are properly installed
+   - Verify your Replicate API key is valid
+   - Check the key has access to the specified models
 
-**Docker build issues:**
+3. **Model not found errors**
 
-- Make sure Docker is running
-- Try building with `--no-cache`: `docker build --no-cache -t anki-translation-maker .`
+   - Verify model names are correct
+   - Check model availability in your Replicate account
 
-**API key issues:**
+4. **Network timeouts**
+   - Large decks may take several minutes to generate
+   - Audio generation is the slowest step
 
-- Verify your Replicate API key is valid
-- Check that you have sufficient credits in your Replicate account
+### Development Issues
 
-### Getting Help
+1. **Port conflicts**
 
-If you encounter issues:
+   - Backend: http://localhost:3000
+   - Frontend dev: http://localhost:5173
+   - Use frontend URL for development
 
-1. Check the [Issues](../../issues) page for similar problems
-2. Create a new issue with detailed information about your problem
-3. Include your environment details (OS, Node version, etc.)
+2. **PNPM issues**
+   - Clear cache: `pnpm store prune`
+   - Reinstall: `rm -rf node_modules && pnpm install`
 
----
+## Contributing
 
-Made with ❤️ for language learners everywhere!
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Ensure all tests pass: `pnpm test`
+5. Submit a pull request
+
+## License
+
+MIT License - see LICENSE file for details.

@@ -6,6 +6,8 @@ interface FormData {
     deckType: string
     words: string
     aiPrompt: string
+    deckName: string
+    cardDirection: string
     targetLanguage: string
     sourceLanguage: string
     replicateApiKey: string
@@ -36,6 +38,8 @@ export function DeckGeneratorForm() {
         deckType: 'basic-verbs',
         words: DEFAULT_DECKS[0].words,
         aiPrompt: '',
+        deckName: '',
+        cardDirection: 'forward',
         targetLanguage: '',
         sourceLanguage: 'en',
         replicateApiKey: '',
@@ -258,6 +262,45 @@ export function DeckGeneratorForm() {
                     </p>
                 </div>
             )}
+
+            <div>
+                <label htmlFor="deckName" className="block text-sm font-medium text-gray-700 mb-2">
+                    Deck Name <span className="text-gray-500">(optional)</span>
+                </label>
+                <input
+                    type="text"
+                    id="deckName"
+                    name="deckName"
+                    value={formData.deckName}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Leave empty to auto-generate a name"
+                    maxLength={50}
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                    Custom name for your Anki deck. If empty, AI will generate one based on the content.
+                </p>
+            </div>
+
+            <div>
+                <label htmlFor="cardDirection" className="block text-sm font-medium text-gray-700 mb-2">
+                    Card Direction
+                </label>
+                <select
+                    id="cardDirection"
+                    name="cardDirection"
+                    value={formData.cardDirection}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                >
+                    <option value="forward">Forward only (Source → Target)</option>
+                    <option value="both">Both directions (Source ↔ Target)</option>
+                </select>
+                <p className="mt-1 text-sm text-gray-500">
+                    Forward: Learn source language → target language. Both: Learn in both directions with separate cards.
+                </p>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>

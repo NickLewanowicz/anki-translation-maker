@@ -182,4 +182,39 @@ export class TranslationService {
         }
         return languageBoostMap[language] || 'English'
     }
+
+    async generateDeckName(content: string, sourceLanguage: string, targetLanguage: string): Promise<string> {
+        try {
+            const defaultInput = {
+                prompt: `Create a short, descriptive name for an Anki flashcard deck based on this content: "${content}". 
+                         The deck contains ${sourceLanguage} words translated to ${targetLanguage}.
+                         
+                         Return only the deck name (maximum 50 characters), no quotes, no explanations.
+                         
+                         Examples:
+                         - "Basic Spanish Verbs"
+                         - "Food & Kitchen Vocabulary"
+                         - "Travel Phrases for Beginners"`,
+                system_prompt: "You are a deck naming expert. Create concise, descriptive names for language learning flashcard decks."
+            }
+
+            const input = { ...defaultInput, ...this.textModelArgs }
+
+            let fullResponse = ''
+            const modelName = this.textModel as `${string}/${string}` | `${string}/${string}:${string}`
+            for await (const event of this.replicate.stream(modelName, { input })) {
+                fullResponse += event
+            }
+
+            const deckName = fullResponse
+                .trim()
+                .replace(/['"]/g, '')
+                .substring(0, 50)
+
+            return deckName || `${sourceLanguage.toUpperCase()}-${targetLanguage.toUpperCase()} Vocabulary`
+        } catch (error) {
+            console.error('Error generating deck name:', error)
+            return `${sourceLanguage.toUpperCase()}-${targetLanguage.toUpperCase()} Vocabulary`
+        }
+    }
 } 

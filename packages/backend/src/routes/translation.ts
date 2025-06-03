@@ -9,6 +9,8 @@ export const translationRouter = new Hono<Env>()
 const generateDeckSchema = z.object({
     words: z.string().default(''),
     aiPrompt: z.string().default(''),
+    deckName: z.string().default(''),
+    cardDirection: z.enum(['forward', 'both']).default('forward'),
     targetLanguage: z.string().min(1, 'Target language is required'),
     sourceLanguage: z.string().default('en'),
     replicateApiKey: z.string().min(1, 'Replicate API key is required'),
@@ -34,7 +36,7 @@ translationRouter.post('/generate-deck', async (c) => {
             useCustomArgs: body.useCustomArgs
         })
 
-        const { words, aiPrompt, targetLanguage, sourceLanguage, replicateApiKey, textModel, voiceModel, useCustomArgs, textModelArgs, voiceModelArgs } = generateDeckSchema.parse(body)
+        const { words, aiPrompt, deckName, cardDirection, targetLanguage, sourceLanguage, replicateApiKey, textModel, voiceModel, useCustomArgs, textModelArgs, voiceModelArgs } = generateDeckSchema.parse(body)
 
         // Set API key in context
         c.set('replicateApiKey', replicateApiKey)
@@ -83,6 +85,17 @@ translationRouter.post('/generate-deck', async (c) => {
             throw new Error('No valid words found to translate')
         }
 
+        // Step 1.5: Generate deck name if not provided
+        let finalDeckName = deckName
+        if (!finalDeckName || finalDeckName.trim() === '') {
+            console.log('🏷️ Generating deck name using AI...')
+            const content = aiPrompt || wordList.slice(0, 10).join(', ')
+            finalDeckName = await translationService.generateDeckName(content, sourceLanguage, targetLanguage)
+            console.log(`✅ Generated deck name: "${finalDeckName}"`)
+        } else {
+            console.log(`✅ Using provided deck name: "${finalDeckName}"`)
+        }
+
         // Step 2: Translate words
         console.log(`🔄 Translating ${wordList.length} words from ${sourceLanguage} to ${targetLanguage}...`)
         const translations = await translationService.translateWords(wordList, sourceLanguage, targetLanguage)
@@ -106,12 +119,13 @@ translationRouter.post('/generate-deck', async (c) => {
             targetAudio: targetAudio[index],
         }))
 
-        const ankiPackage = await ankiService.createDeck(deckData, `${sourceLanguage}-${targetLanguage}-deck`)
+        const ankiPackage = await ankiService.createDeck(deckData, finalDeckName, cardDirection)
         console.log(`✅ Created Anki package with ${deckData.length} cards`)
 
         // Return the deck as a downloadable file
+        const safeFileName = finalDeckName.replace(/[^a-zA-Z0-9-_\s]/g, '').replace(/\s+/g, '-')
         c.header('Content-Type', 'application/zip')
-        c.header('Content-Disposition', `attachment; filename="${sourceLanguage}-${targetLanguage}-deck.apkg"`)
+        c.header('Content-Disposition', `attachment; filename="${safeFileName}.apkg"`)
 
         console.log('🎉 Deck generation completed successfully!')
         return c.body(ankiPackage)
@@ -168,7 +182,7 @@ translationRouter.post('/validate', async (c) => {
 
     try {
         const body = await c.req.json()
-        const { words, aiPrompt, targetLanguage, sourceLanguage, replicateApiKey, textModel, voiceModel, useCustomArgs, textModelArgs, voiceModelArgs } = generateDeckSchema.parse(body)
+        const { words, aiPrompt, deckName, cardDirection, targetLanguage, sourceLanguage, replicateApiKey, textModel, voiceModel, useCustomArgs, textModelArgs, voiceModelArgs } = generateDeckSchema.parse(body)
 
         // Validate that we have either words or aiPrompt
         if (!words && !aiPrompt) {
@@ -211,6 +225,8 @@ translationRouter.post('/validate', async (c) => {
             summary: {
                 deckType: aiPrompt ? 'ai-generated' : 'word-list',
                 wordCount: aiPrompt ? 'Will generate 20 words' : wordList.length,
+                deckName: deckName || 'Will auto-generate from content',
+                cardDirection: cardDirection === 'both' ? 'Forward + Reversed' : 'Forward only',
                 sourceLanguage,
                 targetLanguage,
                 textModel,
