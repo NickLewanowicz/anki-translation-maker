@@ -104,14 +104,16 @@ describe('AnkiService', () => {
                 // Verify deck name is stored correctly
                 expect(result.deckName).toBe(deckName)
 
-                // Verify notes contain correct data (4 fields: Source, Target, SourceAudio, TargetAudio)
+                // Verify notes contain correct data (2 fields: Front=target with audio, Back=source)
                 expect(result.notes).toHaveLength(testCards.length)
                 result.notes.forEach((note: any, index: number) => {
                     const fields = note.flds.split('\x1f')
-                    expect(fields[0]).toBe(testCards[index].source) // Source
-                    expect(fields[1]).toBe(testCards[index].target) // Target
-                    expect(fields[2]).toContain(`${index}_source.wav`) // SourceAudio
-                    expect(fields[3]).toContain(`${index}_target.wav`) // TargetAudio
+                    // Front field should contain target with audio if present
+                    const expectedFront = testCards[index].targetAudio && testCards[index].targetAudio!.length > 0
+                        ? `${testCards[index].target}[sound:${index}.mp3]`
+                        : testCards[index].target
+                    expect(fields[0]).toBe(expectedFront) // Front (target + audio)
+                    expect(fields[1]).toBe(testCards[index].source) // Back (source)
                 })
 
             } finally {
@@ -148,8 +150,9 @@ describe('AnkiService', () => {
                 expect(result.noteCount).toBe(1)
                 const note = result.notes[0]
                 const fields = note.flds.split('\x1f')
-                expect(fields[2]).toBe('') // SourceAudio field should be empty
-                expect(fields[3]).toBe('') // TargetAudio field should be empty
+                expect(fields[0]).toBe('prueba') // Front field (target without audio)
+                expect(fields[1]).toBe('test') // Back field (source)
+                expect(fields.length).toBe(2) // Only 2 fields in new structure
 
             } finally {
                 if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath)
@@ -181,14 +184,14 @@ describe('AnkiService', () => {
             }
         })
 
-        it('should create both forward and reverse cards when cardDirection is "both"', async () => {
-            const apkgBuffer = await ankiService.createDeck(testCards, 'Both Directions Test', 'both')
+        it('should create only forward cards (no reverse cards)', async () => {
+            const apkgBuffer = await ankiService.createDeck(testCards, 'Forward Only Test')
             expect(apkgBuffer).toBeInstanceOf(Buffer)
 
             const files = await extractZipContents(apkgBuffer)
             const dbBuffer = files['collection.anki2']
 
-            const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'anki-both-'))
+            const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'anki-forward-'))
             const dbPath = path.join(tempDir, 'test.db')
 
             try {
@@ -196,8 +199,8 @@ describe('AnkiService', () => {
                 const result = await queryDatabase(dbPath)
 
                 expect(result.noteCount).toBe(testCards.length)
-                // Should create 2 cards per note (forward + reverse)
-                expect(result.cardCount).toBe(testCards.length * 2)
+                // Should create only 1 card per note (forward only)
+                expect(result.cardCount).toBe(testCards.length)
 
             } finally {
                 if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath)
