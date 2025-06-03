@@ -124,6 +124,25 @@ export class TranslationService {
         return voiceMap[language] || 'English_CalmWoman'
     }
 
+    private sanitizeVoiceModelArgs(args: Record<string, any>): Record<string, any> {
+        const sanitized = { ...args }
+
+        // Convert string numbers to actual numbers for common TTS parameters
+        const numericFields = ['speed', 'temperature', 'top_p', 'repetition_penalty', 'pitch', 'rate', 'volume']
+
+        for (const field of numericFields) {
+            if (sanitized[field] !== undefined) {
+                const value = sanitized[field]
+                if (typeof value === 'string' && !isNaN(parseFloat(value))) {
+                    sanitized[field] = parseFloat(value)
+                    console.log(`🔧 Converted ${field} from "${value}" to ${sanitized[field]}`)
+                }
+            }
+        }
+
+        return sanitized
+    }
+
     async generateAudio(words: string[], language: string): Promise<Buffer[]> {
         try {
             const audioBuffers: Buffer[] = []
@@ -138,7 +157,12 @@ export class TranslationService {
                         emotion: "neutral"
                     }
 
-                    const input = { ...defaultInput, ...this.voiceModelArgs }
+                    // Sanitize voice model args to fix common type issues
+                    const sanitizedVoiceArgs = this.sanitizeVoiceModelArgs(this.voiceModelArgs)
+                    const input = { ...defaultInput, ...sanitizedVoiceArgs }
+
+                    console.log(`🔊 Generating audio for "${word}" with input:`, JSON.stringify(input, null, 2))
+
                     const modelName = this.voiceModel as `${string}/${string}` | `${string}/${string}:${string}`
                     const output = await this.replicate.run(modelName, { input })
 
@@ -147,13 +171,44 @@ export class TranslationService {
                         const response = await fetch(output)
                         const arrayBuffer = await response.arrayBuffer()
                         audioBuffers.push(Buffer.from(arrayBuffer))
+                        console.log(`✅ Generated audio for "${word}"`)
                     } else {
                         // Fallback: create empty buffer if audio generation fails
+                        console.warn(`⚠️ No audio output for "${word}", using empty buffer`)
                         audioBuffers.push(Buffer.alloc(0))
                     }
                 } catch (error) {
-                    console.error(`Error generating audio for "${word}":`, error)
-                    // Add empty buffer for failed generations
+                    console.error(`❌ Error generating audio for "${word}":`, error)
+
+                    // Check if it's a validation error from Replicate (multiple ways it can appear)
+                    const errorMessage = error instanceof Error ? error.message : String(error)
+                    const isValidationError = (
+                        errorMessage.includes('Input validation failed') ||
+                        errorMessage.includes('422') ||
+                        errorMessage.includes('Unprocessable Entity') ||
+                        errorMessage.includes('Invalid type') ||
+                        errorMessage.includes('Expected:') ||
+                        (error as any)?.status === 422
+                    )
+
+                    if (isValidationError) {
+                        // Extract the specific validation details if available
+                        let validationDetails = errorMessage
+                        try {
+                            // Try to extract more specific error from API response
+                            const match = errorMessage.match(/"detail":"([^"]+)"/)
+                            if (match) {
+                                validationDetails = match[1].replace(/\\n/g, '\n')
+                            }
+                        } catch (e) {
+                            // Use original message if parsing fails
+                        }
+
+                        throw new Error(`Voice model validation failed for "${word}": ${validationDetails}`)
+                    }
+
+                    // For non-validation errors, just log and continue with empty buffer
+                    console.warn(`⚠️ Audio generation failed for "${word}", continuing with empty audio`)
                     audioBuffers.push(Buffer.alloc(0))
                 }
             }
@@ -161,7 +216,23 @@ export class TranslationService {
             return audioBuffers
         } catch (error) {
             console.error('Error generating audio:', error)
-            throw new Error('Failed to generate audio')
+
+            // Re-throw validation errors with more context
+            const errorMessage = error instanceof Error ? error.message : String(error)
+            const isValidationError = (
+                errorMessage.includes('Voice model validation failed') ||
+                errorMessage.includes('Input validation failed') ||
+                errorMessage.includes('422') ||
+                errorMessage.includes('Unprocessable Entity') ||
+                errorMessage.includes('Invalid type') ||
+                errorMessage.includes('Expected:')
+            )
+
+            if (isValidationError) {
+                throw error
+            }
+
+            throw new Error('Failed to generate audio: ' + errorMessage)
         }
     }
 
