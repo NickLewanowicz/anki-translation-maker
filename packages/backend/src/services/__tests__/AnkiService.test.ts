@@ -104,7 +104,7 @@ describe('AnkiService', () => {
                 // Verify deck name is stored correctly
                 expect(result.deckName).toBe(deckName)
 
-                // Verify notes contain correct data (2 fields: Front=target with audio, Back=source)
+                // Verify notes contain correct data (2 fields: Front=target with audio, Back=source with audio)
                 expect(result.notes).toHaveLength(testCards.length)
                 result.notes.forEach((note: any, index: number) => {
                     const fields = note.flds.split('\x1f')
@@ -112,8 +112,12 @@ describe('AnkiService', () => {
                     const expectedFront = testCards[index].targetAudio && testCards[index].targetAudio!.length > 0
                         ? `${testCards[index].target}[sound:${index}.mp3]`
                         : testCards[index].target
+                    // Back field should contain source with audio if present  
+                    const expectedBack = testCards[index].sourceAudio && testCards[index].sourceAudio!.length > 0
+                        ? `${testCards[index].source}[sound:source_${index}.mp3]`
+                        : testCards[index].source
                     expect(fields[0]).toBe(expectedFront) // Front (target + audio)
-                    expect(fields[1]).toBe(testCards[index].source) // Back (source)
+                    expect(fields[1]).toBe(expectedBack) // Back (source + audio)
                 })
 
             } finally {

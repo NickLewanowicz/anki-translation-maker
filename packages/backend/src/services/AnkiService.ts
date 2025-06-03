@@ -321,13 +321,17 @@ export class AnkiService {
             const noteId = now + index + 100
             const cardId = now + index + 200
 
-            // Front field contains target language with audio (matching working deck pattern)
-            const frontField = card.targetAudio && card.targetAudio.length > 0
-                ? `${card.target}[sound:${index}.mp3]`
-                : card.target
+            // Build front field (target language with optional audio)
+            let frontField = card.target
+            if (card.targetAudio && card.targetAudio.length > 0) {
+                frontField = `${card.target}[sound:${index}.mp3]`
+            }
 
-            // Back field contains source language
-            const backField = card.source
+            // Build back field (source language with optional audio)  
+            let backField = card.source
+            if (card.sourceAudio && card.sourceAudio.length > 0) {
+                backField = `${card.source}[sound:source_${index}.mp3]`
+            }
 
             // Simple checksum - just use the length of the target text
             const checksum = card.target.length
@@ -408,9 +412,17 @@ export class AnkiService {
             const media: Record<string, string> = {}
 
             cards.forEach((card, index) => {
+                // Add target audio if present (use card index for consistency)
                 if (card.targetAudio && card.targetAudio.length > 0) {
                     media[index.toString()] = `${index}.mp3`
                     archive.append(card.targetAudio, { name: index.toString() })
+                }
+
+                // Add source audio if present (use prefixed naming)
+                if (card.sourceAudio && card.sourceAudio.length > 0) {
+                    const sourceKey = `source_${index}`
+                    media[sourceKey] = `source_${index}.mp3`
+                    archive.append(card.sourceAudio, { name: sourceKey })
                 }
             })
 
