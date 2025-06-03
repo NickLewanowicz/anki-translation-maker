@@ -6,13 +6,15 @@ interface FormData {
     deckType: string
     words: string
     aiPrompt: string
+    maxCards: number
     deckName: string
-    cardDirection: string
     targetLanguage: string
     sourceLanguage: string
     replicateApiKey: string
     textModel: string
     voiceModel: string
+    generateSourceAudio: boolean
+    generateTargetAudio: boolean
     useCustomArgs: boolean
     textModelArgs: string
     voiceModelArgs: string
@@ -38,13 +40,15 @@ export function DeckGeneratorForm() {
         deckType: 'basic-verbs',
         words: DEFAULT_DECKS[0].words,
         aiPrompt: '',
+        maxCards: 20,
         deckName: '',
-        cardDirection: 'forward',
         targetLanguage: '',
         sourceLanguage: 'en',
         replicateApiKey: '',
         textModel: 'openai/gpt-4o-mini',
         voiceModel: 'minimax/speech-02-hd',
+        generateSourceAudio: true,
+        generateTargetAudio: true,
         useCustomArgs: false,
         textModelArgs: '{}',
         voiceModelArgs: '{}',
@@ -77,6 +81,9 @@ export function DeckGeneratorForm() {
             // Validate deck-specific requirements
             if (formData.deckType === 'ai-generated' && !formData.aiPrompt.trim()) {
                 throw new Error('AI prompt is required for AI Generated decks')
+            }
+            if (formData.deckType === 'ai-generated' && (formData.maxCards < 1 || formData.maxCards > 100)) {
+                throw new Error('Maximum cards must be between 1 and 100')
             }
             if (formData.deckType !== 'ai-generated' && !formData.words.trim()) {
                 throw new Error('Word list cannot be empty')
@@ -122,6 +129,9 @@ export function DeckGeneratorForm() {
             }))
         } else if (type === 'checkbox') {
             setFormData(prev => ({ ...prev, [name]: checked }))
+        } else if (name === 'maxCards') {
+            const numValue = parseInt(value) || 1
+            setFormData(prev => ({ ...prev, [name]: Math.min(Math.max(numValue, 1), 100) }))
         } else {
             setFormData(prev => ({ ...prev, [name]: value }))
         }
@@ -149,6 +159,9 @@ export function DeckGeneratorForm() {
 
             if (formData.deckType === 'ai-generated' && !formData.aiPrompt.trim()) {
                 throw new Error('AI prompt is required for AI Generated decks')
+            }
+            if (formData.deckType === 'ai-generated' && (formData.maxCards < 1 || formData.maxCards > 100)) {
+                throw new Error('Maximum cards must be between 1 and 100')
             }
             if (formData.deckType !== 'ai-generated' && !formData.words.trim()) {
                 throw new Error('Word list cannot be empty')
@@ -243,23 +256,45 @@ export function DeckGeneratorForm() {
             )}
 
             {isAiGeneratedDeck && (
-                <div>
-                    <label htmlFor="aiPrompt" className="block text-sm font-medium text-gray-700 mb-2">
-                        AI Generation Prompt
-                    </label>
-                    <textarea
-                        id="aiPrompt"
-                        name="aiPrompt"
-                        value={formData.aiPrompt}
-                        onChange={handleInputChange}
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="e.g., Common kitchen utensils, Travel vocabulary, Business terms..."
-                        required
-                    />
-                    <p className="mt-1 text-sm text-gray-500">
-                        Describe what kind of vocabulary you want to generate (AI will create 20 words)
-                    </p>
+                <div className="space-y-4">
+                    <div>
+                        <label htmlFor="aiPrompt" className="block text-sm font-medium text-gray-700 mb-2">
+                            AI Generation Prompt
+                        </label>
+                        <textarea
+                            id="aiPrompt"
+                            name="aiPrompt"
+                            value={formData.aiPrompt}
+                            onChange={handleInputChange}
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="e.g., Common kitchen utensils, Travel vocabulary, Business terms..."
+                            required
+                        />
+                        <p className="mt-1 text-sm text-gray-500">
+                            Describe what kind of vocabulary you want to generate
+                        </p>
+                    </div>
+
+                    <div>
+                        <label htmlFor="maxCards" className="block text-sm font-medium text-gray-700 mb-2">
+                            Maximum Number of Cards
+                        </label>
+                        <input
+                            type="number"
+                            id="maxCards"
+                            name="maxCards"
+                            value={formData.maxCards}
+                            onChange={handleInputChange}
+                            min="1"
+                            max="100"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required
+                        />
+                        <p className="mt-1 text-sm text-gray-500">
+                            AI will generate up to this many cards (1-100). The actual number may be less if the AI determines fewer quality words are appropriate for the topic.
+                        </p>
+                    </div>
                 </div>
             )}
 
@@ -282,25 +317,7 @@ export function DeckGeneratorForm() {
                 </p>
             </div>
 
-            <div>
-                <label htmlFor="cardDirection" className="block text-sm font-medium text-gray-700 mb-2">
-                    Card Direction
-                </label>
-                <select
-                    id="cardDirection"
-                    name="cardDirection"
-                    value={formData.cardDirection}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                >
-                    <option value="forward">Forward only (Source → Target)</option>
-                    <option value="both">Both directions (Source ↔ Target)</option>
-                </select>
-                <p className="mt-1 text-sm text-gray-500">
-                    Forward: Learn source language → target language. Both: Learn in both directions with separate cards.
-                </p>
-            </div>
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -360,6 +377,42 @@ export function DeckGeneratorForm() {
                         <option value="vi">Vietnamese</option>
                     </select>
                 </div>
+            </div>
+
+            <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Audio Generation Options</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            id="generateSourceAudio"
+                            name="generateSourceAudio"
+                            checked={formData.generateSourceAudio}
+                            onChange={handleInputChange}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <label htmlFor="generateSourceAudio" className="text-sm text-gray-700">
+                            Generate source language audio
+                        </label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            id="generateTargetAudio"
+                            name="generateTargetAudio"
+                            checked={formData.generateTargetAudio}
+                            onChange={handleInputChange}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <label htmlFor="generateTargetAudio" className="text-sm text-gray-700">
+                            Generate target language audio
+                        </label>
+                    </div>
+                </div>
+                <p className="mt-2 text-sm text-gray-500">
+                    Choose which languages to generate audio for. Disabling audio generation can save API credits and speed up processing.
+                </p>
             </div>
 
             <div>
