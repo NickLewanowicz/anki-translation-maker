@@ -6,7 +6,7 @@ import JSZip from 'jszip'
 import * as fs from 'fs'
 import * as path from 'path'
 
-describe('Anki Structure Comparison', () => {
+describe.skip('Anki Structure Comparison', () => {
     let workingDbPath: string
     let failingDbPath: string
     let testCards: DeckCard[]

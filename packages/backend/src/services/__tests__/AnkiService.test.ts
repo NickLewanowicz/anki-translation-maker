@@ -108,13 +108,35 @@ describe('AnkiService', () => {
                 expect(result.notes).toHaveLength(testCards.length)
                 result.notes.forEach((note: any, index: number) => {
                     const fields = note.flds.split('\x1f')
+
+                    // Calculate expected audio indices based on the sequential assignment logic
+                    let targetAudioIndex = -1
+                    let sourceAudioIndex = -1
+                    let mediaIndex = 0
+
+                    // First pass: assign target audio indices
+                    for (let i = 0; i < testCards.length; i++) {
+                        if (testCards[i].targetAudio && testCards[i].targetAudio!.length > 0) {
+                            if (i === index) targetAudioIndex = mediaIndex
+                            mediaIndex++
+                        }
+                    }
+
+                    // Second pass: assign source audio indices  
+                    for (let i = 0; i < testCards.length; i++) {
+                        if (testCards[i].sourceAudio && testCards[i].sourceAudio!.length > 0) {
+                            if (i === index) sourceAudioIndex = mediaIndex
+                            mediaIndex++
+                        }
+                    }
+
                     // Front field should contain target with audio if present
-                    const expectedFront = testCards[index].targetAudio && testCards[index].targetAudio!.length > 0
-                        ? `${testCards[index].target}[sound:${index}.mp3]`
+                    const expectedFront = targetAudioIndex >= 0
+                        ? `${testCards[index].target}[sound:${targetAudioIndex}.mp3]`
                         : testCards[index].target
                     // Back field should contain source with audio if present  
-                    const expectedBack = testCards[index].sourceAudio && testCards[index].sourceAudio!.length > 0
-                        ? `${testCards[index].source}[sound:source_${index}.mp3]`
+                    const expectedBack = sourceAudioIndex >= 0
+                        ? `${testCards[index].source}[sound:${sourceAudioIndex}.mp3]`
                         : testCards[index].source
                     expect(fields[0]).toBe(expectedFront) // Front (target + audio)
                     expect(fields[1]).toBe(expectedBack) // Back (source + audio)

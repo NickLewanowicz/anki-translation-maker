@@ -5,11 +5,81 @@ import AdmZip from 'adm-zip'
 import sqlite3 from 'sqlite3'
 import * as fs from 'fs'
 
+/**
+ * ANKI DECK RULES & CONSTRAINTS (see ANKI_DECK_RULES.md)
+ * 
+ * 🚨 CRITICAL RULES (violations cause 500 errors):
+ * 1. SQLite INTEGER Constraints: Use timestamp in seconds, NOT milliseconds
+ * 2. Media File Naming: Sequential numeric only (0, 1, 2...), NO string prefixes
+ * 3. Audio Reference Consistency: Field [sound:N.mp3] must match media file N
+ * 4. Database Schema: All required tables/indexes must exist
+ * 
+ * 🎯 AUDIO PLACEMENT RULES:
+ * - Source audio only: Front = source + audio, Back = target text
+ * - Target audio only: Front = target + audio, Back = source text  
+ * - Both audio: Front = target + audio, Back = source + audio
+ * - No audio: Front = target text, Back = source text
+ * 
+ * 📊 VALID PERMUTATIONS: 36 total combinations tested
+ * - Audio types: none, source, target, both (4 types)
+ * - Card counts: 1, 5, 25 (3 sizes) 
+ * - Content types: simple, unicode, mixed (3 variations)
+ */
+
 describe('AnkiService Source Audio Support', () => {
     let ankiService: AnkiService
 
     beforeEach(() => {
         ankiService = new AnkiService()
+    })
+
+    describe('Rules Validation', () => {
+        it('should enforce sequential numeric media naming (0, 1, 2...)', async () => {
+            const cards: DeckCard[] = [
+                {
+                    source: 'test1',
+                    target: 'thử1',
+                    sourceAudio: Buffer.from('source1'),
+                    targetAudio: Buffer.from('target1')
+                },
+                {
+                    source: 'test2',
+                    target: 'thử2',
+                    sourceAudio: Buffer.from('source2'),
+                    targetAudio: Buffer.alloc(0) // Only source audio
+                }
+            ]
+
+            const apkgBuffer = await ankiService.createDeck(cards, 'Rules Test')
+            const zip = new AdmZip(apkgBuffer)
+
+            // Verify sequential numeric naming: target audio first, then source audio
+            const fileNames = zip.getEntries().map(e => e.entryName)
+            expect(fileNames).toContain('0') // First card target audio
+            expect(fileNames).toContain('1') // First card source audio  
+            expect(fileNames).toContain('2') // Second card source audio
+            expect(fileNames).not.toContain('3') // No fourth audio file
+
+            // Verify media manifest uses string keys with numeric values
+            const mediaEntry = zip.getEntry('media')
+            const mediaContent = JSON.parse(mediaEntry!.getData().toString())
+            expect(mediaContent).toEqual({
+                '0': '0.mp3', // Target audio (assigned first)
+                '1': '1.mp3', // Source audio (card 1)
+                '2': '2.mp3'  // Source audio (card 2)
+            })
+        })
+
+        it('should use timestamp in seconds to avoid SQLite INTEGER overflow', async () => {
+            const cards: DeckCard[] = [
+                { source: 'overflow test', target: 'kiểm tra tràn số', sourceAudio: Buffer.alloc(0), targetAudio: Buffer.alloc(0) }
+            ]
+
+            // This should NOT throw "A number was invalid or out of range"
+            const apkgBuffer = await ankiService.createDeck(cards, 'Overflow Test')
+            expect(apkgBuffer).toBeInstanceOf(Buffer)
+            expect(apkgBuffer.length).toBeGreaterThan(0)
+        })
     })
 
     describe('Source Audio Only (Target Language without Audio)', () => {
