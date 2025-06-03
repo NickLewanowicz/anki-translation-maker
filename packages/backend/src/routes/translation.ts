@@ -160,20 +160,68 @@ translationRouter.post('/generate-deck', async (c) => {
         // Enhanced error messages for common issues
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
 
-        if (errorMessage.includes('API key')) {
+        if (errorMessage.includes('API key') || errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
             console.error('🔑 API key issue:', errorMessage)
             return c.json({
                 error: 'Authentication error',
-                message: 'Invalid or missing Replicate API key. Please check your API key.'
+                message: 'Invalid or missing Replicate API key. Please check your API key.',
+                type: 'auth_error'
             }, 401)
         }
 
-        if (errorMessage.includes('model') || errorMessage.includes('not found')) {
+        if (errorMessage.includes('model') || errorMessage.includes('not found') || errorMessage.includes('404')) {
             console.error('🤖 Model error:', errorMessage)
             return c.json({
                 error: 'Model error',
-                message: 'The specified model was not found or is not accessible. Please check the model names.'
+                message: 'The specified model was not found or is not accessible. Please check the model names.',
+                type: 'model_error'
             }, 400)
+        }
+
+        if (errorMessage.includes('rate limit') || errorMessage.includes('429') || errorMessage.includes('Too Many Requests')) {
+            console.error('⏱️ Rate limit error:', errorMessage)
+            return c.json({
+                error: 'Rate limit exceeded',
+                message: 'Too many requests to the AI service. Please wait a moment and try again.',
+                type: 'rate_limit_error'
+            }, 429)
+        }
+
+        // Check for various types of validation errors
+        const isValidationError = (
+            errorMessage.includes('Input validation failed') ||
+            errorMessage.includes('Voice model validation failed') ||
+            errorMessage.includes('422') ||
+            errorMessage.includes('Unprocessable Entity') ||
+            errorMessage.includes('Invalid type') ||
+            errorMessage.includes('Expected:') ||
+            errorMessage.includes('field')
+        )
+
+        if (isValidationError) {
+            console.error('🔧 Input validation error:', errorMessage)
+
+            // Extract cleaner error message if possible
+            let cleanMessage = errorMessage
+            try {
+                // Try to extract the actual validation error details
+                const detailMatch = errorMessage.match(/detail":"([^"]+)"/)
+                if (detailMatch) {
+                    cleanMessage = detailMatch[1].replace(/\\n/g, '\n')
+                } else if (errorMessage.includes('Voice model validation failed')) {
+                    // Keep our custom voice model error messages
+                    cleanMessage = errorMessage
+                }
+            } catch (e) {
+                // Use original message if parsing fails
+            }
+
+            return c.json({
+                error: 'Input validation error',
+                message: cleanMessage,
+                suggestion: 'Check your custom model arguments. Common issues:\n• Numeric values should be numbers, not strings (e.g., "speed": 0.6 not "speed": "0.6")\n• Check parameter names and valid ranges\n• Ensure all required fields are provided',
+                type: 'validation_error'
+            }, 422)
         }
 
         if (errorMessage.includes('JSON')) {
