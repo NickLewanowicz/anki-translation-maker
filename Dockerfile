@@ -22,11 +22,12 @@ COPY packages/ ./packages/
 # Install all dependencies (will install for both backend and frontend workspace)
 RUN bun install
 
-# Copy built frontend to backend public directory
+# Copy built frontend to backend public directory 
 COPY --from=frontend-builder /app/packages/frontend/dist ./packages/backend/public
 
 # Expose port
 EXPOSE 3000
 
 # Start the application
-CMD ["bun", "run", "packages/backend/src/index.ts"] 
+WORKDIR /app/packages/backend
+CMD ["bun", "run", "src/index.ts"] 
