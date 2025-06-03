@@ -9,13 +9,16 @@ export const translationRouter = new Hono<Env>()
 const generateDeckSchema = z.object({
     words: z.string().default(''),
     aiPrompt: z.string().default(''),
+    maxCards: z.number().min(1, 'Maximum cards must be at least 1').max(100, 'Maximum cards cannot exceed 100').default(20),
     deckName: z.string().default(''),
-    cardDirection: z.enum(['forward', 'both']).default('forward'),
+
     targetLanguage: z.string().min(1, 'Target language is required'),
     sourceLanguage: z.string().default('en'),
     replicateApiKey: z.string().min(1, 'Replicate API key is required'),
     textModel: z.string().default('openai/gpt-4o-mini'),
     voiceModel: z.string().default('minimax/speech-02-hd'),
+    generateSourceAudio: z.boolean().default(true),
+    generateTargetAudio: z.boolean().default(true),
     useCustomArgs: z.boolean().default(false),
     textModelArgs: z.string().default('{}'),
     voiceModelArgs: z.string().default('{}'),
@@ -36,7 +39,7 @@ translationRouter.post('/generate-deck', async (c) => {
             useCustomArgs: body.useCustomArgs
         })
 
-        const { words, aiPrompt, deckName, cardDirection, targetLanguage, sourceLanguage, replicateApiKey, textModel, voiceModel, useCustomArgs, textModelArgs, voiceModelArgs } = generateDeckSchema.parse(body)
+        const { words, aiPrompt, maxCards, deckName, targetLanguage, sourceLanguage, replicateApiKey, textModel, voiceModel, generateSourceAudio, generateTargetAudio, useCustomArgs, textModelArgs, voiceModelArgs } = generateDeckSchema.parse(body)
 
         // Set API key in context
         c.set('replicateApiKey', replicateApiKey)
@@ -73,7 +76,7 @@ translationRouter.post('/generate-deck', async (c) => {
         let wordList: string[]
         if (aiPrompt) {
             console.log('🤖 Generating words from AI prompt:', aiPrompt.substring(0, 50) + '...')
-            wordList = await translationService.generateWordsFromPrompt(aiPrompt, sourceLanguage)
+            wordList = await translationService.generateWordsFromPrompt(aiPrompt, sourceLanguage, maxCards)
             console.log(`✅ Generated ${wordList.length} words:`, wordList.slice(0, 5).join(', ') + '...')
         } else {
             console.log('📝 Using provided word list...')
@@ -101,14 +104,27 @@ translationRouter.post('/generate-deck', async (c) => {
         const translations = await translationService.translateWords(wordList, sourceLanguage, targetLanguage)
         console.log(`✅ Translated ${translations.length} words. Sample:`, translations.slice(0, 3).map((t: any) => `${t.source} → ${t.translation}`))
 
-        // Step 3: Generate audio for source and target languages
-        console.log(`🔊 Generating audio for ${wordList.length} source words...`)
-        const sourceAudio = await translationService.generateAudio(wordList, sourceLanguage)
-        console.log(`✅ Generated ${sourceAudio.length} source audio files`)
+        // Step 3: Generate audio for source and target languages (conditionally)
+        let sourceAudio: Buffer[] = []
+        let targetAudio: Buffer[] = []
 
-        console.log(`🔊 Generating audio for ${translations.length} target words...`)
-        const targetAudio = await translationService.generateAudio(translations.map((t: any) => t.translation), targetLanguage)
-        console.log(`✅ Generated ${targetAudio.length} target audio files`)
+        if (generateSourceAudio) {
+            console.log(`🔊 Generating audio for ${wordList.length} source words...`)
+            sourceAudio = await translationService.generateAudio(wordList, sourceLanguage)
+            console.log(`✅ Generated ${sourceAudio.length} source audio files`)
+        } else {
+            console.log('⏭️ Skipping source audio generation (disabled)')
+            sourceAudio = new Array(wordList.length).fill(Buffer.alloc(0))
+        }
+
+        if (generateTargetAudio) {
+            console.log(`🔊 Generating audio for ${translations.length} target words...`)
+            targetAudio = await translationService.generateAudio(translations.map((t: any) => t.translation), targetLanguage)
+            console.log(`✅ Generated ${targetAudio.length} target audio files`)
+        } else {
+            console.log('⏭️ Skipping target audio generation (disabled)')
+            targetAudio = new Array(translations.length).fill(Buffer.alloc(0))
+        }
 
         // Step 4: Create Anki deck
         console.log('📦 Creating Anki deck package...')
@@ -119,7 +135,7 @@ translationRouter.post('/generate-deck', async (c) => {
             targetAudio: targetAudio[index],
         }))
 
-        const ankiPackage = await ankiService.createDeck(deckData, finalDeckName, cardDirection)
+        const ankiPackage = await ankiService.createDeck(deckData, finalDeckName)
         console.log(`✅ Created Anki package with ${deckData.length} cards`)
 
         // Return the deck as a downloadable file
@@ -182,7 +198,7 @@ translationRouter.post('/validate', async (c) => {
 
     try {
         const body = await c.req.json()
-        const { words, aiPrompt, deckName, cardDirection, targetLanguage, sourceLanguage, replicateApiKey, textModel, voiceModel, useCustomArgs, textModelArgs, voiceModelArgs } = generateDeckSchema.parse(body)
+        const { words, aiPrompt, maxCards, deckName, targetLanguage, sourceLanguage, replicateApiKey, textModel, voiceModel, generateSourceAudio, generateTargetAudio, useCustomArgs, textModelArgs, voiceModelArgs } = generateDeckSchema.parse(body)
 
         // Validate that we have either words or aiPrompt
         if (!words && !aiPrompt) {
@@ -224,13 +240,15 @@ translationRouter.post('/validate', async (c) => {
             message: 'All validations passed! Ready for deck generation.',
             summary: {
                 deckType: aiPrompt ? 'ai-generated' : 'word-list',
-                wordCount: aiPrompt ? 'Will generate 20 words' : wordList.length,
+                wordCount: aiPrompt ? `Will generate up to ${maxCards} words` : wordList.length,
                 deckName: deckName || 'Will auto-generate from content',
-                cardDirection: cardDirection === 'both' ? 'Forward + Reversed' : 'Forward only',
+                cardDirection: 'Forward only',
                 sourceLanguage,
                 targetLanguage,
                 textModel,
                 voiceModel,
+                generateSourceAudio: generateSourceAudio ? 'Yes' : 'No',
+                generateTargetAudio: generateTargetAudio ? 'Yes' : 'No',
                 useCustomArgs,
                 customArgsValid: useCustomArgs ? 'Yes' : 'N/A'
             }

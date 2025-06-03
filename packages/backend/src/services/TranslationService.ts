@@ -24,17 +24,19 @@ export class TranslationService {
         this.voiceModelArgs = voiceModelArgs
     }
 
-    async generateWordsFromPrompt(prompt: string, sourceLanguage: string): Promise<string[]> {
+    async generateWordsFromPrompt(prompt: string, sourceLanguage: string, maxCards: number = 20): Promise<string[]> {
         try {
             const defaultInput = {
-                prompt: `Generate exactly 20 common words related to: "${prompt}". 
-                         Return only the words in ${sourceLanguage}, one per line, no numbering, no additional text, no explanations.
+                prompt: `Generate up to ${maxCards} high-quality, useful words related to: "${prompt}". 
+                         Focus on common, practical words that are important for learning this topic.
+                         Return only the best words in ${sourceLanguage}, one per line, no numbering, no additional text, no explanations.
+                         If the topic only has fewer good words, return fewer than ${maxCards} - quality over quantity.
                          
                          Example format:
                          word1
                          word2
                          word3`,
-                system_prompt: "You are a vocabulary generator. Return exactly 20 words, one per line, no numbering, no additional formatting."
+                system_prompt: `You are an expert vocabulary educator. Generate the most important and useful words for the topic, prioritizing quality over quantity. Return up to ${maxCards} words, one per line, no numbering, no additional formatting.`
             }
 
             const input = { ...defaultInput, ...this.textModelArgs }
@@ -49,7 +51,7 @@ export class TranslationService {
                 .split('\n')
                 .map(word => word.trim())
                 .filter(word => word.length > 0 && !word.match(/^\d+\.?\s*/))
-                .slice(0, 20)
+                .slice(0, maxCards)
 
             return words.length > 0 ? words : ['hello', 'world', 'good', 'bad', 'yes', 'no', 'please', 'thank', 'water', 'food']
         } catch (error) {
