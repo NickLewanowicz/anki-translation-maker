@@ -7,7 +7,7 @@ import * as os from 'os'
 import type { DeckCard } from '../types/translation.js'
 
 export class AnkiService {
-    async createDeck(cards: DeckCard[], deckName: string, cardDirection: 'forward' | 'both' = 'forward'): Promise<Buffer> {
+    async createDeck(cards: DeckCard[], deckName: string): Promise<Buffer> {
         try {
             console.log('📦 Creating Anki deck with proper SQLite database...')
 
@@ -17,7 +17,7 @@ export class AnkiService {
 
             try {
                 // Create SQLite database
-                await this.createSQLiteDatabase(dbPath, cards, deckName, cardDirection)
+                await this.createSQLiteDatabase(dbPath, cards, deckName)
 
                 // Create the .apkg package
                 const apkgBuffer = await this.createApkgPackage(dbPath, cards)
@@ -41,7 +41,7 @@ export class AnkiService {
         }
     }
 
-    private async createSQLiteDatabase(dbPath: string, cards: DeckCard[], deckName: string, cardDirection: 'forward' | 'both'): Promise<void> {
+    private async createSQLiteDatabase(dbPath: string, cards: DeckCard[], deckName: string): Promise<void> {
         return new Promise((resolve, reject) => {
             const db = new sqlite3.Database(dbPath, (err) => {
                 if (err) {
@@ -60,7 +60,7 @@ export class AnkiService {
                     }
 
                     // Insert data
-                    this.insertData(db, cards, deckName, cardDirection, (dataErr) => {
+                    this.insertData(db, cards, deckName, (dataErr) => {
                         db.close((closeErr) => {
                             if (dataErr) {
                                 reject(dataErr)
@@ -210,55 +210,34 @@ export class AnkiService {
         })
     }
 
-    private insertData(db: sqlite3.Database, cards: DeckCard[], deckName: string, cardDirection: 'forward' | 'both', callback: (err?: Error) => void): void {
-        const now = Math.floor(Date.now() / 1000)
-        const deckId = now
-        const modelId = now + 1
+    private insertData(db: sqlite3.Database, cards: DeckCard[], deckName: string, callback: (err?: Error) => void): void {
+        // Use realistic timestamps like the working deck
+        const now = Date.now()
+        const baseTime = 1436126400  // Base timestamp from working deck
 
-        // Create card templates based on direction
-        const templates = cardDirection === 'both' ? [
+        // Use long IDs like the working deck
+        const deckId = Date.now() + 1000
+        const modelId = Date.now() + 2000
+
+        // Create card template matching working deck - Front/Back structure
+        const templates = [
             {
-                name: "Forward",
+                name: "Card 1",
                 ord: 0,
-                qfmt: "{{Source}}",
-                afmt: "{{FrontSide}}<hr id=answer>{{Target}}<br>{{TargetAudio}}",
+                qfmt: "{{Front}}",
+                afmt: "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}",
                 bqfmt: "",
                 bafmt: "",
-                did: null,
-                bfont: "",
-                bsize: 0
-            },
-            {
-                name: "Reverse",
-                ord: 1,
-                qfmt: "{{Target}}{{TargetAudio}}",
-                afmt: "{{FrontSide}}<hr id=answer>{{Source}}<br>{{SourceAudio}}",
-                bqfmt: "",
-                bafmt: "",
-                did: null,
-                bfont: "",
-                bsize: 0
-            }
-        ] : [
-            {
-                name: "Forward",
-                ord: 0,
-                qfmt: "{{Source}}",
-                afmt: "{{FrontSide}}<hr id=answer>{{Target}}<br>{{TargetAudio}}",
-                bqfmt: "",
-                bafmt: "",
-                did: null,
-                bfont: "",
-                bsize: 0
+                did: null
             }
         ]
 
-        // Insert collection data
+        // Insert collection data with Front/Back fields like working deck
         const collection = {
             id: 1,
-            crt: now,
+            crt: baseTime,
             mod: now,
-            scm: now,
+            scm: now - 1000,
             ver: 11,
             dty: 0,
             usn: 0,
@@ -266,21 +245,24 @@ export class AnkiService {
             conf: "{}",
             models: JSON.stringify({
                 [modelId]: {
-                    id: modelId,
-                    name: cardDirection === 'both' ? "Translation Model (Forward + Reverse)" : "Translation Model (Forward)",
-                    type: 0,
-                    mod: now,
-                    usn: 0,
-                    sortf: 0,
+                    vers: [],
+                    name: "Basic-audio",
+                    tags: [],
                     did: deckId,
-                    tmpls: templates,
+                    usn: 0,
+                    req: [[0, "all", [0]]],
                     flds: [
-                        { name: "Source", ord: 0, sticky: false, rtl: false, font: "Arial", size: 20 },
-                        { name: "Target", ord: 1, sticky: false, rtl: false, font: "Arial", size: 20 },
-                        { name: "SourceAudio", ord: 2, sticky: false, rtl: false, font: "Arial", size: 20 },
-                        { name: "TargetAudio", ord: 3, sticky: false, rtl: false, font: "Arial", size: 20 }
+                        { name: "Front", media: [], sticky: false, rtl: false, ord: 0, font: "Arial", size: 20 },
+                        { name: "Back", media: [], sticky: false, rtl: false, ord: 1, font: "Arial", size: 20 }
                     ],
-                    css: ".card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; } .sound { margin-top: 10px; }"
+                    sortf: 0,
+                    tmpls: templates,
+                    mod: Math.floor(now / 1000),
+                    latexPost: "\\end{document}",
+                    type: 0,
+                    id: modelId,
+                    css: ".card {\n font-family: arial;\n font-size: 20px;\n text-align: center;\n color: black;\n background-color: white;\n}\n",
+                    latexPre: "\\documentclass[12pt]{article}\n\\special{papersize=3in,5in}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amssymb,amsmath}\n\\pagestyle{empty}\n\\setlength{\\parindent}{0in}\n\\begin{document}\n"
                 }
             }),
             decks: JSON.stringify({
@@ -319,18 +301,15 @@ export class AnkiService {
                 }
 
                 // Insert notes and cards
-                this.insertNotesAndCards(db, cards, modelId, deckId, cardDirection, callback)
+                this.insertNotesAndCards(db, cards, modelId, deckId, callback)
             }
         )
     }
 
-    private insertNotesAndCards(db: sqlite3.Database, cards: DeckCard[], modelId: number, deckId: number, cardDirection: 'forward' | 'both', callback: (err?: Error) => void): void {
-        const now = Math.floor(Date.now() / 1000)
+    private insertNotesAndCards(db: sqlite3.Database, cards: DeckCard[], modelId: number, deckId: number, callback: (err?: Error) => void): void {
+        const now = Date.now()
         let completed = 0
-
-        // Calculate total operations: notes + cards (1 or 2 cards per note depending on direction)
-        const cardsPerNote = cardDirection === 'both' ? 2 : 1
-        const total = cards.length * (1 + cardsPerNote) // notes + cards
+        const total = cards.length * 2 // notes + cards
 
         // Handle empty cards list
         if (cards.length === 0) {
@@ -339,17 +318,21 @@ export class AnkiService {
         }
 
         cards.forEach((card, index) => {
-            const noteId = now + index
+            const noteId = now + index + 100
+            const cardId = now + index + 200
 
-            // Prepare audio fields
-            const sourceAudioField = card.sourceAudio && card.sourceAudio.length > 0
-                ? `[sound:${index}_source.wav]`
-                : ''
-            const targetAudioField = card.targetAudio && card.targetAudio.length > 0
-                ? `[sound:${index}_target.wav]`
-                : ''
+            // Front field contains target language with audio (matching working deck pattern)
+            const frontField = card.targetAudio && card.targetAudio.length > 0
+                ? `${card.target}[sound:${index}.mp3]`
+                : card.target
 
-            // Insert note with Source, Target, SourceAudio, TargetAudio fields
+            // Back field contains source language
+            const backField = card.source
+
+            // Simple checksum - just use the length of the target text
+            const checksum = card.target.length
+
+            // Insert note with Front/Back fields (matching working deck)
             db.run(
                 `INSERT INTO notes (id, guid, mid, mod, usn, tags, flds, sfld, csum, flags, data) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -357,12 +340,12 @@ export class AnkiService {
                     noteId,
                     uuidv4(),
                     modelId,
-                    now,
+                    now - index,
                     0,
                     "",
-                    `${card.source}\x1f${card.target}\x1f${sourceAudioField}\x1f${targetAudioField}`,
-                    card.source,
+                    `${frontField}\x1f${backField}`,
                     0,
+                    checksum,
                     0,
                     ""
                 ],
@@ -379,16 +362,16 @@ export class AnkiService {
                 }
             )
 
-            // Insert forward card (Source -> Target)
+            // Insert card
             db.run(
                 `INSERT INTO cards (id, nid, did, ord, mod, usn, type, queue, due, ivl, factor, reps, lapses, left, odue, odid, flags, data) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
-                    now + index + 1000, noteId, deckId, 0, now, 0, 0, 0, index + 1, 0, 2500, 0, 0, 1001, 0, 0, 0, ""
+                    cardId, noteId, deckId, 0, now - index - 1, 0, 0, 0, cardId % 1000, 0, 2500, 0, 0, 1, 0, 0, 0, ""
                 ],
                 (err) => {
                     if (err) {
-                        callback(new Error('Failed to insert forward card: ' + err.message))
+                        callback(new Error('Failed to insert card: ' + err.message))
                         return
                     }
 
@@ -398,28 +381,6 @@ export class AnkiService {
                     }
                 }
             )
-
-            // Insert reverse card (Target -> Source) if both directions requested
-            if (cardDirection === 'both') {
-                db.run(
-                    `INSERT INTO cards (id, nid, did, ord, mod, usn, type, queue, due, ivl, factor, reps, lapses, left, odue, odid, flags, data) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [
-                        now + index + 2000, noteId, deckId, 1, now, 0, 0, 0, index + 1 + cards.length, 0, 2500, 0, 0, 1001, 0, 0, 0, ""
-                    ],
-                    (err) => {
-                        if (err) {
-                            callback(new Error('Failed to insert reverse card: ' + err.message))
-                            return
-                        }
-
-                        completed++
-                        if (completed === total) {
-                            callback()
-                        }
-                    }
-                )
-            }
         })
     }
 
@@ -443,20 +404,13 @@ export class AnkiService {
             // Add the SQLite database
             archive.file(dbPath, { name: 'collection.anki2' })
 
-            // Add media files
+            // Add media files with numeric names like working deck (use .mp3)
             const media: Record<string, string> = {}
-            let mediaIndex = 0
 
             cards.forEach((card, index) => {
-                if (card.sourceAudio && card.sourceAudio.length > 0) {
-                    const filename = `${index}_source.wav`
-                    media[filename] = filename
-                    archive.append(card.sourceAudio, { name: filename })
-                }
                 if (card.targetAudio && card.targetAudio.length > 0) {
-                    const filename = `${index}_target.wav`
-                    media[filename] = filename
-                    archive.append(card.targetAudio, { name: filename })
+                    media[index.toString()] = `${index}.mp3`
+                    archive.append(card.targetAudio, { name: index.toString() })
                 }
             })
 
