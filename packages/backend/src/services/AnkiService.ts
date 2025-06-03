@@ -179,6 +179,30 @@ export class AnkiService {
         })
     }
 
+    private calculateMediaMapping(cards: DeckCard[]): { targetAudio: Record<number, number>, sourceAudio: Record<number, number> } {
+        let mediaIndex = 0
+        const targetAudio: Record<number, number> = {}
+        const sourceAudio: Record<number, number> = {}
+
+        // First pass: assign indices for target audio (same logic as createApkgPackage)
+        cards.forEach((card, index) => {
+            if (card.targetAudio && card.targetAudio.length > 0) {
+                targetAudio[index] = mediaIndex
+                mediaIndex++
+            }
+        })
+
+        // Second pass: assign indices for source audio
+        cards.forEach((card, index) => {
+            if (card.sourceAudio && card.sourceAudio.length > 0) {
+                sourceAudio[index] = mediaIndex
+                mediaIndex++
+            }
+        })
+
+        return { targetAudio, sourceAudio }
+    }
+
     private executeStatements(db: sqlite3.Database, statements: string[], callback: (err?: Error) => void): void {
         let completed = 0
         const total = statements.length
@@ -215,9 +239,11 @@ export class AnkiService {
         const now = Date.now()
         const baseTime = 1436126400  // Base timestamp from working deck
 
-        // Use long IDs like the working deck
-        const deckId = Date.now() + 1000
-        const modelId = Date.now() + 2000
+        // Use reasonable IDs that won't overflow SQLite INTEGER (max 2^63-1)
+        // Use timestamp in seconds + small offset to avoid conflicts
+        const baseId = Math.floor(now / 1000)
+        const deckId = baseId + 1000
+        const modelId = baseId + 2000
 
         // Create card template matching working deck - Front/Back structure
         const templates = [
@@ -317,20 +343,27 @@ export class AnkiService {
             return
         }
 
+        // Calculate media indices to match the createApkgPackage method
+        const mediaMapping = this.calculateMediaMapping(cards)
+
         cards.forEach((card, index) => {
-            const noteId = now + index + 100
-            const cardId = now + index + 200
+            // Use base timestamp in seconds to avoid overflow
+            const baseId = Math.floor(now / 1000)
+            const noteId = baseId + index + 100
+            const cardId = baseId + index + 200
 
             // Build front field (target language with optional audio)
             let frontField = card.target
             if (card.targetAudio && card.targetAudio.length > 0) {
-                frontField = `${card.target}[sound:${index}.mp3]`
+                const targetMediaIndex = mediaMapping.targetAudio[index]
+                frontField = `${card.target}[sound:${targetMediaIndex}.mp3]`
             }
 
             // Build back field (source language with optional audio)  
             let backField = card.source
             if (card.sourceAudio && card.sourceAudio.length > 0) {
-                backField = `${card.source}[sound:source_${index}.mp3]`
+                const sourceMediaIndex = mediaMapping.sourceAudio[index]
+                backField = `${card.source}[sound:${sourceMediaIndex}.mp3]`
             }
 
             // Simple checksum - just use the length of the target text
@@ -408,21 +441,25 @@ export class AnkiService {
             // Add the SQLite database
             archive.file(dbPath, { name: 'collection.anki2' })
 
-            // Add media files with numeric names like working deck (use .mp3)
+            // Add media files with sequential numeric names like working deck
             const media: Record<string, string> = {}
+            let mediaIndex = 0
 
+            // First pass: add all target audio files
             cards.forEach((card, index) => {
-                // Add target audio if present (use card index for consistency)
                 if (card.targetAudio && card.targetAudio.length > 0) {
-                    media[index.toString()] = `${index}.mp3`
-                    archive.append(card.targetAudio, { name: index.toString() })
+                    media[mediaIndex.toString()] = `${mediaIndex}.mp3`
+                    archive.append(card.targetAudio, { name: mediaIndex.toString() })
+                    mediaIndex++
                 }
+            })
 
-                // Add source audio if present (use prefixed naming)
+            // Second pass: add all source audio files  
+            cards.forEach((card, index) => {
                 if (card.sourceAudio && card.sourceAudio.length > 0) {
-                    const sourceKey = `source_${index}`
-                    media[sourceKey] = `source_${index}.mp3`
-                    archive.append(card.sourceAudio, { name: sourceKey })
+                    media[mediaIndex.toString()] = `${mediaIndex}.mp3`
+                    archive.append(card.sourceAudio, { name: mediaIndex.toString() })
+                    mediaIndex++
                 }
             })
 

@@ -38,17 +38,17 @@ describe('AnkiService Source Audio Support', () => {
             const entries = zip.getEntries()
             const fileNames = entries.map(entry => entry.entryName)
 
-            // Should contain source audio files
-            expect(fileNames).toContain('source_0')
-            expect(fileNames).toContain('source_1')
+            // Should contain source audio files (using sequential numeric naming)
+            expect(fileNames).toContain('0') // First source audio
+            expect(fileNames).toContain('1') // Second source audio  
             expect(fileNames).toContain('collection.anki2')
             expect(fileNames).toContain('media')
 
-            // Check media manifest includes source audio
+            // Check media manifest includes source audio with numeric keys
             const mediaEntry = zip.getEntry('media')
             const mediaContent = JSON.parse(mediaEntry!.getData().toString())
-            expect(mediaContent['source_0']).toBe('source_0.mp3')
-            expect(mediaContent['source_1']).toBe('source_1.mp3')
+            expect(mediaContent['0']).toBe('0.mp3') // First source audio
+            expect(mediaContent['1']).toBe('1.mp3') // Second source audio
 
             // Verify database content has source audio in back field
             const dbEntry = zip.getEntry('collection.anki2')
@@ -69,12 +69,12 @@ describe('AnkiService Source Audio Support', () => {
                         // First card: front = target (no audio), back = source + audio
                         const firstNote = rows[0].flds.split('\x1f')
                         expect(firstNote[0]).toBe('xin chào') // Front: target text only
-                        expect(firstNote[1]).toBe('hello[sound:source_0.mp3]') // Back: source + audio
+                        expect(firstNote[1]).toBe('hello[sound:0.mp3]') // Back: source + audio (numeric)
 
                         // Second card: same pattern
                         const secondNote = rows[1].flds.split('\x1f')
                         expect(secondNote[0]).toBe('tạm biệt') // Front: target text only
-                        expect(secondNote[1]).toBe('goodbye[sound:source_1.mp3]') // Back: source + audio
+                        expect(secondNote[1]).toBe('goodbye[sound:1.mp3]') // Back: source + audio (numeric)
 
                         db.close()
                         fs.unlinkSync(tempPath)
@@ -105,15 +105,15 @@ describe('AnkiService Source Audio Support', () => {
             const entries = zip.getEntries()
             const fileNames = entries.map(entry => entry.entryName)
 
-            // Should have both target audio (numeric) and source audio (prefixed)
-            expect(fileNames).toContain('0') // Target audio uses numeric naming
-            expect(fileNames).toContain('source_0') // Source audio uses prefixed naming
+            // Should have both target audio and source audio (all numeric)
+            expect(fileNames).toContain('0') // Target audio (first in sequence)
+            expect(fileNames).toContain('1') // Source audio (second in sequence)
 
-            // Check media manifest
+            // Check media manifest  
             const mediaEntry = zip.getEntry('media')
             const mediaContent = JSON.parse(mediaEntry!.getData().toString())
             expect(mediaContent['0']).toBe('0.mp3') // Target audio
-            expect(mediaContent['source_0']).toBe('source_0.mp3') // Source audio
+            expect(mediaContent['1']).toBe('1.mp3') // Source audio
 
             // Verify database has audio in both fields
             const dbEntry = zip.getEntry('collection.anki2')
@@ -133,7 +133,7 @@ describe('AnkiService Source Audio Support', () => {
                     try {
                         const note = rows[0].flds.split('\x1f')
                         expect(note[0]).toBe('nước[sound:0.mp3]') // Front: target + audio
-                        expect(note[1]).toBe('water[sound:source_0.mp3]') // Back: source + audio
+                        expect(note[1]).toBe('water[sound:1.mp3]') // Back: source + audio
 
                         db.close()
                         fs.unlinkSync(tempPath)
@@ -162,8 +162,8 @@ describe('AnkiService Source Audio Support', () => {
             const apkgBuffer = await ankiService.createDeck(cards, 'Audio Integrity Test')
             const zip = new AdmZip(apkgBuffer)
 
-            // Verify source audio file content
-            const sourceAudioEntry = zip.getEntry('source_0')
+            // Verify source audio file content (now using numeric naming)
+            const sourceAudioEntry = zip.getEntry('0') // Source audio is first (no target audio)
             expect(sourceAudioEntry).toBeDefined()
             expect(sourceAudioEntry!.getData().toString()).toBe('test-source-audio-data')
         })
@@ -198,12 +198,9 @@ describe('AnkiService Source Audio Support', () => {
             const fileNames = entries.map(entry => entry.entryName)
 
             // Should have source audio for first card, target audio for second card
-            expect(fileNames).toContain('source_0') // First card source audio
-            expect(fileNames).toContain('1') // Second card target audio (index 1)
-            expect(fileNames).not.toContain('source_1') // Second card has no source audio
-            expect(fileNames).not.toContain('0') // First card has no target audio
-            expect(fileNames).not.toContain('2') // Third card has no target audio
-            expect(fileNames).not.toContain('source_2') // Third card has no source audio
+            expect(fileNames).toContain('0') // Second card target audio (target audio comes first)
+            expect(fileNames).toContain('1') // First card source audio (source audio comes second)
+            expect(fileNames.length).toBe(4) // Only 2 audio files + media + collection.anki2
 
             // Verify database content
             const dbEntry = zip.getEntry('collection.anki2')
@@ -221,14 +218,14 @@ describe('AnkiService Source Audio Support', () => {
                     }
 
                     try {
-                        // First card: target text only, source with audio
+                        // First card: target text only, source with audio  
                         const firstNote = rows[0].flds.split('\x1f')
                         expect(firstNote[0]).toBe('mèo') // Front: target text only
-                        expect(firstNote[1]).toBe('cat[sound:source_0.mp3]') // Back: source + audio
+                        expect(firstNote[1]).toBe('cat[sound:1.mp3]') // Back: source + audio (sequential numbering)
 
                         // Second card: target with audio, source text only
                         const secondNote = rows[1].flds.split('\x1f')
-                        expect(secondNote[0]).toBe('chó[sound:1.mp3]') // Front: target + audio (index 1)
+                        expect(secondNote[0]).toBe('chó[sound:0.mp3]') // Front: target + audio (target audio comes first)
                         expect(secondNote[1]).toBe('dog') // Back: source text only
 
                         // Third card: both text only
