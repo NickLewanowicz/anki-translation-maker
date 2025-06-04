@@ -308,6 +308,11 @@ Enable "Advanced Settings" to use custom models and arguments.
 4. Ensure all tests pass: `pnpm test`
 5. Submit a pull request
 
-## License
+## 📜 License
 
-MIT License - see LICENSE file for details.
+This project is licensed under the **Server Side Public License (SSPL) v1**.
+
+**What this means:**
+
+- ✅ **Free for personal use**: Individual users can use, modify, and contribute freely
+- ✅ **Open source contributions**: All improvements must be shared back to the community

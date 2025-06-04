@@ -2,6 +2,7 @@
     "name": "anki-translation-maker",
     "version": "1.0.0",
     "description": "A TypeScript application that generates Anki flashcard decks with translations and audio",
+    "license": "SSPL-1.0",
     "private": true,
     "workspaces": [
         "packages/*"
