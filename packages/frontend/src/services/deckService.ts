@@ -3,11 +3,13 @@ import axios from 'axios'
 interface GenerateDeckRequest {
     words: string
     aiPrompt: string
-    targetLanguage: string
-    sourceLanguage: string
+    backLanguage: string
+    frontLanguage: string
     replicateApiKey: string
     textModel: string
     voiceModel: string
+    generateFrontAudio: boolean
+    generateBackAudio: boolean
     useCustomArgs: boolean
     textModelArgs: string
     voiceModelArgs: string
@@ -16,7 +18,16 @@ interface GenerateDeckRequest {
 export const deckService = {
     async generateDeck(data: GenerateDeckRequest): Promise<void> {
         try {
-            const response = await axios.post('/api/generate-deck', data, {
+            // Map frontend terminology to backend API expectations
+            const apiData = {
+                ...data,
+                sourceLanguage: data.frontLanguage,
+                targetLanguage: data.backLanguage,
+                generateSourceAudio: data.generateFrontAudio,
+                generateTargetAudio: data.generateBackAudio
+            }
+
+            const response = await axios.post('/api/generate-deck', apiData, {
                 responseType: 'blob',
                 timeout: 300000, // 5 minutes timeout for AI processing
             })
@@ -25,7 +36,7 @@ export const deckService = {
             const url = window.URL.createObjectURL(new Blob([response.data]))
             const link = document.createElement('a')
             link.href = url
-            link.setAttribute('download', `${data.sourceLanguage}-${data.targetLanguage}-deck.apkg`)
+            link.setAttribute('download', `${data.frontLanguage}-${data.backLanguage}-deck.apkg`)
             document.body.appendChild(link)
             link.click()
             link.remove()
