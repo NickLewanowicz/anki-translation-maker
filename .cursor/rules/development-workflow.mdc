@@ -1,0 +1,100 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Development Workflow & Environment
+
+## Package Manager Strategy
+
+**Primary**: Use **Bun** (not pnpm despite workspace config)
+
+### Why Bun?
+- pnpm registry was misconfigured (pointing to yarn registry)
+- Conflicting lockfiles caused issues (package-lock.json, bun.lockb)
+- Bun provides faster performance and better compatibility
+
+### Commands
+```bash
+# Install dependencies
+bun install
+
+# Development (both servers)
+bun run dev                    # Starts both frontend & backend
+bun run --filter backend dev   # Backend only (port 3000)
+bun run --filter frontend dev  # Frontend only (port 5173)
+
+# Production
+bun run build
+bun run start                  # Production backend
+```
+
+## Development Server Setup
+
+### Backend (port 3000)
+- **Entry**: **[index.ts](mdc:packages/backend/src/index.ts)**
+- **Framework**: Hono with TypeScript
+- **Routes**: **[translation.ts](mdc:packages/backend/src/routes/translation.ts)**
+- **Services**: AnkiService, TranslationService
+
+### Frontend (port 5173)  
+- **Entry**: **[main.tsx](mdc:packages/frontend/src/main.tsx)**
+- **Framework**: React + Vite + Tailwind CSS
+- **Main Component**: **[DeckGeneratorForm.tsx](mdc:packages/frontend/src/components/DeckGeneratorForm.tsx)**
+
+## Testing Strategy
+
+### Do NOT run `pnpm dev` for validation
+Instead rely on:
+- **Linting**: ESLint configuration in both packages
+- **Unit Tests**: Jest/Bun test for service logic  
+- **Integration Tests**: API endpoint testing
+
+### Test Files Location
+```
+packages/backend/src/services/__tests__/
+├── AnkiService.test.ts
+└── integration.test.ts
+```
+
+## Environment Variables
+
+### Required for API Functionality
+- `REPLICATE_API_KEY`: For AI translation and audio generation
+- Set via frontend form or environment variable
+
+### Development vs Production
+- **Dev**: Separate frontend (5173) and backend (3000) servers
+- **Prod**: Backend serves static frontend files
+
+## Configuration Files
+
+### Root Level
+- **[package.json](mdc:package.json)**: Workspace configuration with bun scripts
+- **[pnpm-workspace.yaml](mdc:pnpm-workspace.yaml)**: Workspace definition (legacy)
+- **[bun.lockb](mdc:bun.lockb)**: Bun lockfile (primary)
+
+### Backend Package
+- **[tsconfig.json](mdc:packages/backend/tsconfig.json)**: TypeScript configuration
+- **[package.json](mdc:packages/backend/package.json)**: Backend dependencies
+
+### Frontend Package  
+- **[vite.config.ts](mdc:packages/frontend/vite.config.ts)**: Vite build configuration
+- **[tailwind.config.js](mdc:packages/frontend/tailwind.config.js)**: Tailwind CSS setup
+
+## Common Development Issues
+
+### Package Management Problems
+- **Solution**: Always use `bun install` and `bun run` commands
+- **Avoid**: mixing npm/pnpm/yarn commands
+- **Clean**: `bun run clean` to reset node_modules
+
+### Port Conflicts
+- **Backend**: Default 3000, configurable via environment
+- **Frontend**: Default 5173, managed by Vite
+- **Check**: `lsof -i :3000` and `lsof -i :5173`
+
+### API Integration
+- **Development**: Frontend proxies API calls to localhost:3000
+- **Production**: Backend serves frontend from `/` route
+- **CORS**: Configured in Hono for development mode

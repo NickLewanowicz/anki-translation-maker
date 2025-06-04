@@ -1,0 +1,175 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# API Patterns & Request Handling
+
+## Core API Endpoints
+
+### Main Route File: **[translation.ts](mdc:packages/backend/src/routes/translation.ts)**
+
+### Primary Endpoints
+
+#### `POST /api/generate-deck`
+**Purpose**: Generate and download Anki deck package
+
+**Request Schema** (Zod validation):
+```typescript
+{
+    words: string,              // Comma-separated word list
+    aiPrompt: string,           // Alternative to words (AI generation)
+    maxCards: number,           // 1-100, default 20
+    deckName: string,           // Optional, auto-generated if empty
+    sourceLanguage: string,     // Default 'en'
+    targetLanguage: string,     // Required
+    replicateApiKey: string,    // Required for AI services
+    textModel: string,          // Default 'openai/gpt-4o-mini'
+    voiceModel: string,         // Default 'minimax/speech-02-hd'
+    generateSourceAudio: boolean, // Default true
+    generateTargetAudio: boolean, // Default true
+    useCustomArgs: boolean,     // Default false
+    textModelArgs: string,      // JSON string for custom args
+    voiceModelArgs: string      // JSON string for custom args
+}
+```
+
+**Response**: Binary `.apkg` file with proper headers
+
+#### `POST /api/validate`
+**Purpose**: Pre-validate configuration before generation
+**Schema**: Same as generate-deck
+**Response**: JSON validation summary
+
+#### `GET /api/health`
+**Purpose**: Health check endpoint
+**Response**: `{ status: "ok", timestamp: "..." }`
+
+## Request Processing Flow
+
+### 1. Input Validation
+```typescript
+// Zod schema validation in translation.ts
+const { words, aiPrompt, ... } = generateDeckSchema.parse(body)
+
+// Business logic validation
+if (!words && !aiPrompt) {
+    throw new Error('Either words or aiPrompt must be provided')
+}
+```
+
+### 2. AI Service Integration
+```typescript
+// Set API key in Hono context
+c.set('replicateApiKey', replicateApiKey)
+
+// Initialize services
+const translationService = new TranslationService(replicateApiKey, textModel, voiceModel)
+const ankiService = new AnkiService()
+```
+
+### 3. Processing Pipeline
+1. **Word Generation**: From list OR AI prompt via TranslationService
+2. **Deck Naming**: User-provided OR AI-generated
+3. **Translation**: Batch translate words using AI
+4. **Audio Generation**: Optional source/target audio
+5. **Deck Creation**: SQLite database + ZIP packaging via AnkiService
+
+## Error Handling Patterns
+
+### Structured Error Responses
+```typescript
+// Authentication errors (401)
+if (errorMessage.includes('API key')) {
+    return c.json({
+        error: 'Authentication error',
+        message: 'Invalid or missing Replicate API key',
+        type: 'auth_error'
+    }, 401)
+}
+
+// Model errors (400) 
+if (errorMessage.includes('model') || errorMessage.includes('404')) {
+    return c.json({
+        error: 'Model error',
+        message: 'The specified model was not found',
+        type: 'model_error'  
+    }, 400)
+}
+
+// Rate limiting (429)
+if (errorMessage.includes('rate limit')) {
+    return c.json({
+        error: 'Rate limit exceeded',
+        message: 'Too many requests to AI service',
+        type: 'rate_limit_error'
+    }, 429)
+}
+```
+
+### Validation Error Handling
+```typescript
+if (error instanceof z.ZodError) {
+    return c.json({
+        error: 'Validation error',
+        details: error.errors,
+        message: 'Invalid request data - check all required fields'
+    }, 400)
+}
+```
+
+## Response Formatting
+
+### File Download Response
+```typescript
+// Set proper headers for .apkg download
+const safeFileName = finalDeckName.replace(/[^a-zA-Z0-9-_\s]/g, '').replace(/\s+/g, '-')
+c.header('Content-Type', 'application/zip')
+c.header('Content-Disposition', `attachment; filename="${safeFileName}.apkg"`)
+return c.body(ankiPackage)
+```
+
+### JSON Validation Response
+```typescript
+return c.json({
+    status: "valid",
+    message: "All validations passed!",
+    summary: {
+        deckType: "word-list",
+        wordCount: 3,
+        deckName: "Custom Vocabulary Deck",
+        sourceLanguage: "en",
+        targetLanguage: "es",
+        // ... more fields
+    }
+})
+```
+
+## Custom Model Arguments
+
+### JSON Parsing Pattern
+```typescript
+if (useCustomArgs) {
+    try {
+        parsedTextArgs = JSON.parse(textModelArgs)
+        parsedVoiceArgs = JSON.parse(voiceModelArgs)
+    } catch (error) {
+        throw new Error('Invalid JSON in model args: ' + error.message)
+    }
+}
+```
+
+## Logging Strategy
+
+### Console Logging Pattern
+```typescript
+console.log('🎯 Deck generation request received')
+console.log('📝 Request body received:', { /* safe summary */ })
+console.log(`🔄 Translating ${wordList.length} words...`)
+console.log('✅ Created Anki package with ${deckData.length} cards')
+console.error('❌ Error generating deck:', error)
+```
+
+## Related Files
+- **[TranslationService.ts](mdc:packages/backend/src/services/TranslationService.ts)**: AI service integration
+- **[AnkiService.ts](mdc:packages/backend/src/services/AnkiService.ts)**: Deck generation logic

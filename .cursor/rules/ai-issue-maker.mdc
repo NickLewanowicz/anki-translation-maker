@@ -1,0 +1,182 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# AI Issue Maker Guide
+
+## Project Overview
+This is a TypeScript monorepo for an Anki flashcard deck generator with AI-powered translation and audio generation. The project uses PNPM workspaces with separate frontend and backend packages.
+
+## Architecture Understanding
+
+### Core Files to Analyze
+- **Backend Entry**: [packages/backend/src/index.ts](mdc:packages/backend/src/index.ts) - Hono server setup
+- **Main Services**: [packages/backend/src/services/AnkiService.ts](mdc:packages/backend/src/services/AnkiService.ts) and [packages/backend/src/services/TranslationService.ts](mdc:packages/backend/src/services/TranslationService.ts)
+- **API Routes**: [packages/backend/src/routes/translation.ts](mdc:packages/backend/src/routes/translation.ts)
+- **Frontend Entry**: [packages/frontend/src/App.tsx](mdc:packages/frontend/src/App.tsx)
+- **Main UI Component**: [packages/frontend/src/components/DeckGeneratorForm.tsx](mdc:packages/frontend/src/components/DeckGeneratorForm.tsx)
+- **Project Config**: [package.json](mdc:package.json), [packages/backend/package.json](mdc:packages/backend/package.json), [packages/frontend/package.json](mdc:packages/frontend/package.json)
+
+### Technology Stack
+- **Runtime**: Bun for backend, Node.js tooling
+- **Backend**: Hono framework, SQLite (sqlite3), TypeScript
+- **Frontend**: React, Vite, Tailwind CSS, TypeScript
+- **Build**: PNPM workspaces, Bun build system
+- **Container**: Docker with [Dockerfile](mdc:Dockerfile)
+- **External APIs**: Replicate API for AI translation and voice generation
+
+## Issue Creation Standards
+
+### Mandatory Format
+Every issue MUST include:
+
+```markdown
+## Description
+[1-2 sentence summary]
+
+## Context
+**Files Affected:**
+- `path/to/file.ts` (lines X-Y)
+
+**Technology Stack:**
+- [React/Hono/SQLite/TypeScript etc.]
+
+**Current Behavior:**
+[What happens now]
+
+**Expected Behavior:**
+[What should happen]
+
+**Impact Assessment:**
+- **User Impact:** [How users are affected]
+- **Developer Impact:** [How development is affected]
+- **Business Impact:** [How business goals are affected]
+
+## Proposal
+
+### Approach
+[Solution strategy]
+
+### Implementation Steps
+1. [Specific steps]
+
+### Code Examples
+**Current Code (Problem):**
+```typescript
+// file: src/example.ts (lines 10-15)
+// problematic code
+```
+
+**Proposed Code (Solution):**
+```typescript
+// file: src/example.ts (lines 10-15)  
+// improved code
+```
+
+### Testing Requirements
+- [ ] Unit tests for [functionality]
+- [ ] Integration tests for [flow]
+
+### Definition of Done
+- [ ] [Specific criteria]
+```
+
+## Common Issue Categories for This Project
+
+### Backend Issues
+- **SQLite Database**: Schema issues in [AnkiService.ts](mdc:packages/backend/src/services/AnkiService.ts)
+- **API Validation**: Request/response handling in [translation.ts](mdc:packages/backend/src/routes/translation.ts)
+- **External API Integration**: Replicate API calls in [TranslationService.ts](mdc:packages/backend/src/services/TranslationService.ts)
+- **File Processing**: Audio and ZIP file handling
+- **Error Handling**: Async operation failures and cleanup
+
+### Frontend Issues
+- **Form Validation**: Input handling in [DeckGeneratorForm.tsx](mdc:packages/frontend/src/components/DeckGeneratorForm.tsx)
+- **State Management**: React state and form data flow
+- **API Integration**: Frontend service calls
+- **UI/UX**: Accessibility, responsive design, user feedback
+- **Type Safety**: TypeScript type definitions and props
+
+### DevOps Issues
+- **Build System**: PNPM workspace configuration
+- **Container**: Docker setup and deployment
+- **Dependencies**: Package management and security
+- **Testing**: Test coverage and CI/CD integration
+
+## Code Quality Checks
+
+### TypeScript Specific
+- Missing type definitions or overuse of `any`
+- Improper async/await handling
+- Interface vs type usage consistency
+- Import/export organization
+
+### React Specific  
+- Component props validation
+- State management patterns
+- Effect dependencies and cleanup
+- Performance optimization (memo, callback)
+
+### Node.js/Bun Specific
+- File system operations and cleanup
+- Stream handling for large files
+- Database connection management
+- External API error handling
+
+### Monorepo Specific
+- Package boundaries and dependencies
+- Shared type definitions
+- Build script coordination
+- Workspace configuration
+
+## Severity Guidelines
+
+### CRITICAL
+- SQLite corruption preventing deck generation
+- Security vulnerabilities in API key handling
+- Complete service failures
+
+### HIGH  
+- Translation or audio generation failures
+- Form submission errors
+- Database schema issues
+- Build failures
+
+### MEDIUM
+- UI inconsistencies
+- Missing error messages
+- Performance optimizations
+- Code organization improvements
+
+### LOW
+- Documentation updates
+- Code style improvements
+- Minor UX enhancements
+
+## Project-Specific Patterns to Watch
+
+### Common Problems
+1. **Temporary File Cleanup**: Always check cleanup in try/finally blocks
+2. **Audio File Handling**: Ensure proper encoding and file size validation
+3. **API Rate Limiting**: Monitor Replicate API usage patterns
+4. **Memory Management**: Large file processing in Node.js/Bun
+5. **SQLite Constraints**: Database schema compatibility with Anki
+
+### Best Practices for This Codebase
+- Use PNPM for all package management
+- Follow existing TypeScript strict mode settings
+- Maintain separation between frontend and backend types
+- Test SQLite operations with actual database validation
+- Include both unit and integration tests for API endpoints
+
+## Label Strategy
+- **Type**: `bug`, `enhancement`, `refactor`, `security`, `performance`, `docs`, `test`
+- **Severity**: `critical`, `high`, `medium`, `low`  
+- **Component**: `frontend`, `backend`, `api`, `database`, `build`, `deploy`
+- **Domain**: `anki-generation`, `translation`, `audio`, `ui`, `validation`
+
+## Testing Considerations
+Always reference existing test patterns from [packages/backend/src/services/__tests__/](mdc:packages/backend/src/services/__tests__) when proposing test improvements or new test coverage.
+
+Remember: This project handles user data (translations, audio) and generates binary files (.apkg), so data integrity and proper error handling are critical.
