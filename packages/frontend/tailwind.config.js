@@ -4,8 +4,18 @@ export default {
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
     ],
+    darkMode: 'class',
     theme: {
-        extend: {},
+        extend: {
+            colors: {
+                // Custom theme colors for better dark mode contrast
+                gray: {
+                    750: '#374151',
+                    850: '#1f2937',
+                    950: '#111827',
+                }
+            }
+        },
     },
     plugins: [],
 } 
