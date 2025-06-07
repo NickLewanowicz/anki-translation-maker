@@ -3,6 +3,7 @@ import { Download, Loader2, AlertCircle } from 'lucide-react'
 import { deckService } from '../services/deckService'
 import { localStorageService } from '../services/localStorageService'
 import { useDebounce } from '../hooks/useDebounce'
+import { analyticsService } from '../services/analyticsService'
 
 interface DeckFormData {
     deckType: string
@@ -100,6 +101,24 @@ export function DeckGeneratorForm() {
         setIsGenerating(true)
         setError(null)
 
+        // Track form submission start
+        const submissionStartTime = Date.now()
+        analyticsService.trackFormSubmission('deck_generation', {
+            deck_type: formData.deckType,
+            front_language: formData.frontLanguage,
+            back_language: formData.backLanguage,
+            text_model: formData.textModel,
+            voice_model: formData.voiceModel,
+            max_cards: formData.maxCards,
+            has_custom_args: formData.useCustomArgs,
+            has_front_audio: formData.generateFrontAudio,
+            has_back_audio: formData.generateBackAudio,
+            has_custom_deck_name: !!formData.deckName,
+            generation_method: formData.deckType === 'ai-generated' ? 'ai_prompt' : 'word_list',
+            word_count: formData.words ? formData.words.split(',').filter(w => w.trim()).length : 0,
+            prompt_length: formData.aiPrompt ? formData.aiPrompt.length : 0
+        })
+
         try {
             // Validate custom JSON arguments if enabled
             if (formData.useCustomArgs) {
@@ -145,9 +164,40 @@ export function DeckGeneratorForm() {
             })
 
             await deckService.generateDeck(submitData)
+
+            // Track successful deck generation
+            const generationTime = Date.now() - submissionStartTime
+            analyticsService.trackDeckGenerated({
+                cardCount: formData.words ? formData.words.split(',').filter(w => w.trim()).length : formData.maxCards,
+                sourceLanguage: formData.frontLanguage,
+                targetLanguage: formData.backLanguage,
+                hasSourceAudio: formData.generateFrontAudio,
+                hasTargetAudio: formData.generateBackAudio,
+                textModel: formData.textModel,
+                voiceModel: formData.voiceModel,
+                generationMethod: formData.deckType === 'ai-generated' ? 'ai_prompt' : 'word_list',
+                customArgsUsed: formData.useCustomArgs
+            })
+
+            // Track timing for performance analytics
+            analyticsService.trackTiming('deck_generation', 'total_time', generationTime, formData.deckType)
+
         } catch (err) {
             console.error('Deck generation error:', err)
-            setError(err instanceof Error ? err.message : 'An error occurred')
+            const errorMessage = err instanceof Error ? err.message : 'An error occurred'
+            setError(errorMessage)
+
+            // Track deck generation error
+            const generationTime = Date.now() - submissionStartTime
+            analyticsService.trackDeckError(errorMessage, {
+                deck_type: formData.deckType,
+                front_language: formData.frontLanguage,
+                back_language: formData.backLanguage,
+                text_model: formData.textModel,
+                voice_model: formData.voiceModel,
+                generation_time: generationTime
+            })
+
         } finally {
             setIsGenerating(false)
         }
@@ -164,13 +214,47 @@ export function DeckGeneratorForm() {
                 [name]: value,
                 words: selectedDeck?.words || prev.words
             }))
+
+            // Track deck type selection
+            analyticsService.trackFeatureUsage('deck_type', 'changed', {
+                from_deck_type: formData.deckType,
+                to_deck_type: value,
+                deck_name: selectedDeck?.name
+            })
+
         } else if (type === 'checkbox') {
             setFormData(prev => ({ ...prev, [name]: checked }))
+
+            // Track audio/feature toggles
+            if (name === 'generateFrontAudio' || name === 'generateBackAudio' || name === 'useCustomArgs') {
+                analyticsService.trackFeatureUsage('audio_settings', 'toggled', {
+                    feature: name,
+                    enabled: checked
+                })
+            }
+
         } else if (name === 'maxCards') {
             const numValue = parseInt(value) || 1
             setFormData(prev => ({ ...prev, [name]: Math.min(Math.max(numValue, 1), 100) }))
         } else {
             setFormData(prev => ({ ...prev, [name]: value }))
+
+            // Track language changes
+            if (name === 'frontLanguage' || name === 'backLanguage') {
+                analyticsService.trackFeatureUsage('language_selection', 'changed', {
+                    field: name,
+                    value: value,
+                    language_pair: `${name === 'frontLanguage' ? value : formData.frontLanguage}-${name === 'backLanguage' ? value : formData.backLanguage}`
+                })
+            }
+
+            // Track model changes
+            if (name === 'textModel' || name === 'voiceModel') {
+                analyticsService.trackFeatureUsage('model_selection', 'changed', {
+                    model_type: name,
+                    model_value: value
+                })
+            }
         }
     }
 
@@ -180,12 +264,27 @@ export function DeckGeneratorForm() {
         setError(null)
         setTestResult(null)
         console.log('📱 Form reset to defaults and storage cleared')
+
+        // Track storage clear action
+        analyticsService.trackFeatureUsage('local_storage', 'cleared', {
+            action: 'reset_form_data'
+        })
     }
 
     const handleTestConfiguration = async () => {
         setIsTesting(true)
         setError(null)
         setTestResult(null)
+
+        // Track test configuration start
+        const testStartTime = Date.now()
+        analyticsService.trackFeatureUsage('configuration_test', 'started', {
+            deck_type: formData.deckType,
+            front_language: formData.frontLanguage,
+            back_language: formData.backLanguage,
+            text_model: formData.textModel,
+            voice_model: formData.voiceModel
+        })
 
         try {
             // Same validation as submit
@@ -238,12 +337,31 @@ export function DeckGeneratorForm() {
             if (response.ok) {
                 setTestResult(`✅ Configuration Valid! ${result.message}`)
                 console.log('Test result:', result)
+
+                // Track successful test
+                const testTime = Date.now() - testStartTime
+                analyticsService.trackFeatureUsage('configuration_test', 'succeeded', {
+                    test_duration: testTime,
+                    deck_type: formData.deckType,
+                    result_message: result.message
+                })
+
             } else {
                 throw new Error(result.error || result.message || 'Validation failed')
             }
         } catch (err) {
             console.error('Test configuration error:', err)
-            setError(err instanceof Error ? err.message : 'Test failed')
+            const errorMessage = err instanceof Error ? err.message : 'Test failed'
+            setError(errorMessage)
+
+            // Track test failure
+            const testTime = Date.now() - testStartTime
+            analyticsService.trackFeatureUsage('configuration_test', 'failed', {
+                test_duration: testTime,
+                error_message: errorMessage,
+                deck_type: formData.deckType
+            })
+
         } finally {
             setIsTesting(false)
         }
