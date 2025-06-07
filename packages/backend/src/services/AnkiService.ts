@@ -438,6 +438,37 @@ export class AnkiService {
 
     private async createApkgPackage(dbPath: string, cards: DeckCard[]): Promise<Buffer> {
         return new Promise((resolve, reject) => {
+            // Set a timeout to prevent hanging
+            const timeout = setTimeout(() => {
+                reject(new Error('Archive creation timed out after 30 seconds'))
+            }, 30000)
+
+            const cleanup = () => {
+                clearTimeout(timeout)
+            }
+
+            // Validate database file exists before proceeding
+            if (!fs.existsSync(dbPath)) {
+                cleanup()
+                reject(new Error(`Database file does not exist: ${dbPath}`))
+                return
+            }
+
+            // Check if file is readable
+            try {
+                const stats = fs.statSync(dbPath)
+                if (!stats.isFile() || stats.size === 0) {
+                    cleanup()
+                    reject(new Error(`Database file is invalid: ${dbPath} (size: ${stats.size})`))
+                    return
+                }
+                console.log(`📁 Database file validated: ${dbPath} (${stats.size} bytes)`)
+            } catch (statError) {
+                cleanup()
+                reject(new Error(`Cannot access database file: ${dbPath} - ${statError}`))
+                return
+            }
+
             const archive = archiver('zip', { zlib: { level: 9 } })
             const chunks: Buffer[] = []
 
@@ -446,10 +477,13 @@ export class AnkiService {
             })
 
             archive.on('end', () => {
+                cleanup()
+                console.log('🎉 Archive creation completed successfully')
                 resolve(Buffer.concat(chunks))
             })
 
             archive.on('error', (err) => {
+                cleanup()
                 console.error('Archive error:', err)
                 reject(new Error(`Failed to create archive: ${err.message}`))
             })
@@ -459,7 +493,8 @@ export class AnkiService {
             })
 
             try {
-                // Add the SQLite database
+                // Add the SQLite database with additional validation
+                console.log(`📄 Adding database to archive: ${dbPath}`)
                 archive.file(dbPath, { name: 'collection.anki2' })
 
                 // Add media files with sequential numeric names like working deck
@@ -485,11 +520,22 @@ export class AnkiService {
                 })
 
                 // Add media manifest
+                console.log(`📋 Adding media manifest with ${Object.keys(media).length} files`)
                 archive.append(JSON.stringify(media), { name: 'media' })
 
                 // Finalize the archive
-                archive.finalize()
+                console.log('🔄 Finalizing archive...')
+                const result = archive.finalize()
+
+                if (!result) {
+                    reject(new Error('Failed to finalize archive'))
+                    return
+                }
+
+                console.log('✅ Archive finalization initiated')
             } catch (error) {
+                cleanup()
+                console.error('❌ Error in createApkgPackage:', error)
                 reject(new Error(`Failed to create archive: ${error instanceof Error ? error.message : 'Unknown error'}`))
             }
         })
