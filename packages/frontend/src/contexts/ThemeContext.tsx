@@ -1,15 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
-
-type Theme = 'light' | 'dark' | 'system'
-
-interface ThemeContextType {
-    theme: Theme
-    effectiveTheme: 'light' | 'dark'
-    setTheme: (theme: Theme) => void
-    toggleTheme: () => void
-}
-
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
+import React, { useEffect, useState } from 'react'
+import { Theme, ThemeContextType, ThemeContext } from './theme'
 
 const THEME_STORAGE_KEY = 'anki-translation-maker-theme'
 
@@ -44,7 +34,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const updateEffectiveTheme = () => {
             let newEffectiveTheme: 'light' | 'dark'
-            
+
             if (theme === 'system') {
                 newEffectiveTheme = getSystemTheme()
             } else {
@@ -101,10 +91,3 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }
 
-export function useTheme() {
-    const context = useContext(ThemeContext)
-    if (context === undefined) {
-        throw new Error('useTheme must be used within a ThemeProvider')
-    }
-    return context
-}
