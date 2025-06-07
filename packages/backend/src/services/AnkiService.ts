@@ -493,18 +493,9 @@ export class AnkiService {
             })
 
             try {
-                // Read database file into memory to avoid lazy stream issues in CI
-                console.log(`📄 Reading database file into memory: ${dbPath}`)
-                let dbBuffer: Buffer
-                try {
-                    dbBuffer = fs.readFileSync(dbPath)
-                    console.log(`📄 Successfully read database file: ${dbBuffer.length} bytes`)
-                } catch (readError) {
-                    throw new Error(`Failed to read database file: ${readError}`)
-                }
-
-                console.log(`📄 Adding database buffer to archive: ${dbBuffer.length} bytes`)
-                archive.append(dbBuffer, { name: 'collection.anki2' })
+                // Add the SQLite database using lazy stream (should work with Bun 1.1.30)
+                console.log(`📄 Adding database file to archive: ${dbPath}`)
+                archive.file(dbPath, { name: 'collection.anki2' })
 
                 // Add media files with sequential numeric names like working deck
                 const media: Record<string, string> = {}
