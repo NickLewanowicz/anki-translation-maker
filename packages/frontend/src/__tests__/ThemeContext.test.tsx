@@ -1,20 +1,22 @@
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { ThemeProvider, useTheme } from '../contexts/ThemeContext'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { ThemeProvider } from '../contexts/ThemeContext'
+import { useTheme } from '../hooks/useTheme'
 
 // Mock localStorage
 const localStorageMock = {
-    getItem: jest.fn(),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-    clear: jest.fn(),
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
 }
 Object.defineProperty(window, 'localStorage', {
     value: localStorageMock
 })
 
 // Mock matchMedia
-const mockMatchMedia = jest.fn()
+const mockMatchMedia = vi.fn()
 Object.defineProperty(window, 'matchMedia', {
     value: mockMatchMedia
 })
@@ -22,7 +24,7 @@ Object.defineProperty(window, 'matchMedia', {
 // Test component that uses the theme context
 function TestComponent() {
     const { theme, effectiveTheme, setTheme, toggleTheme } = useTheme()
-    
+
     return (
         <div>
             <div data-testid="current-theme">{theme}</div>
@@ -39,19 +41,19 @@ describe('ThemeContext', () => {
     let mockMediaQuery: any
 
     beforeEach(() => {
-        jest.clearAllMocks()
-        
+        vi.clearAllMocks()
+
         // Reset localStorage mock
         localStorageMock.getItem.mockReturnValue(null)
-        
+
         // Setup media query mock
         mockMediaQuery = {
             matches: false,
-            addEventListener: jest.fn(),
-            removeEventListener: jest.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
         }
         mockMatchMedia.mockReturnValue(mockMediaQuery)
-        
+
         // Reset document class
         document.documentElement.classList.remove('dark')
     })
@@ -148,7 +150,7 @@ describe('ThemeContext', () => {
 
             // Set to light first
             fireEvent.click(screen.getByTestId('set-light'))
-            
+
             // Then toggle
             fireEvent.click(screen.getByTestId('toggle'))
 
@@ -164,7 +166,7 @@ describe('ThemeContext', () => {
 
             // Set to dark first
             fireEvent.click(screen.getByTestId('set-dark'))
-            
+
             // Then toggle
             fireEvent.click(screen.getByTestId('toggle'))
 
@@ -180,7 +182,7 @@ describe('ThemeContext', () => {
 
             // Set to system first
             fireEvent.click(screen.getByTestId('set-system'))
-            
+
             // Then toggle
             fireEvent.click(screen.getByTestId('toggle'))
 
@@ -302,7 +304,7 @@ describe('ThemeContext', () => {
     describe('error handling', () => {
         it('should throw error when useTheme is used outside ThemeProvider', () => {
             // Suppress console.error for this test
-            const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { })
 
             expect(() => {
                 render(<TestComponent />)
@@ -326,7 +328,7 @@ describe('ThemeContext', () => {
 
         it('should handle localStorage not being available', () => {
             const originalLocalStorage = window.localStorage
-            
+
             // @ts-ignore
             delete window.localStorage
 

@@ -1,27 +1,28 @@
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { ThemeProvider } from '../contexts/ThemeContext'
 
 // Mock localStorage
 const localStorageMock = {
-    getItem: jest.fn(),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-    clear: jest.fn(),
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
 }
 Object.defineProperty(window, 'localStorage', {
     value: localStorageMock
 })
 
 // Mock matchMedia
-const mockMatchMedia = jest.fn()
+const mockMatchMedia = vi.fn()
 Object.defineProperty(window, 'matchMedia', {
     value: mockMatchMedia
 })
 
 // Mock lucide-react icons
-jest.mock('lucide-react', () => ({
+vi.mock('lucide-react', () => ({
     Sun: ({ className }: { className?: string }) => <div className={className} data-testid="sun-icon">Sun</div>,
     Moon: ({ className }: { className?: string }) => <div className={className} data-testid="moon-icon">Moon</div>,
     Monitor: ({ className }: { className?: string }) => <div className={className} data-testid="monitor-icon">Monitor</div>,
@@ -31,19 +32,19 @@ describe('ThemeToggle', () => {
     let mockMediaQuery: any
 
     beforeEach(() => {
-        jest.clearAllMocks()
-        
+        vi.clearAllMocks()
+
         // Setup media query mock
         mockMediaQuery = {
             matches: false,
-            addEventListener: jest.fn(),
-            removeEventListener: jest.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
         }
         mockMatchMedia.mockReturnValue(mockMediaQuery)
-        
+
         // Reset localStorage mock
         localStorageMock.getItem.mockReturnValue(null)
-        
+
         // Reset document class
         document.documentElement.classList.remove('dark')
     })
@@ -191,7 +192,7 @@ describe('ThemeToggle', () => {
 
             // Simulate external theme change
             localStorageMock.getItem.mockReturnValue('light')
-            
+
             rerender(
                 <ThemeProvider>
                     <ThemeToggle />
