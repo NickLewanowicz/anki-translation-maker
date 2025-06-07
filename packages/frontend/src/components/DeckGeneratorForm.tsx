@@ -256,20 +256,20 @@ export function DeckGeneratorForm() {
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-red-500" />
-                    <span className="text-red-700">{error}</span>
+                <div className="bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center gap-2 transition-colors">
+                    <AlertCircle className="h-5 w-5 text-red-500 dark:text-red-400" />
+                    <span className="text-red-700 dark:text-red-300">{error}</span>
                 </div>
             )}
 
             {testResult && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-2">
-                    <span className="text-green-700">{testResult}</span>
+                <div className="bg-green-50 dark:bg-green-900/50 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center gap-2 transition-colors">
+                    <span className="text-green-700 dark:text-green-300">{testResult}</span>
                 </div>
             )}
 
             <div>
-                <label htmlFor="deckType" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="deckType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                     Deck Type
                 </label>
                 <select
@@ -277,7 +277,7 @@ export function DeckGeneratorForm() {
                     name="deckType"
                     value={formData.deckType}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors"
                     required
                 >
                     {DEFAULT_DECKS.map(deck => (
@@ -290,7 +290,7 @@ export function DeckGeneratorForm() {
 
             {(isPresetDeck || isCustomDeck) && (
                 <div>
-                    <label htmlFor="words" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="words" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                         {isPresetDeck ? 'Word List (editable)' : 'Custom Words/Phrases'}
                     </label>
                     <textarea
@@ -299,11 +299,11 @@ export function DeckGeneratorForm() {
                         value={formData.words}
                         onChange={handleInputChange}
                         rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors"
                         placeholder={isCustomDeck ? "Enter words/phrases separated by commas (e.g., hello, world, good morning)" : ""}
                         required
                     />
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors">
                         {isPresetDeck ? 'Edit the preset words as needed' : 'Enter words or phrases separated by commas'}
                     </p>
                 </div>
@@ -312,7 +312,7 @@ export function DeckGeneratorForm() {
             {isAiGeneratedDeck && (
                 <div className="space-y-4">
                     <div>
-                        <label htmlFor="aiPrompt" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="aiPrompt" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                             AI Generation Prompt
                         </label>
                         <textarea
@@ -321,17 +321,17 @@ export function DeckGeneratorForm() {
                             value={formData.aiPrompt}
                             onChange={handleInputChange}
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors"
                             placeholder="e.g., Common kitchen utensils, Travel vocabulary, Business terms..."
                             required
                         />
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors">
                             Describe what kind of vocabulary you want to generate
                         </p>
                     </div>
 
                     <div>
-                        <label htmlFor="maxCards" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="maxCards" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                             Maximum Number of Cards
                         </label>
                         <input
@@ -342,10 +342,10 @@ export function DeckGeneratorForm() {
                             onChange={handleInputChange}
                             min="1"
                             max="100"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors"
                             required
                         />
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors">
                             AI will generate up to this many cards (1-100). The actual number may be less if the AI determines fewer quality words are appropriate for the topic.
                         </p>
                     </div>
@@ -353,8 +353,8 @@ export function DeckGeneratorForm() {
             )}
 
             <div>
-                <label htmlFor="deckName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Deck Name <span className="text-gray-500">(optional)</span>
+                <label htmlFor="deckName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
+                    Deck Name <span className="text-gray-500 dark:text-gray-400">(optional)</span>
                 </label>
                 <input
                     type="text"
@@ -362,20 +362,18 @@ export function DeckGeneratorForm() {
                     name="deckName"
                     value={formData.deckName}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors"
                     placeholder="Leave empty to auto-generate a name"
                     maxLength={50}
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors">
                     Custom name for your Anki deck. If empty, AI will generate one based on the content.
                 </p>
             </div>
 
-
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label htmlFor="frontLanguage" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="frontLanguage" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                         Front Language
                     </label>
                     <select
@@ -383,7 +381,7 @@ export function DeckGeneratorForm() {
                         name="frontLanguage"
                         value={formData.frontLanguage}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors"
                     >
                         <option value="en">English</option>
                         <option value="es">Spanish</option>
@@ -403,7 +401,7 @@ export function DeckGeneratorForm() {
                 </div>
 
                 <div>
-                    <label htmlFor="backLanguage" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="backLanguage" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                         Back Language
                     </label>
                     <select
@@ -411,7 +409,7 @@ export function DeckGeneratorForm() {
                         name="backLanguage"
                         value={formData.backLanguage}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors"
                         required
                     >
                         <option value="">Select back language</option>
@@ -434,7 +432,7 @@ export function DeckGeneratorForm() {
             </div>
 
             <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Audio Generation Options</h3>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 transition-colors">Audio Generation Options</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center gap-2">
                         <input
@@ -443,9 +441,9 @@ export function DeckGeneratorForm() {
                             name="generateFrontAudio"
                             checked={formData.generateFrontAudio}
                             onChange={handleInputChange}
-                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                            className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-2 transition-colors"
                         />
-                        <label htmlFor="generateFrontAudio" className="text-sm text-gray-700">
+                        <label htmlFor="generateFrontAudio" className="text-sm text-gray-700 dark:text-gray-300 transition-colors">
                             Generate front language audio
                         </label>
                     </div>
@@ -457,20 +455,20 @@ export function DeckGeneratorForm() {
                             name="generateBackAudio"
                             checked={formData.generateBackAudio}
                             onChange={handleInputChange}
-                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                            className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-2 transition-colors"
                         />
-                        <label htmlFor="generateBackAudio" className="text-sm text-gray-700">
+                        <label htmlFor="generateBackAudio" className="text-sm text-gray-700 dark:text-gray-300 transition-colors">
                             Generate back language audio
                         </label>
                     </div>
                 </div>
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 transition-colors">
                     Choose which languages to generate audio for. Disabling audio generation can save API credits and speed up processing.
                 </p>
             </div>
 
             <div>
-                <label htmlFor="replicateApiKey" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="replicateApiKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                     Replicate API Key
                 </label>
                 <input
@@ -479,29 +477,29 @@ export function DeckGeneratorForm() {
                     name="replicateApiKey"
                     value={formData.replicateApiKey}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors"
                     placeholder="r8_..."
                     required
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors">
                     Get your API key from{' '}
                     <a
                         href="https://replicate.com/account/api-tokens"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                     >
                         replicate.com
                     </a>
                 </p>
             </div>
 
-            <div className="border-t pt-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Advanced Settings</h3>
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-6 transition-colors">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 transition-colors">Advanced Settings</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label htmlFor="textModel" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="textModel" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                             Text Model
                         </label>
                         <input
@@ -510,17 +508,17 @@ export function DeckGeneratorForm() {
                             name="textModel"
                             value={formData.textModel}
                             onChange={handleInputChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors"
                             placeholder="openai/gpt-4o-mini"
                             required
                         />
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors">
                             Replicate model for text generation (must support streaming)
                         </p>
                     </div>
 
                     <div>
-                        <label htmlFor="voiceModel" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="voiceModel" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                             Voice Model
                         </label>
                         <input
@@ -529,11 +527,11 @@ export function DeckGeneratorForm() {
                             name="voiceModel"
                             value={formData.voiceModel}
                             onChange={handleInputChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors"
                             placeholder="minimax/speech-02-hd"
                             required
                         />
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors">
                             Replicate model for audio/speech generation
                         </p>
                     </div>
@@ -547,9 +545,9 @@ export function DeckGeneratorForm() {
                             name="useCustomArgs"
                             checked={formData.useCustomArgs}
                             onChange={handleInputChange}
-                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                            className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-2 transition-colors"
                         />
-                        <label htmlFor="useCustomArgs" className="text-sm font-medium text-gray-700">
+                        <label htmlFor="useCustomArgs" className="text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
                             Enable custom model arguments
                         </label>
                     </div>
@@ -557,7 +555,7 @@ export function DeckGeneratorForm() {
                     {formData.useCustomArgs && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label htmlFor="textModelArgs" className="block text-sm font-medium text-gray-700 mb-2">
+                                <label htmlFor="textModelArgs" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                                     Text Model Arguments (JSON)
                                 </label>
                                 <textarea
@@ -566,16 +564,16 @@ export function DeckGeneratorForm() {
                                     value={formData.textModelArgs}
                                     onChange={handleInputChange}
                                     rows={4}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent font-mono text-sm transition-colors"
                                     placeholder='{"max_tokens": 100, "temperature": 0.7}'
                                 />
-                                <p className="mt-1 text-sm text-gray-500">
+                                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors">
                                     Custom arguments for text model (JSON format)
                                 </p>
                             </div>
 
                             <div>
-                                <label htmlFor="voiceModelArgs" className="block text-sm font-medium text-gray-700 mb-2">
+                                <label htmlFor="voiceModelArgs" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                                     Voice Model Arguments (JSON)
                                 </label>
                                 <textarea
@@ -584,10 +582,10 @@ export function DeckGeneratorForm() {
                                     value={formData.voiceModelArgs}
                                     onChange={handleInputChange}
                                     rows={4}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent font-mono text-sm transition-colors"
                                     placeholder='{"voice_id": "custom_voice", "speed": 1.0}'
                                 />
-                                <p className="mt-1 text-sm text-gray-500">
+                                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-colors">
                                     Custom arguments for voice model (JSON format)
                                 </p>
                             </div>
@@ -597,16 +595,16 @@ export function DeckGeneratorForm() {
             </div>
 
             {/* Auto-save indicator and clear storage */}
-            <div className="border-t pt-4">
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 transition-colors">
                 <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 transition-colors">
                         <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                         <span>Form auto-saved locally</span>
                     </div>
                     <button
                         type="button"
                         onClick={handleClearStoredData}
-                        className="text-sm text-gray-500 hover:text-gray-700 underline"
+                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 underline transition-colors"
                     >
                         Reset & Clear Storage
                     </button>
@@ -618,7 +616,7 @@ export function DeckGeneratorForm() {
                     type="button"
                     onClick={handleTestConfiguration}
                     disabled={isTesting || isGenerating}
-                    className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full bg-green-600 dark:bg-green-700 text-white py-2 px-4 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
                 >
                     {isTesting ? (
                         <>
@@ -635,7 +633,7 @@ export function DeckGeneratorForm() {
                 <button
                     type="submit"
                     disabled={isGenerating || isTesting}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full bg-blue-600 dark:bg-blue-700 text-white py-2 px-4 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
                 >
                     {isGenerating ? (
                         <>

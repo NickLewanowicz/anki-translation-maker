@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
-@tailwind utilities; 
+@tailwind utilities;
+
+/* Dark mode transitions - applied selectively, not globally */
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+    
+    body {
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+} 
