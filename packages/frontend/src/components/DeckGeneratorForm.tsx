@@ -8,13 +8,13 @@ interface FormData {
     aiPrompt: string
     maxCards: number
     deckName: string
-    targetLanguage: string
-    sourceLanguage: string
+    backLanguage: string
+    frontLanguage: string
     replicateApiKey: string
     textModel: string
     voiceModel: string
-    generateSourceAudio: boolean
-    generateTargetAudio: boolean
+    generateFrontAudio: boolean
+    generateBackAudio: boolean
     useCustomArgs: boolean
     textModelArgs: string
     voiceModelArgs: string
@@ -42,13 +42,13 @@ export function DeckGeneratorForm() {
         aiPrompt: '',
         maxCards: 20,
         deckName: '',
-        targetLanguage: '',
-        sourceLanguage: 'en',
+        backLanguage: '',
+        frontLanguage: 'en',
         replicateApiKey: '',
         textModel: 'openai/gpt-4o-mini',
         voiceModel: 'minimax/speech-02-hd',
-        generateSourceAudio: true,
-        generateTargetAudio: true,
+        generateFrontAudio: true,
+        generateBackAudio: true,
         useCustomArgs: false,
         textModelArgs: '{}',
         voiceModelArgs: '{}',
@@ -100,8 +100,8 @@ export function DeckGeneratorForm() {
                 deckType: submitData.deckType,
                 wordsCount: submitData.words ? submitData.words.split(',').length : 0,
                 aiPrompt: submitData.aiPrompt ? '***provided***' : 'none',
-                sourceLanguage: submitData.sourceLanguage,
-                targetLanguage: submitData.targetLanguage,
+                frontLanguage: submitData.frontLanguage,
+                backLanguage: submitData.backLanguage,
                 textModel: submitData.textModel,
                 voiceModel: submitData.voiceModel,
                 useCustomArgs: submitData.useCustomArgs
@@ -173,10 +173,19 @@ export function DeckGeneratorForm() {
                 aiPrompt: formData.deckType === 'ai-generated' ? formData.aiPrompt : ''
             }
 
+            // Map frontend terminology to backend API expectations
+            const apiData = {
+                ...submitData,
+                sourceLanguage: submitData.frontLanguage,
+                targetLanguage: submitData.backLanguage,
+                generateSourceAudio: submitData.generateFrontAudio,
+                generateTargetAudio: submitData.generateBackAudio
+            }
+
             const response = await fetch('/api/validate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(submitData)
+                body: JSON.stringify(apiData)
             })
 
             const result = await response.json()
@@ -321,13 +330,13 @@ export function DeckGeneratorForm() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label htmlFor="sourceLanguage" className="block text-sm font-medium text-gray-700 mb-2">
-                        Source Language
+                    <label htmlFor="frontLanguage" className="block text-sm font-medium text-gray-700 mb-2">
+                        Front Language
                     </label>
                     <select
-                        id="sourceLanguage"
-                        name="sourceLanguage"
-                        value={formData.sourceLanguage}
+                        id="frontLanguage"
+                        name="frontLanguage"
+                        value={formData.frontLanguage}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
@@ -349,18 +358,18 @@ export function DeckGeneratorForm() {
                 </div>
 
                 <div>
-                    <label htmlFor="targetLanguage" className="block text-sm font-medium text-gray-700 mb-2">
-                        Target Language
+                    <label htmlFor="backLanguage" className="block text-sm font-medium text-gray-700 mb-2">
+                        Back Language
                     </label>
                     <select
-                        id="targetLanguage"
-                        name="targetLanguage"
-                        value={formData.targetLanguage}
+                        id="backLanguage"
+                        name="backLanguage"
+                        value={formData.backLanguage}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         required
                     >
-                        <option value="">Select target language</option>
+                        <option value="">Select back language</option>
                         <option value="en">English</option>
                         <option value="es">Spanish</option>
                         <option value="fr">French</option>
@@ -385,28 +394,28 @@ export function DeckGeneratorForm() {
                     <div className="flex items-center gap-2">
                         <input
                             type="checkbox"
-                            id="generateSourceAudio"
-                            name="generateSourceAudio"
-                            checked={formData.generateSourceAudio}
+                            id="generateFrontAudio"
+                            name="generateFrontAudio"
+                            checked={formData.generateFrontAudio}
                             onChange={handleInputChange}
                             className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                         />
-                        <label htmlFor="generateSourceAudio" className="text-sm text-gray-700">
-                            Generate source language audio
+                        <label htmlFor="generateFrontAudio" className="text-sm text-gray-700">
+                            Generate front language audio
                         </label>
                     </div>
 
                     <div className="flex items-center gap-2">
                         <input
                             type="checkbox"
-                            id="generateTargetAudio"
-                            name="generateTargetAudio"
-                            checked={formData.generateTargetAudio}
+                            id="generateBackAudio"
+                            name="generateBackAudio"
+                            checked={formData.generateBackAudio}
                             onChange={handleInputChange}
                             className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                         />
-                        <label htmlFor="generateTargetAudio" className="text-sm text-gray-700">
-                            Generate target language audio
+                        <label htmlFor="generateBackAudio" className="text-sm text-gray-700">
+                            Generate back language audio
                         </label>
                     </div>
                 </div>

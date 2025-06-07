@@ -1,0 +1,174 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Deployment & Docker Patterns
+
+## Docker Configuration
+
+### Production Dockerfile: **[Dockerfile](mdc:Dockerfile)**
+**Purpose**: Multi-stage build for optimized production image
+
+#### Build Strategy
+- **Stage 1**: Build frontend assets with Vite
+- **Stage 2**: Prepare backend with dependencies
+- **Stage 3**: Runtime image with both frontend and backend
+
+### Docker Compose: **[docker-compose.yml](mdc:docker-compose.yml)**
+**Purpose**: Development environment with volume mounts
+
+#### Available Profiles
+```bash
+# Development with live reload
+docker-compose --profile dev up --build
+
+# Production build
+docker build -t anki-translation-maker .
+docker run -p 3000:3000 anki-translation-maker
+```
+
+### Scripts in **[package.json](mdc:package.json)**
+```bash
+# Docker commands
+bun run docker:build  # Build production image
+bun run docker:run    # Run production container
+bun run docker:dev    # Start development environment
+```
+
+## Production Architecture
+
+### Backend Serves Frontend
+In production, the backend serves the built frontend assets:
+- **Static Files**: Served from `/` route
+- **API Routes**: Available at `/api/*` 
+- **Port**: Single port 3000 for both frontend and API
+
+### Environment Variables
+```bash
+# Required in production
+REPLICATE_API_KEY=r8_...    # Can be set via frontend form or env var
+NODE_ENV=production         # Automatically set in Docker
+
+# Optional
+PORT=3000                   # Default port for backend
+```
+
+## Deployment Targets
+
+### Railway Configuration: **[railway.toml](mdc:railway.toml)**
+**Purpose**: Railway deployment configuration
+- **Build**: Uses Docker build process
+- **Port**: Configurable via environment variables
+
+### Manual Deployment Steps
+```bash
+# 1. Build frontend assets
+bun run build:frontend
+
+# 2. Start production backend
+cd packages/backend
+bun run start
+```
+
+## File Structure in Production
+
+### Built Frontend Assets
+```
+packages/frontend/dist/    # Built by Vite
+├── index.html
+├── assets/
+│   ├── index.css
+│   └── index.js
+└── ...
+```
+
+### Backend Serves Static Files
+```typescript
+// Backend serves frontend from dist folder
+app.get('*', (c) => {
+    // Serve static files from frontend/dist
+    return c.file(path.join(__dirname, '../frontend/dist/index.html'))
+})
+```
+
+## Build Optimization
+
+### Frontend Build: **[vite.config.ts](mdc:packages/frontend/vite.config.ts)**
+- **Output**: Optimized bundle in `dist/` directory
+- **Assets**: Hashed filenames for caching
+- **Code Splitting**: Automatic chunk splitting
+
+### Backend Build
+- **TypeScript**: Compiled to JavaScript
+- **Dependencies**: Production-only packages
+- **Size**: Optimized for container deployment
+
+## Health Checks & Monitoring
+
+### Health Endpoint
+```typescript
+// GET /api/health
+{
+    "status": "ok",
+    "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### Container Health Check
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3000/api/health || exit 1
+```
+
+## Security Considerations
+
+### API Key Management
+- **Frontend**: User provides API key via form (not stored)
+- **Backend**: API key passed in request context, not persisted
+- **Environment**: Can optionally set default API key via env var
+
+### CORS Configuration
+```typescript
+// CORS setup for development
+app.use('*', cors({
+    origin: ['http://localhost:5173'], // Frontend dev server
+    credentials: true
+}))
+```
+
+## Performance Optimizations
+
+### Frontend
+- **Vite**: Fast build times with hot module replacement
+- **Tailwind**: Purged CSS for minimal bundle size
+- **Lazy Loading**: Components loaded on demand
+
+### Backend  
+- **Bun**: Fast JavaScript runtime
+- **Hono**: Lightweight framework with minimal overhead
+- **Streaming**: File downloads stream directly to client
+
+## Deployment Checklist
+
+### Pre-deployment
+1. **Test Build**: `bun run build` completes successfully
+2. **Run Tests**: All unit tests pass
+3. **Lint Check**: ESLint passes on all files
+4. **Docker Build**: Production image builds without errors
+
+### Production Deployment
+1. **Environment Variables**: Set required API keys
+2. **Port Configuration**: Ensure port 3000 is accessible
+3. **Health Check**: Verify `/api/health` responds
+4. **Frontend Access**: Verify main UI loads correctly
+
+### Post-deployment Verification
+1. **API Endpoints**: Test deck generation with valid inputs
+2. **Error Handling**: Verify error responses are user-friendly
+3. **File Downloads**: Test .apkg file generation and download
+4. **Performance**: Monitor response times and memory usage
+
+## Related Files
+- **[deploy.md](mdc:deploy.md)**: Detailed deployment instructions
+- **[.dockerignore](mdc:.dockerignore)**: Docker build exclusions

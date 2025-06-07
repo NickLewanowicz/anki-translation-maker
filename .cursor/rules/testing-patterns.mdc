@@ -1,0 +1,218 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Testing & Debugging Patterns
+
+## Testing Strategy
+
+### Do NOT use `pnpm dev` for validation
+**Reason**: User rule specifies reliance on linting, unit tests, and screenshot regressions instead
+
+### Test Suite Structure
+
+#### Backend Tests
+**Location**: `packages/backend/src/services/__tests__/`
+
+```bash
+# Run all backend tests
+cd packages/backend && bun test
+
+# Run specific test files
+bun test src/services/__tests__/AnkiService.test.ts
+bun test src/services/__tests__/integration.test.ts
+```
+
+#### Test Coverage Areas
+- ✅ SQLite database creation and validation
+- ✅ Anki package (.apkg) generation  
+- ✅ ZIP file structure verification
+- ✅ Audio file handling (all combinations)
+- ✅ Empty deck handling
+- ✅ API endpoint validation
+- ✅ Error handling and edge cases
+
+### Critical Test Scenarios
+
+#### Audio Combination Matrix (from **[ANKI_DECK_RULES.md](mdc:ANKI_DECK_RULES.md)**)
+
+| Audio Type  | Card Count | Content Type | Expected Result |
+|-------------|------------|--------------|-----------------|
+| None        | 1, 5, 50   | Simple/Unicode/Mixed | ✅ Should Pass |
+| Source Only | 1, 5, 50   | Simple/Unicode/Mixed | ✅ Should Pass |
+| Target Only | 1, 5, 50   | Simple/Unicode/Mixed | ✅ Should Pass |
+| Dual Audio  | 1, 5, 50   | Simple/Unicode/Mixed | ✅ Should Pass |
+
+#### Test Data Patterns
+```typescript
+// Test with Vietnamese diacritics (Unicode)
+const testCards = [
+    { source: "hello", target: "xin chào" },
+    { source: "goodbye", target: "tạm biệt" },
+    { source: "thank you", target: "cảm ơn" }
+]
+
+// Test with audio combinations
+const testWithTargetAudio = cards.map(card => ({
+    ...card,
+    targetAudio: Buffer.from('fake-audio-data')
+}))
+```
+
+## Debugging Anki Import Failures
+
+### Common Error Patterns
+
+#### "A number was invalid or out of range"
+**Root Cause**: ID overflow from using milliseconds instead of seconds
+```typescript
+// ❌ WRONG - Causes overflow
+const id = Date.now()
+
+// ✅ CORRECT - Use seconds
+const id = Math.floor(Date.now() / 1000)
+```
+
+#### "Missing media file" Errors
+**Root Cause**: Mismatch between field references and media manifest
+```typescript
+// ✅ CORRECT - References match media files
+const field = `hello[sound:0.mp3]` // Media file "0" exists
+const manifest = { "0": "0.mp3" }
+
+// ❌ WRONG - Reference doesn't match
+const field = `hello[sound:source_0.mp3]` // No media file "source_0"
+```
+
+### Debugging Checklist
+
+When deck import fails:
+
+1. **Check IDs**: Are all IDs reasonable numbers (< 10^12)?
+2. **Check Media**: Are files named 0, 1, 2... sequentially?
+3. **Check References**: Do `[sound:N.mp3]` match existing media files?
+4. **Check Schema**: Are all required tables and indexes present?
+5. **Check ZIP**: Does the .apkg extract correctly?
+
+### Database Inspection Tools
+
+```bash
+# Extract and inspect .apkg file
+unzip deck.apkg
+sqlite3 collection.anki2
+
+# Check tables exist
+.tables
+
+# Inspect media manifest  
+cat media
+
+# Check note field references
+SELECT flds FROM notes LIMIT 5;
+```
+
+## Integration Testing Patterns
+
+### API Endpoint Testing
+```typescript
+// Test deck generation endpoint
+const testGenerateEndpoint = async () => {
+    const response = await fetch('/api/generate-deck', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            words: 'hello,world,test',
+            targetLanguage: 'es',
+            replicateApiKey: 'test-key',
+            // ... other required fields
+        })
+    })
+    
+    expect(response.headers.get('content-type')).toBe('application/zip')
+    expect(response.status).toBe(200)
+}
+```
+
+### Service Integration Testing
+```typescript
+// Test complete pipeline
+const testFullPipeline = async () => {
+    const translationService = new TranslationService(apiKey, textModel, voiceModel)
+    const ankiService = new AnkiService()
+    
+    // Test translation
+    const translations = await translationService.translateWords(['hello'], 'en', 'es')
+    expect(translations).toHaveLength(1)
+    
+    // Test audio generation
+    const audio = await translationService.generateAudio(['hello'], 'en')
+    expect(audio[0]).toBeInstanceOf(Buffer)
+    
+    // Test deck creation
+    const deckData = [{ source: 'hello', target: 'hola', sourceAudio: audio[0] }]
+    const deck = await ankiService.createDeck(deckData, 'Test Deck')
+    expect(deck).toBeInstanceOf(Buffer)
+}
+```
+
+## Error Testing Patterns
+
+### Input Validation Testing
+```typescript
+// Test required field validation
+const testValidation = async () => {
+    const invalidData = { /* missing required fields */ }
+    
+    const response = await fetch('/api/generate-deck', {
+        method: 'POST',
+        body: JSON.stringify(invalidData)
+    })
+    
+    expect(response.status).toBe(400)
+    const error = await response.json()
+    expect(error.error).toBe('Validation error')
+}
+```
+
+### Edge Case Testing
+```typescript
+// Test empty inputs
+const testEmptyDeck = async () => {
+    const emptyDeck = await ankiService.createDeck([], 'Empty Deck')
+    // Should handle gracefully without crashing
+}
+
+// Test very large inputs  
+const testLargeDeck = async () => {
+    const manyCards = Array(100).fill().map((_, i) => ({
+        source: `word${i}`,
+        target: `palabra${i}`
+    }))
+    const deck = await ankiService.createDeck(manyCards, 'Large Deck')
+    expect(deck.length).toBeGreaterThan(0)
+}
+```
+
+## Performance Testing
+
+### Memory Usage Monitoring
+```typescript
+// Monitor memory during large deck generation
+const testMemoryUsage = async () => {
+    const initialMemory = process.memoryUsage()
+    
+    // Generate large deck
+    const largeDeck = await generateDeck(/* large data */)
+    
+    const finalMemory = process.memoryUsage()
+    const memoryIncrease = finalMemory.heapUsed - initialMemory.heapUsed
+    
+    // Assert memory usage is reasonable
+    expect(memoryIncrease).toBeLessThan(100 * 1024 * 1024) // 100MB
+}
+```
+
+## Related Files
+- **[ANKI_DECK_RULES.md](mdc:ANKI_DECK_RULES.md)**: Complete testing matrix and constraints
+- **[AnkiService.ts](mdc:packages/backend/src/services/AnkiService.ts)**: Core service being tested

@@ -1,0 +1,72 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Anki Translation Maker - Project Overview
+
+## Architecture
+
+This is a **TypeScript monorepo** for generating Anki flashcard decks with AI-powered translation and audio generation.
+
+### Core Technologies
+- **Monorepo**: Bun workspace with separate frontend and backend packages
+- **Backend**: Bun + Hono server with TypeScript
+- **Frontend**: React + Vite + Tailwind CSS  
+- **Database**: SQLite for Anki deck generation
+- **AI Services**: Replicate API for translation and audio generation
+- **Package Manager**: Bun (switched from pnpm due to registry issues)
+
+### Key Components
+
+#### Backend Services
+- **[AnkiService.ts](mdc:packages/backend/src/services/AnkiService.ts)**: Core service for generating Anki `.apkg` files with proper SQLite database structure
+- **[TranslationService.ts](mdc:packages/backend/src/services/TranslationService.ts)**: Handles AI translation and audio generation via Replicate API
+
+#### Frontend Components  
+- **[DeckGeneratorForm.tsx](mdc:packages/frontend/src/components/DeckGeneratorForm.tsx)**: Main UI component with form validation and progress tracking
+- **[App.tsx](mdc:packages/frontend/src/App.tsx)**: Root component with routing
+
+#### API Routes
+- **[translation.ts](mdc:packages/backend/src/routes/translation.ts)**: Main API endpoints for deck generation and validation
+
+#### Types & Configuration
+- **[translation.ts](mdc:packages/backend/src/types/translation.ts)**: Core data structures (`DeckCard`, `Translation`)
+- **[package.json](mdc:package.json)**: Root workspace configuration with bun scripts
+
+## Development Patterns
+
+### Monorepo Structure
+```
+packages/
+├── backend/    # Bun + Hono API server (port 3000)
+└── frontend/   # React + Vite app (port 5173)
+```
+
+### Package Management
+- **Primary**: Bun (`bun install`, `bun run dev`)
+- **Scripts**: Use `bun run --filter='*' [command]` for workspace commands
+- **Legacy**: pnpm configuration exists but bun is preferred due to registry issues
+
+### Critical Implementation Details
+- **Sequential Media Naming**: Audio files must be named `0`, `1`, `2`... (never strings)
+- **Timestamp Handling**: Use seconds (`Math.floor(Date.now() / 1000)`) not milliseconds
+- **Audio References**: Field format `[sound:N.mp3]` must match media file index exactly
+- **Card Direction**: Currently forward-only (Source → Target), reverse cards removed
+
+## Key Services Integration
+
+### Deck Generation Flow
+1. Parse input (word list OR AI prompt)
+2. Generate/validate words via TranslationService
+3. Translate words using AI
+4. Generate audio for source/target languages (optional)
+5. Create SQLite database with proper Anki schema
+6. Package as `.apkg` ZIP file via AnkiService
+
+### Error Handling Patterns
+- **500 "Number out of range"**: ID overflow (use seconds not milliseconds)
+- **Media file errors**: Mismatched audio references or invalid naming
+- **SQLite errors**: Missing schema tables or invalid data types
+
+See **[ANKI_DECK_RULES.md](mdc:ANKI_DECK_RULES.md)** for complete constraints and debugging guidance.

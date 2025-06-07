@@ -1,0 +1,210 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Frontend Development Patterns
+
+## Architecture Overview
+
+**Framework**: React + TypeScript + Vite + Tailwind CSS
+
+### Key Components
+
+#### **[DeckGeneratorForm.tsx](mdc:packages/frontend/src/components/DeckGeneratorForm.tsx)** (Main Component)
+- **Size**: ~28KB, 584 lines - Large, complex form component
+- **Purpose**: Primary UI for deck generation with extensive form validation
+- **Features**: Multi-step form, progress tracking, real-time validation
+- **State**: Complex form state with multiple validation modes
+
+#### **[App.tsx](mdc:packages/frontend/src/App.tsx)** (Root Component)
+- **Purpose**: Root application component with routing setup
+- **Layout**: Header + Main Content + Footer structure
+
+#### **[Header.tsx](mdc:packages/frontend/src/components/Header.tsx)** & **[Footer.tsx](mdc:packages/frontend/src/components/Footer.tsx)**
+- **Purpose**: Layout components for consistent branding
+- **Size**: Small, focused components
+
+## Form State Management Patterns
+
+### Complex Form with Multiple Modes
+```typescript
+// DeckGeneratorForm uses controlled components with useState
+const [formData, setFormData] = useState({
+    words: '',
+    aiPrompt: '',
+    deckName: '',
+    sourceLanguage: 'en',
+    targetLanguage: '',
+    replicateApiKey: '',
+    // ... more fields
+})
+
+// Dynamic form validation based on input mode
+const validateForm = () => {
+    if (!formData.words && !formData.aiPrompt) {
+        return 'Either word list or AI prompt is required'
+    }
+    // ... more validation
+}
+```
+
+### Progress Tracking & Loading States
+```typescript
+// Multiple loading states for different operations
+const [isGenerating, setIsGenerating] = useState(false)
+const [isValidating, setIsValidating] = useState(false)
+const [progress, setProgress] = useState('')
+
+// Step-by-step progress updates
+setProgress('Validating configuration...')
+setProgress('Generating translations...')
+setProgress('Creating audio files...')
+```
+
+## API Integration Patterns
+
+### Fetch with Error Handling
+```typescript
+const handleGenerate = async () => {
+    try {
+        setIsGenerating(true)
+        setProgress('Starting deck generation...')
+        
+        const response = await fetch('/api/generate-deck', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        })
+        
+        if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.message || 'Generation failed')
+        }
+        
+        // Handle file download
+        const blob = await response.blob()
+        downloadFile(blob, `${deckName}.apkg`)
+        
+    } catch (error) {
+        setError(error.message)
+    } finally {
+        setIsGenerating(false)
+        setProgress('')
+    }
+}
+```
+
+### File Download Handling
+```typescript
+const downloadFile = (blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+}
+```
+
+## Styling Patterns
+
+### Tailwind CSS Classes
+- **Layout**: Use Flexbox/Grid with responsive breakpoints
+- **Forms**: Consistent form styling with focus states
+- **Loading States**: Animated progress indicators
+- **Error States**: Clear error messaging with appropriate colors
+
+### Component Structure
+```typescript
+// Consistent component structure
+const Component = () => {
+    return (
+        <div className="container mx-auto p-4">
+            <div className="max-w-2xl mx-auto">
+                {/* Component content */}
+            </div>
+        </div>
+    )
+}
+```
+
+## Configuration & Build
+
+### **[vite.config.ts](mdc:packages/frontend/vite.config.ts)**
+- **Dev Server**: Port 5173 with proxy to backend (3000)
+- **Build**: Optimized production build with proper asset handling
+- **Plugins**: React plugin for JSX support
+
+### **[tailwind.config.js](mdc:packages/frontend/tailwind.config.js)**
+- **Content**: Configured for src/**/*.{ts,tsx} files
+- **Theme**: Custom theme configuration
+- **Plugins**: Additional Tailwind plugins as needed
+
+## Form Validation Strategy
+
+### Real-time Validation
+- **On Blur**: Validate individual fields when focus leaves
+- **On Change**: Immediate feedback for critical fields
+- **On Submit**: Final validation before API call
+
+### Validation Patterns
+```typescript
+// Field-level validation
+const validateApiKey = (key: string) => {
+    if (!key.startsWith('r8_')) {
+        return 'API key must start with r8_'
+    }
+    if (key.length < 20) {
+        return 'API key appears too short'
+    }
+    return null
+}
+
+// Form-level validation
+const canSubmit = useMemo(() => {
+    return formData.targetLanguage && 
+           formData.replicateApiKey && 
+           (formData.words || formData.aiPrompt) &&
+           !isGenerating
+}, [formData, isGenerating])
+```
+
+## Error Handling UI
+
+### Error Display Patterns
+```typescript
+// Error state management
+const [error, setError] = useState('')
+const [validationErrors, setValidationErrors] = useState({})
+
+// Clear errors on form changes
+useEffect(() => {
+    if (error) setError('')
+}, [formData])
+
+// Error message display
+{error && (
+    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        {error}
+    </div>
+)}
+```
+
+## Development Considerations
+
+### Component Size Management
+- **[DeckGeneratorForm.tsx](mdc:packages/frontend/src/components/DeckGeneratorForm.tsx)** is large (584 lines)
+- **Consider**: Breaking into smaller sub-components if adding features
+- **Pattern**: Extract form sections into separate components
+
+### State Management
+- **Current**: useState for form state (appropriate for current complexity)
+- **Future**: Consider Zustand or Context API if state becomes more complex
+- **Avoid**: Redux unless absolutely necessary
+
+## Related Files
+- **[main.tsx](mdc:packages/frontend/src/main.tsx)**: Application entry point
+- **[index.css](mdc:packages/frontend/src/index.css)**: Global styles

@@ -1,0 +1,88 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# AnkiService Implementation Patterns
+
+## Critical Constraints ⚠️
+
+When working with **[AnkiService.ts](mdc:packages/backend/src/services/AnkiService.ts)**, these constraints are **MANDATORY** to prevent 500 errors:
+
+### 1. ID Generation (NEVER use Date.now())
+```typescript
+// ✅ CORRECT - Use seconds
+const baseTime = Math.floor(Date.now() / 1000)
+const deckId = baseTime + 1
+const noteId = baseTime + 2
+
+// ❌ WRONG - Causes "number out of range" error
+const deckId = Date.now() // Too large for SQLite INTEGER
+```
+
+### 2. Media File Naming (Sequential Only)
+```typescript
+// ✅ CORRECT - Sequential numeric naming
+const mediaMapping = { 0: "0.mp3", 1: "1.mp3", 2: "2.mp3" }
+
+// ❌ WRONG - String-based naming breaks Anki import
+const mediaMapping = { "source_0": "source_0.mp3", "target_1": "target_1.mp3" }
+```
+
+### 3. Audio Field References (Exact Match Required)
+```typescript
+// ✅ CORRECT - Reference matches media file index
+const frontField = `hello[sound:0.mp3]` // Media file "0" exists
+
+// ❌ WRONG - Reference doesn't match any media file
+const frontField = `hello[sound:source_0.mp3]` // No media file "source_0"
+```
+
+## Implementation Patterns
+
+### Database Schema Creation
+- Always create tables first, then indexes
+- Use the exact schema from **[AnkiService.ts](mdc:packages/backend/src/services/AnkiService.ts)** lines 70-130
+- Include all required indexes for performance
+
+### Field Separator & Format
+```typescript
+// Use \x1f as field separator between front and back
+const fieldsText = `${frontField}\x1f${backField}`
+
+// Calculate proper checksum for first field
+const checksum = this.calculateFieldChecksum(frontField)
+```
+
+### Media Assignment Logic
+```typescript
+// Target audio gets indices 0, 1, 2...
+cards.forEach((card, index) => {
+    if (card.targetAudio) {
+        targetAudio[index] = mediaIndex++
+    }
+})
+
+// Source audio continues numbering
+cards.forEach((card, index) => {
+    if (card.sourceAudio) {
+        sourceAudio[index] = mediaIndex++
+    }
+})
+```
+
+## Error Prevention
+
+### Common Failure Patterns
+1. **"A number was invalid or out of range"**: Always use seconds, not milliseconds
+2. **Missing media files**: Ensure every `[sound:N.mp3]` has corresponding media file
+3. **Invalid ZIP structure**: Follow exact .apkg format with collection.anki2 and media files
+
+### Testing Approach
+- Test with cards that have no audio, source only, target only, and both
+- Verify all media references match exactly
+- Check that SQLite database opens correctly in external tools
+
+## Related Files
+- **[ANKI_DECK_RULES.md](mdc:ANKI_DECK_RULES.md)**: Complete constraints documentation
+- **[translation.ts](mdc:packages/backend/src/types/translation.ts)**: `DeckCard` interface definition
