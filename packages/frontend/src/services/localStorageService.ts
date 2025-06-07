@@ -71,6 +71,7 @@ export const localStorageService = {
 
             console.log('📱 Form state loaded from local storage')
             // Return data without timestamp
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { timestamp, ...formData } = parsedData
             return formData
         } catch (error) {
@@ -97,7 +98,7 @@ export const localStorageService = {
      * @param data - The data to validate
      * @returns true if valid, false otherwise
      */
-    isValidFormData(data: any): data is StoredFormData {
+    isValidFormData(data: unknown): data is StoredFormData {
         if (!data || typeof data !== 'object') return false
 
         const requiredFields = [

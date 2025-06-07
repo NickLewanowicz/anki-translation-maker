@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { DeckGeneratorForm } from '../components/DeckGeneratorForm'
-import { localStorageService } from '../services/localStorageService'
 
 // Mock the deckService
 vi.mock('../services/deckService', () => ({

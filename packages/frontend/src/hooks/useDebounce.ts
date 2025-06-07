@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, DependencyList } from 'react'
 
 /**
  * Custom hook for debouncing function calls
@@ -9,9 +9,9 @@ import { useEffect, useRef } from 'react'
 export function useDebounce(
     callback: () => void,
     delay: number,
-    dependencies: React.DependencyList
+    dependencies: DependencyList
 ) {
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     useEffect(() => {
         // Clear the previous timeout
@@ -30,6 +30,8 @@ export function useDebounce(
                 clearTimeout(timeoutRef.current)
             }
         }
+        // ESLint disabled for this hook as dependencies are explicitly passed by the consumer
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, dependencies)
 
     // Cleanup on unmount
