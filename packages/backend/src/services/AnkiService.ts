@@ -495,7 +495,14 @@ export class AnkiService {
             try {
                 // Read database file into memory to avoid lazy stream issues in CI
                 console.log(`📄 Reading database file into memory: ${dbPath}`)
-                const dbBuffer = fs.readFileSync(dbPath)
+                let dbBuffer: Buffer
+                try {
+                    dbBuffer = fs.readFileSync(dbPath)
+                    console.log(`📄 Successfully read database file: ${dbBuffer.length} bytes`)
+                } catch (readError) {
+                    throw new Error(`Failed to read database file: ${readError}`)
+                }
+
                 console.log(`📄 Adding database buffer to archive: ${dbBuffer.length} bytes`)
                 archive.append(dbBuffer, { name: 'collection.anki2' })
 
