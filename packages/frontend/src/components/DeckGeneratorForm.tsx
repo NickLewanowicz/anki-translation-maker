@@ -1,6 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Download, Loader2, AlertCircle } from 'lucide-react'
 import { deckService } from '../services/deckService'
+import { localStorageService } from '../services/localStorageService'
+import { useDebounce } from '../hooks/useDebounce'
 
 interface DeckFormData {
     deckType: string
@@ -36,7 +38,8 @@ const DEFAULT_DECKS = [
 ]
 
 export function DeckGeneratorForm() {
-    const [formData, setFormData] = useState<DeckFormData>({
+    // Default form data
+    const getDefaultFormData = (): DeckFormData => ({
         deckType: 'basic-verbs',
         words: DEFAULT_DECKS[0].words,
         aiPrompt: '',
@@ -53,10 +56,44 @@ export function DeckGeneratorForm() {
         textModelArgs: '{}',
         voiceModelArgs: '{}',
     })
+
+    const [formData, setFormData] = useState<DeckFormData>(getDefaultFormData())
     const [isGenerating, setIsGenerating] = useState(false)
     const [isTesting, setIsTesting] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [testResult, setTestResult] = useState<string | null>(null)
+    const [isLocalStorageLoaded, setIsLocalStorageLoaded] = useState(false)
+
+    // Load form data from local storage on component mount
+    useEffect(() => {
+        const loadSavedData = () => {
+            if (!localStorageService.isLocalStorageAvailable()) {
+                console.warn('📱 Local storage is not available')
+                setIsLocalStorageLoaded(true)
+                return
+            }
+
+            const savedData = localStorageService.loadFormData()
+            if (savedData) {
+                setFormData(savedData)
+                console.log('📱 Restored form state from local storage')
+            }
+            setIsLocalStorageLoaded(true)
+        }
+
+        loadSavedData()
+    }, [])
+
+    // Debounced save to local storage when form data changes
+    useDebounce(
+        () => {
+            if (isLocalStorageLoaded && localStorageService.isLocalStorageAvailable()) {
+                localStorageService.saveFormData(formData)
+            }
+        },
+        1000, // Save after 1 second of inactivity
+        [formData, isLocalStorageLoaded]
+    )
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -135,6 +172,14 @@ export function DeckGeneratorForm() {
         } else {
             setFormData(prev => ({ ...prev, [name]: value }))
         }
+    }
+
+    const handleClearStoredData = () => {
+        localStorageService.clearFormData()
+        setFormData(getDefaultFormData())
+        setError(null)
+        setTestResult(null)
+        console.log('📱 Form reset to defaults and storage cleared')
     }
 
     const handleTestConfiguration = async () => {
@@ -548,6 +593,23 @@ export function DeckGeneratorForm() {
                             </div>
                         </div>
                     )}
+                </div>
+            </div>
+
+            {/* Auto-save indicator and clear storage */}
+            <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span>Form auto-saved locally</span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleClearStoredData}
+                        className="text-sm text-gray-500 hover:text-gray-700 underline"
+                    >
+                        Reset & Clear Storage
+                    </button>
                 </div>
             </div>
 
