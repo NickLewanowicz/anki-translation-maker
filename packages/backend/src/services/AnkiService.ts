@@ -450,38 +450,48 @@ export class AnkiService {
             })
 
             archive.on('error', (err) => {
-                reject(err)
+                console.error('Archive error:', err)
+                reject(new Error(`Failed to create archive: ${err.message}`))
             })
 
-            // Add the SQLite database
-            archive.file(dbPath, { name: 'collection.anki2' })
-
-            // Add media files with sequential numeric names like working deck
-            const media: Record<string, string> = {}
-            let mediaIndex = 0
-
-            // First pass: add all target audio files
-            cards.forEach((card, index) => {
-                if (card.targetAudio && card.targetAudio.length > 0) {
-                    media[mediaIndex.toString()] = `${mediaIndex}.mp3`
-                    archive.append(card.targetAudio, { name: mediaIndex.toString() })
-                    mediaIndex++
-                }
+            archive.on('warning', (err) => {
+                console.warn('Archive warning:', err)
             })
 
-            // Second pass: add all source audio files  
-            cards.forEach((card, index) => {
-                if (card.sourceAudio && card.sourceAudio.length > 0) {
-                    media[mediaIndex.toString()] = `${mediaIndex}.mp3`
-                    archive.append(card.sourceAudio, { name: mediaIndex.toString() })
-                    mediaIndex++
-                }
-            })
+            try {
+                // Add the SQLite database
+                archive.file(dbPath, { name: 'collection.anki2' })
 
-            // Add media manifest
-            archive.append(JSON.stringify(media), { name: 'media' })
+                // Add media files with sequential numeric names like working deck
+                const media: Record<string, string> = {}
+                let mediaIndex = 0
 
-            archive.finalize()
+                // First pass: add all target audio files
+                cards.forEach((card, index) => {
+                    if (card.targetAudio && Buffer.isBuffer(card.targetAudio) && card.targetAudio.length > 0) {
+                        media[mediaIndex.toString()] = `${mediaIndex}.mp3`
+                        archive.append(card.targetAudio, { name: mediaIndex.toString() })
+                        mediaIndex++
+                    }
+                })
+
+                // Second pass: add all source audio files  
+                cards.forEach((card, index) => {
+                    if (card.sourceAudio && Buffer.isBuffer(card.sourceAudio) && card.sourceAudio.length > 0) {
+                        media[mediaIndex.toString()] = `${mediaIndex}.mp3`
+                        archive.append(card.sourceAudio, { name: mediaIndex.toString() })
+                        mediaIndex++
+                    }
+                })
+
+                // Add media manifest
+                archive.append(JSON.stringify(media), { name: 'media' })
+
+                // Finalize the archive
+                archive.finalize()
+            } catch (error) {
+                reject(new Error(`Failed to create archive: ${error instanceof Error ? error.message : 'Unknown error'}`))
+            }
         })
     }
 } 
