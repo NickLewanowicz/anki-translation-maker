@@ -493,9 +493,11 @@ export class AnkiService {
             })
 
             try {
-                // Add the SQLite database with additional validation
-                console.log(`📄 Adding database to archive: ${dbPath}`)
-                archive.file(dbPath, { name: 'collection.anki2' })
+                // Read database file into memory to avoid lazy stream issues in CI
+                console.log(`📄 Reading database file into memory: ${dbPath}`)
+                const dbBuffer = fs.readFileSync(dbPath)
+                console.log(`📄 Adding database buffer to archive: ${dbBuffer.length} bytes`)
+                archive.append(dbBuffer, { name: 'collection.anki2' })
 
                 // Add media files with sequential numeric names like working deck
                 const media: Record<string, string> = {}
