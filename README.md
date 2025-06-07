@@ -1,5 +1,7 @@
 # Anki Translation Maker
 
+[![CI](https://github.com/nicklewanowicz/anki-translation-maker/actions/workflows/ci.yml/badge.svg)](https://github.com/nicklewanowicz/anki-translation-maker/actions/workflows/ci.yml)
+
 A TypeScript monorepo application for generating Anki flashcard decks with AI-powered translation and audio generation.
 
 ## Features
@@ -300,13 +302,69 @@ Enable "Advanced Settings" to use custom models and arguments.
    - Clear cache: `pnpm store prune`
    - Reinstall: `rm -rf node_modules && pnpm install`
 
+## Continuous Integration
+
+This project uses GitHub Actions for automated testing and quality assurance. All pull requests must pass CI checks before merging.
+
+### CI Pipeline
+
+The CI pipeline runs on every pull request and push to main, executing:
+
+- **TypeScript Compilation**: Validates TypeScript code across both packages
+- **ESLint**: Enforces code quality and style guidelines  
+- **Unit Tests**: Runs comprehensive test suites for backend and frontend
+- **Build Verification**: Validates frontend builds and backend startup
+- **Docker Testing**: Tests Docker container builds and health checks (main branch only)
+- **Multi-Version Testing**: Tests against multiple Bun versions for compatibility
+
+### Local Testing
+
+Before submitting PRs, ensure all checks pass locally:
+
+```bash
+# Install dependencies
+bun install
+
+# Run TypeScript checks
+cd packages/backend && bunx tsc --noEmit
+cd packages/frontend && bunx tsc --noEmit
+
+# Run linting
+bun run lint
+
+# Run all tests
+bun run test
+
+# Build frontend
+cd packages/frontend && bun run build
+```
+
+### CI Status
+
+Check the CI status badge at the top of this README or view detailed results in the [Actions tab](https://github.com/nicklewanowicz/anki-translation-maker/actions).
+
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass: `pnpm test`
-5. Submit a pull request
+We welcome contributions! Please follow this workflow:
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/your-feature-name`
+3. **Add comprehensive tests** for new functionality
+4. **Ensure all CI checks pass**:
+   - TypeScript compilation
+   - ESLint validation
+   - Unit tests (70%+ coverage)
+   - Build verification
+5. **Follow atomic commit structure** with descriptive messages
+6. **Submit a pull request** with a clear description of changes
+
+### Development Guidelines
+
+- **Test Coverage**: Maintain 70%+ unit test coverage for new features
+- **Code Quality**: All code must pass ESLint validation
+- **TypeScript**: Strict TypeScript with proper type definitions
+- **Documentation**: Update README and add JSDoc comments for public APIs
+- **No Dev Server Testing**: Rely on linting, unit tests, and build validation (CI follows this pattern)
 
 ## 📜 License
 
