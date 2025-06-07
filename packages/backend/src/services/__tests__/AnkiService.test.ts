@@ -5,8 +5,31 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 import sqlite3 from 'sqlite3'
-import archiver from 'archiver'
-import { Readable } from 'stream'
+
+interface DatabaseNote {
+    flds: string
+    [key: string]: unknown
+}
+
+interface DatabaseEntry {
+    name: string
+    isDirectory: boolean
+    entryName: string
+    getData(): Buffer
+}
+
+interface DatabaseRow {
+    name: string
+}
+
+interface CountRow {
+    count: number
+}
+
+interface ColRow {
+    decks: string
+}
+
 
 describe('AnkiService', () => {
     let ankiService: AnkiService
@@ -106,7 +129,7 @@ describe('AnkiService', () => {
 
                 // Verify notes contain correct data (2 fields: Front=target with audio, Back=source with audio)
                 expect(result.notes).toHaveLength(testCards.length)
-                result.notes.forEach((note: any, index: number) => {
+                result.notes.forEach((note: DatabaseNote, index: number) => {
                     const fields = note.flds.split('\x1f')
 
                     // Calculate expected audio indices based on the sequential assignment logic
@@ -258,7 +281,7 @@ async function extractZipContents(zipBuffer: Buffer): Promise<Record<string, Buf
     const entries = zip.getEntries()
 
     const files: Record<string, Buffer> = {}
-    entries.forEach((entry: any) => {
+    entries.forEach((entry: DatabaseEntry) => {
         if (!entry.isDirectory) {
             files[entry.entryName] = entry.getData()
         }
@@ -272,7 +295,7 @@ async function queryDatabase(dbPath: string): Promise<{
     noteCount: number
     cardCount: number
     deckName: string
-    notes: any[]
+    notes: DatabaseNote[]
 }> {
     return new Promise((resolve, reject) => {
         const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
@@ -281,16 +304,16 @@ async function queryDatabase(dbPath: string): Promise<{
                 return
             }
 
-            const result: any = {
-                tables: [],
+            const result = {
+                tables: [] as string[],
                 noteCount: 0,
                 cardCount: 0,
                 deckName: '',
-                notes: []
+                notes: [] as DatabaseNote[]
             }
 
             // Get table names
-            db.all("SELECT name FROM sqlite_master WHERE type='table'", (err, rows: any[]) => {
+            db.all("SELECT name FROM sqlite_master WHERE type='table'", (err, rows: DatabaseRow[]) => {
                 if (err) {
                     db.close()
                     reject(err)
@@ -300,7 +323,7 @@ async function queryDatabase(dbPath: string): Promise<{
                 result.tables = rows.map(row => row.name)
 
                 // Get note count
-                db.get("SELECT COUNT(*) as count FROM notes", (err, row: any) => {
+                db.get("SELECT COUNT(*) as count FROM notes", (err, row: CountRow) => {
                     if (err) {
                         db.close()
                         reject(err)
@@ -310,7 +333,7 @@ async function queryDatabase(dbPath: string): Promise<{
                     result.noteCount = row.count
 
                     // Get card count
-                    db.get("SELECT COUNT(*) as count FROM cards", (err, row: any) => {
+                    db.get("SELECT COUNT(*) as count FROM cards", (err, row: CountRow) => {
                         if (err) {
                             db.close()
                             reject(err)
@@ -320,7 +343,7 @@ async function queryDatabase(dbPath: string): Promise<{
                         result.cardCount = row.count
 
                         // Get deck name
-                        db.get("SELECT decks FROM col", (err, row: any) => {
+                        db.get("SELECT decks FROM col", (err, row: ColRow) => {
                             if (err) {
                                 db.close()
                                 reject(err)
@@ -332,7 +355,7 @@ async function queryDatabase(dbPath: string): Promise<{
                             result.deckName = decks[deckId]?.name || ''
 
                             // Get notes
-                            db.all("SELECT * FROM notes", (err, rows: any[]) => {
+                            db.all("SELECT * FROM notes", (err, rows: DatabaseNote[]) => {
                                 db.close()
 
                                 if (err) {

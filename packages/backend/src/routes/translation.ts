@@ -3,6 +3,7 @@ import { TranslationService } from '../services/TranslationService.js'
 import { AnkiService } from '../services/AnkiService.js'
 import { z } from 'zod'
 import type { Env } from '../types/env.js'
+import type { Translation } from '../types/translation.js'
 
 export const translationRouter = new Hono<Env>()
 
@@ -102,7 +103,7 @@ translationRouter.post('/generate-deck', async (c) => {
         // Step 2: Translate words
         console.log(`🔄 Translating ${wordList.length} words from ${sourceLanguage} to ${targetLanguage}...`)
         const translations = await translationService.translateWords(wordList, sourceLanguage, targetLanguage)
-        console.log(`✅ Translated ${translations.length} words. Sample:`, translations.slice(0, 3).map((t: any) => `${t.source} → ${t.translation}`))
+        console.log(`✅ Translated ${translations.length} words. Sample:`, translations.slice(0, 3).map((t: Translation) => `${t.source} → ${t.translation}`))
 
         // Step 3: Generate audio for source and target languages (conditionally)
         let sourceAudio: Buffer[] = []
@@ -119,7 +120,7 @@ translationRouter.post('/generate-deck', async (c) => {
 
         if (generateTargetAudio) {
             console.log(`🔊 Generating audio for ${translations.length} target words...`)
-            targetAudio = await translationService.generateAudio(translations.map((t: any) => t.translation), targetLanguage)
+            targetAudio = await translationService.generateAudio(translations.map((t: Translation) => t.translation), targetLanguage)
             console.log(`✅ Generated ${targetAudio.length} target audio files`)
         } else {
             console.log('⏭️ Skipping target audio generation (disabled)')
@@ -128,7 +129,7 @@ translationRouter.post('/generate-deck', async (c) => {
 
         // Step 4: Create Anki deck
         console.log('📦 Creating Anki deck package...')
-        const deckData = translations.map((translation: any, index: number) => ({
+        const deckData = translations.map((translation: Translation, index: number) => ({
             source: translation.source,
             target: translation.translation,
             sourceAudio: sourceAudio[index],
@@ -249,26 +250,23 @@ translationRouter.post('/validate', async (c) => {
 
     try {
         const body = await c.req.json()
-        const { words, aiPrompt, maxCards, deckName, targetLanguage, sourceLanguage, replicateApiKey, textModel, voiceModel, generateSourceAudio, generateTargetAudio, useCustomArgs, textModelArgs, voiceModelArgs } = generateDeckSchema.parse(body)
+        const { words, aiPrompt, maxCards, deckName, targetLanguage, sourceLanguage, textModel, voiceModel, generateSourceAudio, generateTargetAudio, useCustomArgs, textModelArgs, voiceModelArgs } = generateDeckSchema.parse(body)
 
         // Validate that we have either words or aiPrompt
         if (!words && !aiPrompt) {
             throw new Error('Either words or aiPrompt must be provided')
         }
 
-        // Parse custom arguments if enabled
-        let parsedTextArgs = {}
-        let parsedVoiceArgs = {}
-
+        // Parse custom arguments if enabled (validation only)
         if (useCustomArgs) {
             try {
-                parsedTextArgs = JSON.parse(textModelArgs)
+                JSON.parse(textModelArgs)
             } catch (error) {
                 throw new Error('Invalid JSON in textModelArgs: ' + (error as Error).message)
             }
 
             try {
-                parsedVoiceArgs = JSON.parse(voiceModelArgs)
+                JSON.parse(voiceModelArgs)
             } catch (error) {
                 throw new Error('Invalid JSON in voiceModelArgs: ' + (error as Error).message)
             }

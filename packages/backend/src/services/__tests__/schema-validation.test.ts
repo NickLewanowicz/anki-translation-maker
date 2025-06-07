@@ -6,6 +6,16 @@ import * as path from 'path'
 import * as os from 'os'
 import sqlite3 from 'sqlite3'
 
+interface DatabaseEntry {
+    entryName: string
+    getData(): Buffer
+}
+
+interface SchemaRow {
+    name: string
+    type: string
+}
+
 describe('Anki Schema Validation', () => {
     it('should create database with all required Anki tables and indexes', async () => {
         const ankiService = new AnkiService()
@@ -28,7 +38,7 @@ describe('Anki Schema Validation', () => {
         const entries = zip.getEntries()
 
         let dbBuffer: Buffer | undefined
-        entries.forEach((entry: any) => {
+        entries.forEach((entry: DatabaseEntry) => {
             if (entry.entryName === 'collection.anki2') {
                 dbBuffer = entry.getData()
             }
@@ -93,7 +103,7 @@ async function validateAnkiSchema(dbPath: string): Promise<{
             }
 
             // Get all database objects
-            db.all("SELECT name, type FROM sqlite_master WHERE type IN ('table', 'index') ORDER BY type, name", (err, rows: any[]) => {
+            db.all("SELECT name, type FROM sqlite_master WHERE type IN ('table', 'index') ORDER BY type, name", (err, rows: SchemaRow[]) => {
                 db.close()
 
                 if (err) {

@@ -5,15 +5,15 @@ export class TranslationService {
     private replicate: Replicate
     private textModel: string
     private voiceModel: string
-    private textModelArgs: Record<string, any>
-    private voiceModelArgs: Record<string, any>
+    private textModelArgs: Record<string, unknown>
+    private voiceModelArgs: Record<string, unknown>
 
     constructor(
         apiKey: string,
-        textModel: string = 'openai/gpt-4o-mini',
-        voiceModel: string = 'minimax/speech-02-hd',
-        textModelArgs: Record<string, any> = {},
-        voiceModelArgs: Record<string, any> = {}
+        textModel = 'openai/gpt-4o-mini',
+        voiceModel = 'minimax/speech-02-hd',
+        textModelArgs: Record<string, unknown> = {},
+        voiceModelArgs: Record<string, unknown> = {}
     ) {
         this.replicate = new Replicate({
             auth: apiKey,
@@ -24,7 +24,7 @@ export class TranslationService {
         this.voiceModelArgs = voiceModelArgs
     }
 
-    async generateWordsFromPrompt(prompt: string, sourceLanguage: string, maxCards: number = 20): Promise<string[]> {
+    async generateWordsFromPrompt(prompt: string, sourceLanguage: string, maxCards = 20): Promise<string[]> {
         try {
             const defaultInput = {
                 prompt: `Generate up to ${maxCards} high-quality, useful words related to: "${prompt}". 
@@ -124,7 +124,7 @@ export class TranslationService {
         return voiceMap[language] || 'English_CalmWoman'
     }
 
-    private sanitizeVoiceModelArgs(args: Record<string, any>): Record<string, any> {
+    private sanitizeVoiceModelArgs(args: Record<string, unknown>): Record<string, unknown> {
         const sanitized = { ...args }
 
         // Convert string numbers to actual numbers for common TTS parameters
@@ -188,7 +188,7 @@ export class TranslationService {
                         errorMessage.includes('Unprocessable Entity') ||
                         errorMessage.includes('Invalid type') ||
                         errorMessage.includes('Expected:') ||
-                        (error as any)?.status === 422
+                        (error as { status?: number })?.status === 422
                     )
 
                     if (isValidationError) {

@@ -4,7 +4,11 @@ import { AnkiService } from '../services/AnkiService.js'
 import type { DeckCard } from '../types/translation.js'
 import JSZip from 'jszip'
 import * as fs from 'fs'
-import * as path from 'path'
+
+interface DatabaseRow {
+    [key: string]: unknown
+}
+
 
 describe.skip('Anki Structure Comparison', () => {
     let workingDbPath: string
@@ -52,7 +56,7 @@ describe.skip('Anki Structure Comparison', () => {
         if (fs.existsSync(failingDbPath)) fs.unlinkSync(failingDbPath)
     })
 
-    function queryDatabase(dbPath: string, query: string): Promise<any[]> {
+    function queryDatabase(dbPath: string, query: string): Promise<DatabaseRow[]> {
         return new Promise((resolve, reject) => {
             const db = new sqlite3.Database(dbPath, (err) => {
                 if (err) reject(err)
@@ -65,7 +69,7 @@ describe.skip('Anki Structure Comparison', () => {
                     return
                 }
                 db.close()
-                resolve(rows)
+                resolve(rows as DatabaseRow[])
             })
         })
     }
@@ -83,7 +87,6 @@ describe.skip('Anki Structure Comparison', () => {
     })
 
     test('should have proper timestamp ranges in all fields', async () => {
-        const MAX_32BIT_SIGNED = 2147483647
 
         // Check collection timestamps
         const workingCol = await queryDatabase(workingDbPath, 'SELECT crt, mod, scm FROM col')
@@ -104,7 +107,7 @@ describe.skip('Anki Structure Comparison', () => {
         console.log('Failing model mod:', failingModels['1']?.mod)
 
         if (failingModels['1']?.mod !== undefined) {
-            expect(failingModels['1'].mod).toBeLessThanOrEqual(MAX_32BIT_SIGNED)
+            expect(failingModels['1'].mod).toBeLessThanOrEqual(2147483647)
         }
 
         // Check notes/cards timestamps
@@ -147,14 +150,14 @@ describe.skip('Anki Structure Comparison', () => {
         const workingFields = workingModels[workingModelId]?.flds || []
         const failingFields = failingModels[generatedModelId]?.flds || []
 
-        console.log('Working model fields:', workingFields.map((f: any) => f.name))
-        console.log('Failing model fields:', failingFields.map((f: any) => f.name))
+        console.log('Working model fields:', workingFields.map((f: { name: string }) => f.name))
+        console.log('Failing model fields:', failingFields.map((f: { name: string }) => f.name))
 
         // Both should have 2 fields (Front, Back)
         expect(workingFields.length).toBe(2)
         expect(failingFields.length).toBe(2)
-        expect(workingFields.map((f: any) => f.name)).toEqual(['Front', 'Back'])
-        expect(failingFields.map((f: any) => f.name)).toEqual(['Front', 'Back'])
+        expect(workingFields.map((f: { name: string }) => f.name)).toEqual(['Front', 'Back'])
+        expect(failingFields.map((f: { name: string }) => f.name)).toEqual(['Front', 'Back'])
     })
 
     test('generated deck should match working structure', async () => {
@@ -175,7 +178,7 @@ describe.skip('Anki Structure Comparison', () => {
         try {
             // Check timestamps
             const generatedCol = await queryDatabase(generatedDbPath, 'SELECT crt, mod, scm, models FROM col')
-            const MAX_32BIT_SIGNED = 2147483647
+
 
             // Large timestamps are actually fine - working deck proves this
             expect(generatedCol[0].crt).toBeGreaterThan(0)
@@ -188,7 +191,7 @@ describe.skip('Anki Structure Comparison', () => {
             expect(generatedModels[generatedModelId]?.mod).toBeGreaterThan(0)
 
             // Check field structure matches working version (2 fields)
-            const generatedFieldNames = generatedModels[generatedModelId]?.flds?.map((f: any) => f.name) || []
+            const generatedFieldNames = generatedModels[generatedModelId]?.flds?.map((f: { name: string }) => f.name) || []
 
             console.log('Generated deck field names:', generatedFieldNames)
 

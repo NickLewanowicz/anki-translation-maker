@@ -36,8 +36,6 @@ describe('Deck Name Generation', () => {
     })
 
     it('should sanitize deck names to remove quotes', async () => {
-        const translationService = new TranslationService('test-key')
-
         // Mock the API response by directly testing the sanitization logic
         const mockResponse = '"Basic Spanish Verbs"'
         const sanitized = mockResponse.trim().replace(/['"]/g, '').substring(0, 50)
