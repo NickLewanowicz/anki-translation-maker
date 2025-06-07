@@ -502,7 +502,7 @@ export class AnkiService {
                 let mediaIndex = 0
 
                 // First pass: add all target audio files
-                cards.forEach((card, index) => {
+                cards.forEach((card) => {
                     if (card.targetAudio && Buffer.isBuffer(card.targetAudio) && card.targetAudio.length > 0) {
                         media[mediaIndex.toString()] = `${mediaIndex}.mp3`
                         archive.append(card.targetAudio, { name: mediaIndex.toString() })
@@ -511,7 +511,7 @@ export class AnkiService {
                 })
 
                 // Second pass: add all source audio files  
-                cards.forEach((card, index) => {
+                cards.forEach((card) => {
                     if (card.sourceAudio && Buffer.isBuffer(card.sourceAudio) && card.sourceAudio.length > 0) {
                         media[mediaIndex.toString()] = `${mediaIndex}.mp3`
                         archive.append(card.sourceAudio, { name: mediaIndex.toString() })

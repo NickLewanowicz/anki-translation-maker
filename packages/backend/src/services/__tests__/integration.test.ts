@@ -5,7 +5,7 @@ import { serve } from 'bun'
 import { translationRouter } from '../../routes/translation.js'
 
 describe('Integration Tests', () => {
-    let server: any
+    let server: { stop?: () => void }
     const testPort = 3001
     const baseUrl = `http://localhost:${testPort}`
 

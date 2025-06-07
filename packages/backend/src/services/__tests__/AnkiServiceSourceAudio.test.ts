@@ -5,6 +5,11 @@ import AdmZip from 'adm-zip'
 import sqlite3 from 'sqlite3'
 import * as fs from 'fs'
 
+interface DatabaseNote {
+    flds: string
+    [key: string]: unknown
+}
+
 /**
  * ANKI DECK RULES & CONSTRAINTS (see ANKI_DECK_RULES.md)
  * 
@@ -129,7 +134,7 @@ describe('AnkiService Source Audio Support', () => {
             const db = new sqlite3.Database(tempPath)
 
             return new Promise<void>((resolve, reject) => {
-                db.all('SELECT flds FROM notes ORDER BY id', (err, rows: any[]) => {
+                db.all('SELECT flds FROM notes ORDER BY id', (err, rows: DatabaseNote[]) => {
                     if (err) {
                         reject(err)
                         return
@@ -194,7 +199,7 @@ describe('AnkiService Source Audio Support', () => {
             const db = new sqlite3.Database(tempPath)
 
             return new Promise<void>((resolve, reject) => {
-                db.all('SELECT flds FROM notes ORDER BY id', (err, rows: any[]) => {
+                db.all('SELECT flds FROM notes ORDER BY id', (err, rows: DatabaseNote[]) => {
                     if (err) {
                         reject(err)
                         return
@@ -281,7 +286,7 @@ describe('AnkiService Source Audio Support', () => {
             const db = new sqlite3.Database(tempPath)
 
             return new Promise<void>((resolve, reject) => {
-                db.all('SELECT flds FROM notes ORDER BY id', (err, rows: any[]) => {
+                db.all('SELECT flds FROM notes ORDER BY id', (err, rows: DatabaseNote[]) => {
                     if (err) {
                         reject(err)
                         return
