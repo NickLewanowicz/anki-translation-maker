@@ -9,6 +9,16 @@ interface DatabaseRow {
     [key: string]: unknown
 }
 
+interface ColRow {
+    models: string
+    [key: string]: unknown
+}
+
+interface NoteRow {
+    flds: string
+    [key: string]: unknown
+}
+
 
 describe.skip('Anki Structure Comparison', () => {
     let workingDbPath: string
@@ -56,7 +66,7 @@ describe.skip('Anki Structure Comparison', () => {
         if (fs.existsSync(failingDbPath)) fs.unlinkSync(failingDbPath)
     })
 
-    function queryDatabase(dbPath: string, query: string): Promise<DatabaseRow[]> {
+    function queryDatabase<T = DatabaseRow>(dbPath: string, query: string): Promise<T[]> {
         return new Promise((resolve, reject) => {
             const db = new sqlite3.Database(dbPath, (err) => {
                 if (err) reject(err)
@@ -69,7 +79,7 @@ describe.skip('Anki Structure Comparison', () => {
                     return
                 }
                 db.close()
-                resolve(rows as DatabaseRow[])
+                resolve(rows as T[])
             })
         })
     }
@@ -89,8 +99,8 @@ describe.skip('Anki Structure Comparison', () => {
     test('should have proper timestamp ranges in all fields', async () => {
 
         // Check collection timestamps
-        const workingCol = await queryDatabase(workingDbPath, 'SELECT crt, mod, scm FROM col')
-        const failingCol = await queryDatabase(failingDbPath, 'SELECT crt, mod, scm FROM col')
+        const workingCol = await queryDatabase<ColRow>(workingDbPath, 'SELECT crt, mod, scm, models FROM col')
+        const failingCol = await queryDatabase<ColRow>(failingDbPath, 'SELECT crt, mod, scm, models FROM col')
 
         console.log('Working collection timestamps:', workingCol[0])
         console.log('Failing collection timestamps:', failingCol[0])
@@ -119,8 +129,8 @@ describe.skip('Anki Structure Comparison', () => {
     })
 
     test('should have proper field structure', async () => {
-        const workingNotes = await queryDatabase(workingDbPath, 'SELECT flds FROM notes LIMIT 1')
-        const failingNotes = await queryDatabase(failingDbPath, 'SELECT flds FROM notes LIMIT 1')
+        const workingNotes = await queryDatabase<NoteRow>(workingDbPath, 'SELECT flds FROM notes LIMIT 1')
+        const failingNotes = await queryDatabase<NoteRow>(failingDbPath, 'SELECT flds FROM notes LIMIT 1')
 
         console.log('Working note fields:', workingNotes[0]?.flds)
         console.log('Failing note fields:', failingNotes[0]?.flds)
@@ -137,8 +147,8 @@ describe.skip('Anki Structure Comparison', () => {
     })
 
     test('should have proper model field definitions', async () => {
-        const workingCol = await queryDatabase(workingDbPath, 'SELECT models FROM col')
-        const failingCol = await queryDatabase(failingDbPath, 'SELECT models FROM col')
+        const workingCol = await queryDatabase<ColRow>(workingDbPath, 'SELECT models FROM col')
+        const failingCol = await queryDatabase<ColRow>(failingDbPath, 'SELECT models FROM col')
 
         const workingModels = JSON.parse(workingCol[0].models)
         const failingModels = JSON.parse(failingCol[0].models)
@@ -177,7 +187,7 @@ describe.skip('Anki Structure Comparison', () => {
 
         try {
             // Check timestamps
-            const generatedCol = await queryDatabase(generatedDbPath, 'SELECT crt, mod, scm, models FROM col')
+            const generatedCol = await queryDatabase<ColRow>(generatedDbPath, 'SELECT crt, mod, scm, models FROM col')
 
 
             // Large timestamps are actually fine - working deck proves this
