@@ -1,4 +1,3 @@
-import React from 'react'
 import { Sun, Moon, Monitor } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
 
@@ -10,8 +9,8 @@ export function ThemeToggle() {
             <button
                 onClick={() => setTheme('light')}
                 className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${theme === 'light'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                     }`}
                 title="Switch to light theme"
                 aria-label="Switch to light theme"
@@ -23,8 +22,8 @@ export function ThemeToggle() {
             <button
                 onClick={() => setTheme('dark')}
                 className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${theme === 'dark'
-                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                     }`}
                 title="Switch to dark theme"
                 aria-label="Switch to dark theme"
@@ -36,8 +35,8 @@ export function ThemeToggle() {
             <button
                 onClick={() => setTheme('system')}
                 className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${theme === 'system'
-                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                     }`}
                 title="Switch to system theme"
                 aria-label="Switch to system theme"
