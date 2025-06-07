@@ -1,46 +1,48 @@
 import { Hono } from 'hono'
-import { cors } from 'hono/cors'
-import { z } from 'zod'
 import { TranslationService } from '../services/TranslationService.js'
 import { AnkiService } from '../services/AnkiService.js'
+import { z } from 'zod'
+import type { Env } from '../types/env.js'
 
-const translationRouter = new Hono()
-
-// Enable CORS for all routes
-translationRouter.use('*', cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
-    credentials: true
-}))
+export const translationRouter = new Hono<Env>()
 
 const generateDeckSchema = z.object({
-    words: z.string().optional(),
-    aiPrompt: z.string().optional(),
-    maxCards: z.number().min(1).max(100).default(20),
-    deckName: z.string().optional(),
+    words: z.string().default(''),
+    aiPrompt: z.string().default(''),
+    maxCards: z.number().min(1, 'Maximum cards must be at least 1').max(100, 'Maximum cards cannot exceed 100').default(20),
+    deckName: z.string().default(''),
+
+    targetLanguage: z.string().min(1, 'Target language is required'),
     sourceLanguage: z.string().default('en'),
-    targetLanguage: z.string(),
-    replicateApiKey: z.string(),
+    replicateApiKey: z.string().min(1, 'Replicate API key is required'),
     textModel: z.string().default('openai/gpt-4o-mini'),
     voiceModel: z.string().default('minimax/speech-02-hd'),
     generateSourceAudio: z.boolean().default(true),
     generateTargetAudio: z.boolean().default(true),
     useCustomArgs: z.boolean().default(false),
     textModelArgs: z.string().default('{}'),
-    voiceModelArgs: z.string().default('{}')
+    voiceModelArgs: z.string().default('{}'),
 })
 
 translationRouter.post('/generate-deck', async (c) => {
     console.log('🎯 Deck generation request received')
-    console.log('📝 Request body received:', {
-        hasWords: !!(await c.req.json()).words,
-        hasAiPrompt: !!(await c.req.json()).aiPrompt,
-        targetLanguage: (await c.req.json()).targetLanguage,
-        hasApiKey: !!(await c.req.json()).replicateApiKey?.startsWith('r8_')
-    })
 
     try {
         const body = await c.req.json()
+        console.log('📝 Request body received:', {
+            hasWords: !!body.words,
+            hasAiPrompt: !!body.aiPrompt,
+            sourceLanguage: body.sourceLanguage,
+            targetLanguage: body.targetLanguage,
+            textModel: body.textModel,
+            voiceModel: body.voiceModel,
+            useCustomArgs: body.useCustomArgs
+        })
+
         const { words, aiPrompt, maxCards, deckName, targetLanguage, sourceLanguage, replicateApiKey, textModel, voiceModel, generateSourceAudio, generateTargetAudio, useCustomArgs, textModelArgs, voiceModelArgs } = generateDeckSchema.parse(body)
+
+        // Set API key in context
+        c.set('replicateApiKey', replicateApiKey)
 
         // Validate that we have either words or aiPrompt
         if (!words && !aiPrompt) {
@@ -78,7 +80,7 @@ translationRouter.post('/generate-deck', async (c) => {
             console.log(`✅ Generated ${wordList.length} words:`, wordList.slice(0, 5).join(', ') + '...')
         } else {
             console.log('📝 Using provided word list...')
-            wordList = words!.split(',').map(word => word.trim()).filter(word => word.length > 0)
+            wordList = words.split(',').map(word => word.trim()).filter(word => word.length > 0)
             console.log(`✅ Parsed ${wordList.length} words:`, wordList.slice(0, 5).join(', ') + '...')
         }
 
@@ -138,14 +140,11 @@ translationRouter.post('/generate-deck', async (c) => {
 
         // Return the deck as a downloadable file
         const safeFileName = finalDeckName.replace(/[^a-zA-Z0-9-_\s]/g, '').replace(/\s+/g, '-')
-        
+        c.header('Content-Type', 'application/zip')
+        c.header('Content-Disposition', `attachment; filename="${safeFileName}.apkg"`)
+
         console.log('🎉 Deck generation completed successfully!')
-        return new Response(ankiPackage, {
-            headers: {
-                'Content-Type': 'application/zip',
-                'Content-Disposition': `attachment; filename="${safeFileName}.apkg"`
-            }
-        })
+        return c.newResponse(ankiPackage as any)
     } catch (error) {
         console.error('❌ Error generating deck:', error)
 
@@ -277,7 +276,7 @@ translationRouter.post('/validate', async (c) => {
         if (aiPrompt) {
             wordList = ['(AI will generate words from prompt)']
         } else {
-            wordList = words!.split(',').map(word => word.trim()).filter(word => word.length > 0)
+            wordList = words.split(',').map(word => word.trim()).filter(word => word.length > 0)
         }
 
         if (!aiPrompt && wordList.length === 0) {
@@ -323,6 +322,4 @@ translationRouter.post('/validate', async (c) => {
 
 translationRouter.get('/health', (c) => {
     return c.json({ status: 'ok', timestamp: new Date().toISOString() })
-})
-
-export { translationRouter }
+}) 

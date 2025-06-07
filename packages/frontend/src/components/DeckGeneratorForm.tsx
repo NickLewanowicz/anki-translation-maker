@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Download, Loader2, AlertCircle } from 'lucide-react'
 import { deckService } from '../services/deckService'
 
-interface FormData {
+interface DeckFormData {
     deckType: string
     words: string
     aiPrompt: string
@@ -36,7 +36,7 @@ const DEFAULT_DECKS = [
 ]
 
 export function DeckGeneratorForm() {
-    const [formData, setFormData] = useState<FormData>({
+    const [formData, setFormData] = useState<DeckFormData>({
         deckType: 'basic-verbs',
         words: DEFAULT_DECKS[0].words,
         aiPrompt: '',
