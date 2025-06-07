@@ -5,11 +5,11 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
     plugins: [react()],
     base: '/', // Ensure assets are served from root
-    test: {
-        globals: true,
-        environment: 'jsdom',
-        setupFiles: ['./src/__tests__/setup.ts']
-    },
+    // test: {
+    //     globals: true,
+    //     environment: 'jsdom',
+    //     setupFiles: ['./src/__tests__/setup.ts']
+    // },
     server: {
         port: 5173,
         proxy: {
