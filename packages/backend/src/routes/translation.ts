@@ -140,11 +140,14 @@ translationRouter.post('/generate-deck', async (c) => {
 
         // Return the deck as a downloadable file
         const safeFileName = finalDeckName.replace(/[^a-zA-Z0-9-_\s]/g, '').replace(/\s+/g, '-')
-        c.header('Content-Type', 'application/zip')
-        c.header('Content-Disposition', `attachment; filename="${safeFileName}.apkg"`)
 
         console.log('🎉 Deck generation completed successfully!')
-        return c.newResponse(ankiPackage as any)
+        return new Response(ankiPackage, {
+            headers: {
+                'Content-Type': 'application/zip',
+                'Content-Disposition': `attachment; filename="${safeFileName}.apkg"`
+            }
+        })
     } catch (error) {
         console.error('❌ Error generating deck:', error)
 
