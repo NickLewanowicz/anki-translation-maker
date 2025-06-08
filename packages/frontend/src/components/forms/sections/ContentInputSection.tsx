@@ -17,8 +17,29 @@ export function ContentInputSection({ formData, deckMode, onInputChange, getFiel
     const aiPromptError = getFieldError('aiPrompt')
     const maxCardsError = getFieldError('maxCards')
 
+    // Only show if deck type is selected and languages are valid
+    const showSection = formData.deckType &&
+        formData.sourceLanguage &&
+        formData.targetLanguage &&
+        formData.sourceLanguage !== formData.targetLanguage
+
+    if (!showSection) {
+        return null
+    }
+
     return (
         <div className="space-y-4">
+            <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                    3. Content
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    {deckMode.isAiGeneratedDeck && 'Describe what you want to learn and let AI generate the vocabulary.'}
+                    {deckMode.isCustomDeck && 'Enter the words or phrases you want to learn.'}
+                    {deckMode.isPresetDeck && 'Review the included words in this preset deck.'}
+                </p>
+            </div>
+
             {/* AI Generated Deck Content */}
             {deckMode.isAiGeneratedDeck && (
                 <>
@@ -35,8 +56,8 @@ export function ContentInputSection({ formData, deckMode, onInputChange, getFiel
                             value={formData.maxCards}
                             onChange={onInputChange}
                             className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${maxCardsError
-                                    ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
                                 } text-gray-900 dark:text-gray-100`}
                         />
                         {maxCardsError && (
@@ -54,10 +75,10 @@ export function ContentInputSection({ formData, deckMode, onInputChange, getFiel
                             value={formData.aiPrompt}
                             onChange={onInputChange}
                             rows={4}
-                            placeholder="Describe what kind of vocabulary you want to learn (e.g., 'Spanish words for cooking and kitchen utensils')"
+                            placeholder={`Describe what kind of vocabulary you want to learn (e.g., '${formData.targetLanguage === 'es' ? 'Spanish' : formData.targetLanguage === 'fr' ? 'French' : 'Target language'} words for cooking and kitchen utensils')`}
                             className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-vertical ${aiPromptError
-                                    ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
                                 } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400`}
                         />
                         {aiPromptError && (
@@ -84,8 +105,8 @@ export function ContentInputSection({ formData, deckMode, onInputChange, getFiel
                         rows={6}
                         placeholder="Enter words separated by commas (e.g., hello, world, good, bad)"
                         className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-vertical ${wordsError
-                                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                            ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
                             } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400`}
                     />
                     {wordsError && (

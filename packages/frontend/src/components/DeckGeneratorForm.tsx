@@ -3,8 +3,10 @@ import { Download, Loader2, AlertCircle } from 'lucide-react'
 import { deckService } from '../services/deckService'
 import { analyticsService } from '../services/analyticsService'
 import { useFormState } from './forms/hooks/useFormState'
+import { LanguageSelectionSection } from './forms/sections/LanguageSelectionSection'
 import { DeckTypeSection } from './forms/sections/DeckTypeSection'
 import { ContentInputSection } from './forms/sections/ContentInputSection'
+import { CardDirectionSection } from './forms/sections/CardDirectionSection'
 import { LanguageAudioSection } from './forms/sections/LanguageAudioSection'
 import { ApiConfigSection } from './forms/sections/ApiConfigSection'
 
@@ -53,7 +55,8 @@ export function DeckGeneratorForm() {
             has_custom_deck_name: !!formData.deckName,
             generation_method: formData.deckType === 'ai-generated' ? 'ai_prompt' : 'word_list',
             word_count: formData.words ? formData.words.split(',').filter(w => w.trim()).length : 0,
-            prompt_length: formData.aiPrompt ? formData.aiPrompt.length : 0
+            prompt_length: formData.aiPrompt ? formData.aiPrompt.length : 0,
+            card_direction: formData.cardDirection
         })
 
         try {
@@ -66,7 +69,8 @@ export function DeckGeneratorForm() {
                 targetLanguage: submitData.targetLanguage,
                 textModel: submitData.textModel,
                 voiceModel: submitData.voiceModel,
-                useCustomArgs: submitData.useCustomArgs
+                useCustomArgs: submitData.useCustomArgs,
+                cardDirection: formData.cardDirection
             })
 
             await deckService.generateDeck(submitData)
@@ -148,7 +152,14 @@ export function DeckGeneratorForm() {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Deck Type Selection */}
+            {/* Step 1: Language Selection */}
+            <LanguageSelectionSection
+                formData={formData}
+                onInputChange={handleInputChange}
+                getFieldError={getFieldError}
+            />
+
+            {/* Step 2: Deck Type Selection */}
             <DeckTypeSection
                 formData={formData}
                 defaultDecks={defaultDecks}
@@ -156,7 +167,7 @@ export function DeckGeneratorForm() {
                 getFieldError={getFieldError}
             />
 
-            {/* Content Input Section */}
+            {/* Step 3: Content Input */}
             <ContentInputSection
                 formData={formData}
                 deckMode={deckMode}
@@ -164,11 +175,16 @@ export function DeckGeneratorForm() {
                 getFieldError={getFieldError}
             />
 
-            {/* Language and Audio Section */}
+            {/* Step 4: Card Direction */}
+            <CardDirectionSection
+                formData={formData}
+                onInputChange={handleInputChange}
+            />
+
+            {/* Step 5: Audio & Deck Settings */}
             <LanguageAudioSection
                 formData={formData}
                 onInputChange={handleInputChange}
-                getFieldError={getFieldError}
             />
 
             {/* API Configuration Section */}

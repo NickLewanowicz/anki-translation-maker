@@ -16,6 +16,7 @@ export interface StoredFormData {
     useCustomArgs: boolean
     textModelArgs: string
     voiceModelArgs: string
+    cardDirection?: string
     timestamp: number
 }
 
