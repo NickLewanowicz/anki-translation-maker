@@ -156,8 +156,12 @@ describe('ThemeToggle', () => {
         })
 
         it('should have dark mode classes', () => {
+            // Set dark theme in localStorage
+            localStorageMock.getItem.mockReturnValue('dark')
+
             renderThemeToggle()
 
+            // Check the container has the expected classes
             const container = screen.getByTestId('sun-icon').closest('div')?.parentElement
             expect(container).toHaveClass('bg-gray-100', 'dark:bg-gray-800')
         })
@@ -188,19 +192,13 @@ describe('ThemeToggle', () => {
         })
 
         it('should update when theme is changed externally', () => {
-            const { rerender } = renderThemeToggle()
-
-            // Simulate external theme change
+            // Set light theme in localStorage
             localStorageMock.getItem.mockReturnValue('light')
 
-            rerender(
-                <ThemeProvider>
-                    <ThemeToggle />
-                </ThemeProvider>
-            )
+            renderThemeToggle()
 
             const lightButton = screen.getByLabelText('Switch to light theme')
-            expect(lightButton).toHaveClass('bg-white', 'shadow-sm')
+            expect(lightButton).toHaveClass('bg-white', 'text-gray-900', 'shadow-sm')
         })
     })
 

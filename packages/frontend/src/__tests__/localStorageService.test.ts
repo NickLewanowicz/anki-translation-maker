@@ -32,15 +32,15 @@ describe('localStorageService', () => {
         deckType: 'custom',
         words: 'hello, world, test',
         aiPrompt: '',
-        maxCards: 25,
         deckName: 'Test Deck',
-        backLanguage: 'es',
-        frontLanguage: 'en',
+        sourceLanguage: 'en',
+        targetLanguage: 'es',
         replicateApiKey: 'r8_test_key',
+        maxCards: 25,
         textModel: 'openai/gpt-4o-mini',
         voiceModel: 'minimax/speech-02-hd',
-        generateFrontAudio: true,
-        generateBackAudio: false,
+        generateSourceAudio: true,
+        generateTargetAudio: false,
         useCustomArgs: true,
         textModelArgs: '{"temperature": 0.8}',
         voiceModelArgs: '{"speed": 1.2}'
@@ -172,8 +172,11 @@ describe('localStorageService', () => {
         it('should return false for missing required fields', () => {
             const invalidData = {
                 deckType: 'custom',
-                words: 'test'
-                // Missing other required fields
+                words: 'test',
+                sourceLanguage: 'en',
+                targetLanguage: 'es',
+                generateSourceAudio: true,
+                generateTargetAudio: true
             }
 
             expect(localStorageService.isValidFormData(invalidData)).toBe(false)
