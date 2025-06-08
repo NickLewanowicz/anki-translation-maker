@@ -27,16 +27,19 @@ export function ContentInputSection({ formData, deckMode, onInputChange, getFiel
         return null
     }
 
+    const sourceLanguageName = getLanguageName(formData.sourceLanguage)
+    const targetLanguageName = getLanguageName(formData.targetLanguage)
+
     return (
         <div className="space-y-4">
             <div>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                    3. Content
+                    3. Content & Audio
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    {deckMode.isAiGeneratedDeck && 'Describe what you want to learn and let AI generate the vocabulary.'}
-                    {deckMode.isCustomDeck && 'Enter the words or phrases you want to learn.'}
-                    {deckMode.isPresetDeck && 'Review the included words in this preset deck.'}
+                    {deckMode.isAiGeneratedDeck && 'Describe what you want to learn and configure audio generation.'}
+                    {deckMode.isCustomDeck && 'Enter the words or phrases you want to learn and configure audio.'}
+                    {deckMode.isPresetDeck && 'Review the included words and configure audio generation.'}
                 </p>
             </div>
 
@@ -134,6 +137,59 @@ export function ContentInputSection({ formData, deckMode, onInputChange, getFiel
                     </p>
                 </div>
             )}
+
+            {/* Audio Generation Settings */}
+            <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Audio Generation</h3>
+
+                <div className="flex items-center space-x-3">
+                    <input
+                        type="checkbox"
+                        id="generateSourceAudio"
+                        name="generateSourceAudio"
+                        checked={formData.generateSourceAudio}
+                        onChange={onInputChange}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded transition-colors"
+                    />
+                    <label htmlFor="generateSourceAudio" className="text-sm text-gray-700 dark:text-gray-300">
+                        Generate audio for source language ({sourceLanguageName})
+                    </label>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                    <input
+                        type="checkbox"
+                        id="generateTargetAudio"
+                        name="generateTargetAudio"
+                        checked={formData.generateTargetAudio}
+                        onChange={onInputChange}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded transition-colors"
+                    />
+                    <label htmlFor="generateTargetAudio" className="text-sm text-gray-700 dark:text-gray-300">
+                        Generate audio for target language ({targetLanguageName})
+                    </label>
+                </div>
+
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Audio generation helps with pronunciation. Disable to speed up deck creation.
+                </p>
+            </div>
         </div>
     )
+}
+
+function getLanguageName(code: string): string {
+    const languageNames: Record<string, string> = {
+        'en': 'English',
+        'es': 'Spanish',
+        'fr': 'French',
+        'de': 'German',
+        'it': 'Italian',
+        'pt': 'Portuguese',
+        'ja': 'Japanese',
+        'ko': 'Korean',
+        'zh': 'Chinese',
+        'ru': 'Russian'
+    }
+    return languageNames[code] || code.toUpperCase()
 } 

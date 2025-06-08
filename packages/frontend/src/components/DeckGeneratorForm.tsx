@@ -7,8 +7,7 @@ import { LanguageSelectionSection } from './forms/sections/LanguageSelectionSect
 import { DeckTypeSection } from './forms/sections/DeckTypeSection'
 import { ContentInputSection } from './forms/sections/ContentInputSection'
 import { CardDirectionSection } from './forms/sections/CardDirectionSection'
-import { LanguageAudioSection } from './forms/sections/LanguageAudioSection'
-import { ApiConfigSection } from './forms/sections/ApiConfigSection'
+import { ModelSettingsSection } from './forms/sections/LanguageAudioSection'
 
 export function DeckGeneratorForm() {
     const [isGenerating, setIsGenerating] = useState(false)
@@ -181,14 +180,8 @@ export function DeckGeneratorForm() {
                 onInputChange={handleInputChange}
             />
 
-            {/* Step 5: Audio & Deck Settings */}
-            <LanguageAudioSection
-                formData={formData}
-                onInputChange={handleInputChange}
-            />
-
-            {/* API Configuration Section */}
-            <ApiConfigSection
+            {/* Step 5: Model & AI Settings */}
+            <ModelSettingsSection
                 formData={formData}
                 onInputChange={handleInputChange}
                 getFieldError={getFieldError}

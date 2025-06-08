@@ -1,12 +1,19 @@
 import React from 'react'
 import type { DeckFormData } from '../types/FormTypes'
 
-interface LanguageAudioSectionProps {
+interface ModelSettingsSectionProps {
     formData: DeckFormData
-    onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
+    onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void
+    getFieldError: (fieldName: string) => string | null
 }
 
-export function LanguageAudioSection({ formData, onInputChange }: LanguageAudioSectionProps) {
+export function ModelSettingsSection({ formData, onInputChange, getFieldError }: ModelSettingsSectionProps) {
+    const apiKeyError = getFieldError('replicateApiKey')
+    const textModelError = getFieldError('textModel')
+    const voiceModelError = getFieldError('voiceModel')
+    const textArgsError = getFieldError('textModelArgs')
+    const voiceArgsError = getFieldError('voiceModelArgs')
+
     // Only show if we have content and card direction is configured
     const hasContent = (formData.deckType === 'ai-generated' && formData.aiPrompt) ||
         (formData.deckType !== 'ai-generated' && formData.words)
@@ -23,82 +30,170 @@ export function LanguageAudioSection({ formData, onInputChange }: LanguageAudioS
         <div className="space-y-4">
             <div>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                    5. Audio & Deck Settings
+                    5. Model & AI Settings
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Configure audio generation and give your deck a name.
+                    Configure your API key and select AI models for translation and audio generation.
                 </p>
             </div>
 
+            {/* API Key */}
             <div>
-                <label htmlFor="deckName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
-                    Deck Name (optional)
+                <label htmlFor="replicateApiKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
+                    Replicate API Key *
                 </label>
                 <input
-                    type="text"
-                    id="deckName"
-                    name="deckName"
-                    value={formData.deckName}
+                    type="password"
+                    id="replicateApiKey"
+                    name="replicateApiKey"
+                    value={formData.replicateApiKey}
                     onChange={onInputChange}
-                    placeholder="Leave empty to auto-generate"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
+                    placeholder="r8_..."
+                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${apiKeyError
+                        ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                        } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400`}
                 />
+                {apiKeyError && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{apiKeyError}</p>
+                )}
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    If left empty, a name will be generated automatically based on your content and languages.
+                    Your Replicate API key is required for AI translation and audio generation.
+                    <a href="https://replicate.com/account/api-tokens" target="_blank" rel="noopener noreferrer" className="ml-1 text-blue-600 dark:text-blue-400 hover:underline">
+                        Get your key here
+                    </a>
                 </p>
             </div>
 
+            {/* Model Selection */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label htmlFor="textModel" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
+                        Text Model
+                    </label>
+                    <select
+                        id="textModel"
+                        name="textModel"
+                        value={formData.textModel}
+                        onChange={onInputChange}
+                        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${textModelError
+                            ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                            } text-gray-900 dark:text-gray-100`}
+                    >
+                        <option value="openai/gpt-4o-mini">OpenAI GPT-4o Mini (recommended)</option>
+                        <option value="openai/gpt-4o">OpenAI GPT-4o</option>
+                        <option value="openai/gpt-3.5-turbo">OpenAI GPT-3.5 Turbo</option>
+                        <option value="meta/llama-3.1-405b-instruct">Meta Llama 3.1 405B</option>
+                        <option value="meta/llama-3.1-70b-instruct">Meta Llama 3.1 70B</option>
+                    </select>
+                    {textModelError && (
+                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{textModelError}</p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Model used for translation and deck name generation
+                    </p>
+                </div>
+
+                <div>
+                    <label htmlFor="voiceModel" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
+                        Voice Model
+                    </label>
+                    <select
+                        id="voiceModel"
+                        name="voiceModel"
+                        value={formData.voiceModel}
+                        onChange={onInputChange}
+                        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${voiceModelError
+                            ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                            } text-gray-900 dark:text-gray-100`}
+                    >
+                        <option value="minimax/speech-02-hd">Minimax Speech 02 HD (recommended)</option>
+                        <option value="parler-tts/parler-tts-large-v1">Parler TTS Large v1</option>
+                        <option value="parler-tts/parler-tts-mini-v1">Parler TTS Mini v1</option>
+                    </select>
+                    {voiceModelError && (
+                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{voiceModelError}</p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Model used for audio generation
+                    </p>
+                </div>
+            </div>
+
+            {/* Advanced Model Arguments */}
             <div className="space-y-3">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Audio Generation</h3>
-
                 <div className="flex items-center space-x-3">
                     <input
                         type="checkbox"
-                        id="generateSourceAudio"
-                        name="generateSourceAudio"
-                        checked={formData.generateSourceAudio}
+                        id="useCustomArgs"
+                        name="useCustomArgs"
+                        checked={formData.useCustomArgs}
                         onChange={onInputChange}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded transition-colors"
                     />
-                    <label htmlFor="generateSourceAudio" className="text-sm text-gray-700 dark:text-gray-300">
-                        Generate audio for source language ({getLanguageName(formData.sourceLanguage)})
+                    <label htmlFor="useCustomArgs" className="text-sm text-gray-700 dark:text-gray-300">
+                        Use custom model arguments (advanced)
                     </label>
                 </div>
 
-                <div className="flex items-center space-x-3">
-                    <input
-                        type="checkbox"
-                        id="generateTargetAudio"
-                        name="generateTargetAudio"
-                        checked={formData.generateTargetAudio}
-                        onChange={onInputChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded transition-colors"
-                    />
-                    <label htmlFor="generateTargetAudio" className="text-sm text-gray-700 dark:text-gray-300">
-                        Generate audio for target language ({getLanguageName(formData.targetLanguage)})
-                    </label>
-                </div>
+                {formData.useCustomArgs && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-7">
+                        <div>
+                            <label htmlFor="textModelArgs" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
+                                Text Model Arguments
+                            </label>
+                            <textarea
+                                id="textModelArgs"
+                                name="textModelArgs"
+                                value={formData.textModelArgs}
+                                onChange={onInputChange}
+                                rows={3}
+                                placeholder='{"temperature": 0.7, "max_tokens": 100}'
+                                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-vertical ${textArgsError
+                                    ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                                    } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 font-mono text-sm`}
+                            />
+                            {textArgsError && (
+                                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{textArgsError}</p>
+                            )}
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                JSON object with model parameters
+                            </p>
+                        </div>
+
+                        <div>
+                            <label htmlFor="voiceModelArgs" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
+                                Voice Model Arguments
+                            </label>
+                            <textarea
+                                id="voiceModelArgs"
+                                name="voiceModelArgs"
+                                value={formData.voiceModelArgs}
+                                onChange={onInputChange}
+                                rows={3}
+                                placeholder='{"speed": 1.0, "voice": "default"}'
+                                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-vertical ${voiceArgsError
+                                    ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                                    } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 font-mono text-sm`}
+                            />
+                            {voiceArgsError && (
+                                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{voiceArgsError}</p>
+                            )}
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                JSON object with voice parameters
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Audio generation helps with pronunciation. Disable to speed up deck creation.
+                    Advanced users can customize model behavior with JSON parameters. Leave unchecked for optimal defaults.
                 </p>
             </div>
         </div>
     )
-}
-
-function getLanguageName(code: string): string {
-    const languageNames: Record<string, string> = {
-        'en': 'English',
-        'es': 'Spanish',
-        'fr': 'French',
-        'de': 'German',
-        'it': 'Italian',
-        'pt': 'Portuguese',
-        'ja': 'Japanese',
-        'ko': 'Korean',
-        'zh': 'Chinese',
-        'ru': 'Russian'
-    }
-    return languageNames[code] || code.toUpperCase()
 } 
