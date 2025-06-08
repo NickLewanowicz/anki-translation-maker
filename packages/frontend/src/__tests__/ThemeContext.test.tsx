@@ -3,17 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ThemeProvider } from '../contexts/ThemeContext'
 import { useTheme } from '../hooks/useTheme'
-
-// Mock localStorage
-const localStorageMock = {
-    getItem: vi.fn(),
-    setItem: vi.fn(),
-    removeItem: vi.fn(),
-    clear: vi.fn(),
-}
-Object.defineProperty(window, 'localStorage', {
-    value: localStorageMock
-})
+import { localStorageMock } from './setup'
 
 // Mock matchMedia
 const mockMatchMedia = vi.fn()

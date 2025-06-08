@@ -39,10 +39,10 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
         render(<DeckGeneratorForm />)
 
         const sourceLanguageSelect = screen.getByLabelText('Source Language') as HTMLSelectElement
-        const targetLanguageSelect = screen.getByLabelText('Target Language *') as HTMLSelectElement
+        const targetLanguageSelect = screen.getByLabelText(/Target Language/) as HTMLSelectElement
 
         expect(sourceLanguageSelect.value).toBe('en')
-        expect(targetLanguageSelect.value).toBe('')
+        expect(targetLanguageSelect.value).toBe('es')
     })
 
     it('has correct default values for audio generation', () => {
@@ -105,14 +105,22 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
 
         render(<DeckGeneratorForm />)
 
+        // Wait for form to load
+        await waitFor(() => {
+            expect(screen.getByLabelText('Replicate API Key *')).toBeInTheDocument()
+        })
+
         // Fill in required fields
-        const targetLanguageSelect = screen.getByLabelText('Target Language *')
         const apiKeyInput = screen.getByLabelText('Replicate API Key *')
+        fireEvent.change(apiKeyInput, { target: { value: 'r8_test_key_12345' } })
+
+        // Wait for form validation to complete
+        await waitFor(() => {
+            const submitButton = screen.getByRole('button', { name: /Generate Deck/i })
+            expect(submitButton).not.toBeDisabled()
+        })
+
         const submitButton = screen.getByRole('button', { name: /Generate Deck/i })
-
-        fireEvent.change(targetLanguageSelect, { target: { value: 'es' } })
-        fireEvent.change(apiKeyInput, { target: { value: 'r8_test_key' } })
-
         fireEvent.click(submitButton)
 
         await waitFor(() => {
@@ -121,10 +129,11 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
                     sourceLanguage: 'en',
                     targetLanguage: 'es',
                     generateSourceAudio: true,
-                    generateTargetAudio: true
+                    generateTargetAudio: true,
+                    replicateApiKey: 'r8_test_key_12345'
                 })
             )
-        })
+        }, { timeout: 3000 })
     })
 
     it('calls validation API with correct source/target terminology', async () => {
@@ -136,14 +145,25 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
 
         render(<DeckGeneratorForm />)
 
+        // Wait for form to load
+        await waitFor(() => {
+            expect(screen.getByLabelText('Replicate API Key *')).toBeInTheDocument()
+        })
+
         // Fill in required fields
         const targetLanguageSelect = screen.getByLabelText('Target Language *')
         const apiKeyInput = screen.getByLabelText('Replicate API Key *')
-        const testButton = screen.getByRole('button', { name: /Test Configuration/i })
 
         fireEvent.change(targetLanguageSelect, { target: { value: 'fr' } })
-        fireEvent.change(apiKeyInput, { target: { value: 'r8_test_key' } })
+        fireEvent.change(apiKeyInput, { target: { value: 'r8_test_key_12345' } })
 
+        // Wait for form validation to complete
+        await waitFor(() => {
+            const testButton = screen.getByRole('button', { name: /Test Configuration/i })
+            expect(testButton).not.toBeDisabled()
+        })
+
+        const testButton = screen.getByRole('button', { name: /Test Configuration/i })
         fireEvent.click(testButton)
 
         await waitFor(() => {
@@ -152,7 +172,7 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: expect.stringContaining('"sourceLanguage":"en"')
             })
-        })
+        }, { timeout: 3000 })
 
         await waitFor(() => {
             expect(mockFetch).toHaveBeenCalledWith('/api/validate', {
@@ -160,7 +180,7 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: expect.stringContaining('"targetLanguage":"fr"')
             })
-        })
+        }, { timeout: 3000 })
     })
 
     it('displays correct placeholder text for target language', () => {

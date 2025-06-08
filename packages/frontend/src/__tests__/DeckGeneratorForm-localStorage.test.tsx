@@ -1,6 +1,8 @@
+import React from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { DeckGeneratorForm } from '../components/DeckGeneratorForm'
+import { localStorageMock } from './setup'
 
 // Mock the deckService
 vi.mock('../services/deckService', () => ({
@@ -11,32 +13,6 @@ vi.mock('../services/deckService', () => ({
 
 // Mock fetch for validation API
 global.fetch = vi.fn()
-
-// Mock localStorage
-const localStorageMock = (() => {
-    let store: { [key: string]: string } = {}
-
-    return {
-        getItem: vi.fn((key: string) => store[key] || null),
-        setItem: vi.fn((key: string, value: string) => {
-            store[key] = value
-        }),
-        removeItem: vi.fn((key: string) => {
-            delete store[key]
-        }),
-        clear: vi.fn(() => {
-            store = {}
-        }),
-        get length() {
-            return Object.keys(store).length
-        },
-        key: vi.fn((index: number) => Object.keys(store)[index] || null)
-    }
-})()
-
-Object.defineProperty(window, 'localStorage', {
-    value: localStorageMock
-})
 
 describe('DeckGeneratorForm - Local Storage Integration', () => {
     beforeEach(() => {
@@ -57,13 +33,13 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
             aiPrompt: 'saved prompt',
             maxCards: 30,
             deckName: 'Saved Deck',
-            backLanguage: 'fr',
-            frontLanguage: 'es',
+            sourceLanguage: 'es',
+            targetLanguage: 'fr',
             replicateApiKey: 'r8_saved_key',
             textModel: 'saved/model',
             voiceModel: 'saved/voice',
-            generateFrontAudio: false,
-            generateBackAudio: true,
+            generateSourceAudio: false,
+            generateTargetAudio: true,
             useCustomArgs: true,
             textModelArgs: '{"saved": true}',
             voiceModelArgs: '{"voice": "custom"}',
@@ -86,10 +62,10 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
         expect((screen.getByDisplayValue('fr') as HTMLSelectElement).value).toBe('fr')
 
         // Check checkboxes
-        const frontAudioCheckbox = screen.getByLabelText('Generate front language audio') as HTMLInputElement
-        const backAudioCheckbox = screen.getByLabelText('Generate back language audio') as HTMLInputElement
-        expect(frontAudioCheckbox.checked).toBe(false)
-        expect(backAudioCheckbox.checked).toBe(true)
+        const sourceAudioCheckbox = screen.getByLabelText('Generate source language audio') as HTMLInputElement
+        const targetAudioCheckbox = screen.getByLabelText('Generate target language audio') as HTMLInputElement
+        expect(sourceAudioCheckbox.checked).toBe(false)
+        expect(targetAudioCheckbox.checked).toBe(true)
     })
 
     it('should auto-save form data when user makes changes', async () => {
