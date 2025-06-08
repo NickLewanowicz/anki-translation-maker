@@ -1,9 +1,9 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import '@testing-library/jest-dom'
 import { DeckGeneratorForm } from '../components/DeckGeneratorForm'
 import { ThemeProvider } from '../contexts/ThemeContext'
-import * as deckService from '../services/deckService'
 
 const DECK_GENERATOR_FORM_KEY = 'anki-form-state'
 
@@ -60,7 +60,7 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
         await waitFor(() => {
             expect(setItemSpy).toHaveBeenCalledWith(
                 DECK_GENERATOR_FORM_KEY,
-                expect.stringContaining('\"targetLanguage\":\"fr\"')
+                expect.stringContaining('"targetLanguage":"fr"')
             )
         }, { timeout: 1000 })
 

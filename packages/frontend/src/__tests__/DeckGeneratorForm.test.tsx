@@ -1,5 +1,5 @@
 import React from 'react'
-import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { DeckGeneratorForm } from '../components/DeckGeneratorForm'
 import * as deckService from '../services/deckService'
@@ -16,7 +16,6 @@ vi.mock('../services/deckService', () => ({
 
 // Mock axios for API calls
 vi.mock('axios')
-const mockedAxios = axios as any
 
 // Helper to render with required context
 const renderForm = async () => {
