@@ -16,12 +16,27 @@ global.fetch = vi.fn()
 
 describe('DeckGeneratorForm - Local Storage Integration', () => {
     beforeEach(() => {
-        // Reset all mocks
+        // Reset all mocks completely first
         vi.clearAllMocks()
         localStorageMock.clear()
         vi.useFakeTimers()
 
-        // Mock localStorage with saved form data
+        // Create a fresh store for each test
+        const store = new Map<string, string>()
+
+        // Ensure localStorage mock implementations are reset to defaults before setting data
+        localStorageMock.getItem.mockReset()
+        localStorageMock.setItem.mockReset()
+        localStorageMock.removeItem.mockReset()
+        localStorageMock.clear.mockReset()
+
+        // Restore default implementations
+        localStorageMock.getItem.mockImplementation((key: string) => store.get(key) || null)
+        localStorageMock.setItem.mockImplementation((key: string, value: string) => store.set(key, value))
+        localStorageMock.removeItem.mockImplementation((key: string) => store.delete(key))
+        localStorageMock.clear.mockImplementation(() => store.clear())
+
+        // Now safely set the test data
         const savedFormData = {
             deckType: 'custom',
             words: 'saved, words, test',
@@ -29,7 +44,7 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
             deckName: 'Saved Deck',
             sourceLanguage: 'es',
             targetLanguage: 'fr',
-            replicateApiKey: 'r8_saved_key',
+            replicateApiKey: 'r8_saved_key_1234567890_valid',
             maxCards: 15,
             textModel: 'openai/gpt-4o-mini',
             voiceModel: 'minimax/speech-02-hd',
@@ -41,7 +56,7 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
             timestamp: Date.now()
         }
 
-        localStorageMock.setItem('anki-form-state', JSON.stringify(savedFormData))
+        localStorageMock.setItem('anki-form-data', JSON.stringify(savedFormData))
     })
 
     afterEach(() => {
