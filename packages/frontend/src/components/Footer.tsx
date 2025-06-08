@@ -1,30 +1,40 @@
+import { Layout, Typography, theme } from 'antd'
+
+const { Footer: AntFooter } = Layout
+const { Text, Link } = Typography
+
 export function Footer() {
+    const { token } = theme.useToken()
+
     return (
-        <footer className="bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 transition-colors">
-            <div className="container mx-auto px-4 py-6">
-                <div className="text-center text-gray-600 dark:text-gray-300 transition-colors">
-                    <p>
-                        Built with{' '}
-                        <a
-                            href="https://replicate.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                        >
-                            Replicate
-                        </a>{' '}
-                        and{' '}
-                        <a
-                            href="https://ankiweb.net"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                        >
-                            Anki
-                        </a>
-                    </p>
-                </div>
-            </div>
-        </footer>
+        <AntFooter
+            style={{
+                background: token.colorBgLayout,
+                borderTop: `1px solid ${token.colorBorder}`,
+                textAlign: 'center',
+                padding: '24px'
+            }}
+        >
+            <Text style={{ color: token.colorTextSecondary }}>
+                Built with{' '}
+                <Link
+                    href="https://replicate.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: token.colorPrimary }}
+                >
+                    Replicate
+                </Link>{' '}
+                and{' '}
+                <Link
+                    href="https://ankiweb.net"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: token.colorPrimary }}
+                >
+                    Anki
+                </Link>
+            </Text>
+        </AntFooter>
     )
 } 
