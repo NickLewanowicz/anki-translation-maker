@@ -1,6 +1,6 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { DeckGeneratorForm } from '../components/DeckGeneratorForm'
 
@@ -52,30 +52,35 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
     })
 
     it('should auto-save form data when user makes changes', async () => {
+        vi.useFakeTimers()
+        const setItemSpy = vi.spyOn(localStorage, 'setItem')
+
         render(<DeckGeneratorForm />)
 
-        // Wait for initial load
+        // Wait for form to load
         await waitFor(() => {
-            expect(screen.getByLabelText('Word List (editable)')).toBeInTheDocument()
+            expect(screen.getByLabelText('Target Language *')).toBeInTheDocument()
         })
 
-        // Make changes to the form
-        const wordsInput = screen.getByLabelText('Word List (editable)')
-        fireEvent.change(wordsInput, { target: { value: 'new, words, typed' } })
+        // Make a change to target language (always available field)
+        const targetLanguageSelect = screen.getByLabelText('Target Language *')
+        fireEvent.change(targetLanguageSelect, { target: { value: 'fr' } })
 
-        const deckNameInput = screen.getByLabelText(/Deck Name/)
-        fireEvent.change(deckNameInput, { target: { value: 'Auto-saved Deck' } })
+        // Advance timers to trigger debounced auto-save
+        act(() => {
+            vi.advanceTimersByTime(1000) // Default debounce time
+        })
 
-        // Fast-forward past debounce delay
-        vi.advanceTimersByTime(1100)
-
-        // Verify data was saved to localStorage
+        // Wait for localStorage to be called
         await waitFor(() => {
-            expect(localStorageMock.setItem).toHaveBeenCalledWith(
-                'anki-form-state',
-                expect.stringContaining('"words":"new, words, typed"')
+            expect(setItemSpy).toHaveBeenCalledWith(
+                expect.stringContaining('deckGeneratorForm'),
+                expect.stringContaining('fr')
             )
-        })
+        }, { timeout: 1000 })
+
+        vi.useRealTimers()
+        setItemSpy.mockRestore()
     })
 
     it('should display auto-save indicator', () => {

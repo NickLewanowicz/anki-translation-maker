@@ -23,8 +23,9 @@ const localStorageMock = (() => {
     }
 })()
 
-Object.defineProperty(window, 'localStorage', {
-    value: localStorageMock
+Object.defineProperty(globalThis, 'localStorage', {
+    value: localStorageMock,
+    writable: true
 })
 
 describe('localStorageService', () => {
@@ -34,13 +35,13 @@ describe('localStorageService', () => {
         aiPrompt: '',
         maxCards: 25,
         deckName: 'Test Deck',
-        backLanguage: 'es',
-        frontLanguage: 'en',
+        targetLanguage: 'es',
+        sourceLanguage: 'en',
         replicateApiKey: 'r8_test_key',
         textModel: 'openai/gpt-4o-mini',
         voiceModel: 'minimax/speech-02-hd',
-        generateFrontAudio: true,
-        generateBackAudio: false,
+        generateSourceAudio: true,
+        generateTargetAudio: false,
         useCustomArgs: true,
         textModelArgs: '{"temperature": 0.8}',
         voiceModelArgs: '{"speed": 1.2}'
