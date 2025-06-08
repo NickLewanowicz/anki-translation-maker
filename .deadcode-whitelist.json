@@ -1,0 +1,71 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Dead Code Analysis Whitelist",
+    "description": "Whitelist for temporarily allowing unused code during active development",
+    "_usage_guidelines": {
+        "when_to_use": [
+            "New features being actively developed but not yet integrated",
+            "Experimental code that will be used in upcoming features",
+            "Public API methods that are intended for external use but not yet consumed internally",
+            "Utility functions being built in preparation for future features"
+        ],
+        "when_NOT_to_use": [
+            "Legacy code that is no longer needed",
+            "Old implementations that have been replaced",
+            "Code that was commented out or disabled",
+            "Dependencies that are no longer used"
+        ],
+        "requirements": [
+            "All whitelisted items MUST include a 'reason' explaining why they're unused",
+            "All whitelisted items MUST include an 'expires' date (max 30 days from addition)",
+            "Whitelist entries should be reviewed and cleaned up regularly",
+            "PR reviews should question any new whitelist additions"
+        ]
+    },
+    "whitelist": {
+        "files": [
+            {
+                "path": "packages/backend/src/services/AnkiServiceLegacy.ts",
+                "reason": "Legacy service preserved for reference until migration is complete",
+                "expires": "2025-07-15",
+                "pr": "#26",
+                "author": "@nicklewanowicz"
+            }
+        ],
+        "exports": [
+            {
+                "path": "packages/backend/src/services/anki/media/MediaMappingService.ts",
+                "export": "MediaMapping",
+                "reason": "Public interface for external API consumers",
+                "expires": "9999-12-31",
+                "pr": "#26",
+                "author": "@nicklewanowicz"
+            },
+            {
+                "path": "packages/backend/src/services/anki/media/MediaMappingService.ts",
+                "export": "MediaFileInfo",
+                "reason": "Public interface for external API consumers",
+                "expires": "9999-12-31",
+                "pr": "#26",
+                "author": "@nicklewanowicz"
+            },
+            {
+                "path": "packages/frontend/src/services/analyticsService.ts",
+                "export": "AnalyticsEvent",
+                "reason": "Public interface for analytics integration",
+                "expires": "9999-12-31",
+                "pr": "#analytics",
+                "author": "@nicklewanowicz"
+            },
+            {
+                "path": "packages/frontend/src/services/analyticsService.ts",
+                "export": "AnalyticsConfig",
+                "reason": "Public interface for analytics configuration",
+                "expires": "9999-12-31",
+                "pr": "#analytics",
+                "author": "@nicklewanowicz"
+            }
+        ],
+        "dependencies": []
+    }
+}

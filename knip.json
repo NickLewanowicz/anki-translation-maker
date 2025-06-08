@@ -1,0 +1,48 @@
+{
+    "$schema": "https://unpkg.com/knip@latest/schema.json",
+    "workspaces": {
+        "packages/backend": {
+            "entry": [
+                "src/index.ts"
+            ],
+            "project": [
+                "src/**/*.{ts,js}"
+            ],
+            "ignore": [
+                "src/**/*.test.ts",
+                "src/**/__tests__/**",
+                "src/test/**"
+            ]
+        },
+        "packages/frontend": {
+            "entry": [
+                "src/main.tsx"
+            ],
+            "project": [
+                "src/**/*.{ts,tsx}"
+            ],
+            "ignore": [
+                "src/**/*.test.{ts,tsx}",
+                "src/**/__tests__/**"
+            ]
+        }
+    },
+    "ignore": [
+        "**/*.test.{ts,tsx}",
+        "**/__tests__/**",
+        "**/test/**",
+        "**/*.config.{js,ts}",
+        "**/vite.config.ts",
+        "**/tailwind.config.js",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".github/**",
+        "scripts/**"
+    ],
+    "ignoreBinaries": [
+        "docker-compose"
+    ],
+    "ignoreDependencies": [
+        "@types/*"
+    ]
+}

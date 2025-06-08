@@ -50,6 +50,11 @@ jobs:
           echo "🧹 Running ESLint..."
           bun run lint
 
+      - name: Dead code analysis
+        run: |
+          echo "🔍 Checking for dead code..."
+          bun run check-dead-code
+
       - name: Run backend tests
         run: |
           echo "🧪 Running backend tests..."
