@@ -74,24 +74,47 @@ export function ModelSettingsSection({ formData, onInputChange, getFieldError }:
                     <select
                         id="textModel"
                         name="textModel"
-                        value={formData.textModel}
-                        onChange={onInputChange}
+                        value={formData.textModel === 'openai/gpt-4o-mini' ? 'openai/gpt-4o-mini' : 'custom'}
+                        onChange={(e) => {
+                            if (e.target.value === 'openai/gpt-4o-mini') {
+                                onInputChange({
+                                    target: { name: 'textModel', value: 'openai/gpt-4o-mini' }
+                                } as React.ChangeEvent<HTMLInputElement>)
+                            } else {
+                                onInputChange({
+                                    target: { name: 'textModel', value: '' }
+                                } as React.ChangeEvent<HTMLInputElement>)
+                            }
+                        }}
                         className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${textModelError
                             ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
                             : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
                             } text-gray-900 dark:text-gray-100`}
                     >
                         <option value="openai/gpt-4o-mini">OpenAI GPT-4o Mini (recommended)</option>
-                        <option value="openai/gpt-4o">OpenAI GPT-4o</option>
-                        <option value="openai/gpt-3.5-turbo">OpenAI GPT-3.5 Turbo</option>
-                        <option value="meta/llama-3.1-405b-instruct">Meta Llama 3.1 405B</option>
-                        <option value="meta/llama-3.1-70b-instruct">Meta Llama 3.1 70B</option>
+                        <option value="custom">Custom Model</option>
                     </select>
+                    {formData.textModel !== 'openai/gpt-4o-mini' && (
+                        <input
+                            type="text"
+                            name="textModel"
+                            value={formData.textModel}
+                            onChange={onInputChange}
+                            placeholder="e.g., openai/gpt-4o, meta/llama-3.1-70b-instruct"
+                            className={`mt-2 w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${textModelError
+                                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                                } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400`}
+                        />
+                    )}
                     {textModelError && (
                         <p className="mt-1 text-sm text-red-600 dark:text-red-400">{textModelError}</p>
                     )}
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Model used for translation and deck name generation
+                        {formData.textModel === 'openai/gpt-4o-mini'
+                            ? 'Tested and recommended for translation and deck name generation'
+                            : 'Enter a custom model identifier (e.g., openai/gpt-4o)'
+                        }
                     </p>
                 </div>
 
@@ -102,22 +125,47 @@ export function ModelSettingsSection({ formData, onInputChange, getFieldError }:
                     <select
                         id="voiceModel"
                         name="voiceModel"
-                        value={formData.voiceModel}
-                        onChange={onInputChange}
+                        value={formData.voiceModel === 'minimax/speech-02-hd' ? 'minimax/speech-02-hd' : 'custom'}
+                        onChange={(e) => {
+                            if (e.target.value === 'minimax/speech-02-hd') {
+                                onInputChange({
+                                    target: { name: 'voiceModel', value: 'minimax/speech-02-hd' }
+                                } as React.ChangeEvent<HTMLInputElement>)
+                            } else {
+                                onInputChange({
+                                    target: { name: 'voiceModel', value: '' }
+                                } as React.ChangeEvent<HTMLInputElement>)
+                            }
+                        }}
                         className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${voiceModelError
                             ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
                             : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
                             } text-gray-900 dark:text-gray-100`}
                     >
                         <option value="minimax/speech-02-hd">Minimax Speech 02 HD (recommended)</option>
-                        <option value="parler-tts/parler-tts-large-v1">Parler TTS Large v1</option>
-                        <option value="parler-tts/parler-tts-mini-v1">Parler TTS Mini v1</option>
+                        <option value="custom">Custom Model</option>
                     </select>
+                    {formData.voiceModel !== 'minimax/speech-02-hd' && (
+                        <input
+                            type="text"
+                            name="voiceModel"
+                            value={formData.voiceModel}
+                            onChange={onInputChange}
+                            placeholder="e.g., parler-tts/parler-tts-large-v1"
+                            className={`mt-2 w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${voiceModelError
+                                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                                } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400`}
+                        />
+                    )}
                     {voiceModelError && (
                         <p className="mt-1 text-sm text-red-600 dark:text-red-400">{voiceModelError}</p>
                     )}
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Model used for audio generation
+                        {formData.voiceModel === 'minimax/speech-02-hd'
+                            ? 'Tested and recommended for audio generation'
+                            : 'Enter a custom model identifier (e.g., parler-tts/parler-tts-mini-v1)'
+                        }
                     </p>
                 </div>
             </div>
