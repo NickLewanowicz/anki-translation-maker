@@ -35,8 +35,8 @@ class AnalyticsService {
     }
 
     /**
- * Check if we can initialize PostHog (has required env vars)
- */
+     * Check if we can initialize PostHog (has required env vars)
+     */
     private canInitialize(): boolean {
         const key = import.meta.env.VITE_POSTHOG_KEY
         const host = import.meta.env.VITE_POSTHOG_HOST
