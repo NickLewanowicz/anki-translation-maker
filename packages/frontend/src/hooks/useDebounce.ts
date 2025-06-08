@@ -1,4 +1,4 @@
-import { useEffect, useRef, DependencyList } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 /**
  * Custom hook for debouncing function calls
@@ -6,35 +6,32 @@ import { useEffect, useRef, DependencyList } from 'react'
  * @param delay - The delay in milliseconds
  * @param dependencies - Array of dependencies that should trigger the callback
  */
-export function useDebounce(
-    callback: () => void,
-    delay: number,
-    dependencies: DependencyList
-) {
-    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+export function useDebounce<T>(value: T, delay: number): T {
+    const [debouncedValue, setDebouncedValue] = useState<T>(value)
 
     useEffect(() => {
-        // Clear the previous timeout
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current)
-        }
+        const timer = setTimeout(() => setDebouncedValue(value), delay)
 
-        // Set a new timeout
-        timeoutRef.current = setTimeout(() => {
-            callback()
-        }, delay)
-
-        // Cleanup function
         return () => {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current)
-            }
+            clearTimeout(timer)
         }
-        // ESLint disabled for this hook as dependencies are explicitly passed by the consumer
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, dependencies)
+    }, [value, delay])
 
-    // Cleanup on unmount
+    return debouncedValue
+}
+
+export function useDebouncedCallback<A extends unknown[]>(
+    callback: (...args: A) => void,
+    delay: number
+): (...args: A) => void {
+    const callbackRef = useRef(callback)
+    const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
+
+    useEffect(() => {
+        callbackRef.current = callback
+    }, [callback])
+
+    // Cleanup timeout on unmount
     useEffect(() => {
         return () => {
             if (timeoutRef.current) {
@@ -42,4 +39,14 @@ export function useDebounce(
             }
         }
     }, [])
+
+    return (...args: A) => {
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current)
+        }
+
+        timeoutRef.current = setTimeout(() => {
+            callbackRef.current(...args)
+        }, delay)
+    }
 } 

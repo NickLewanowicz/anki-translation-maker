@@ -4,6 +4,19 @@ import * as matchers from '@testing-library/jest-dom/matchers'
 
 expect.extend(matchers)
 
+// Mock the entire analytics service to prevent PostHog from initializing
+vi.mock('../services/analyticsService', () => ({
+    analyticsService: {
+        initialize: vi.fn(),
+        trackEvent: vi.fn(),
+        trackPageView: vi.fn(),
+        trackFormSubmission: vi.fn(),
+        trackDeckGeneration: vi.fn(),
+        trackError: vi.fn(),
+        trackDeckError: vi.fn()
+    }
+}))
+
 // Mock localStorage
 const localStorageMock = {
     getItem: vi.fn(),
@@ -18,7 +31,7 @@ Object.defineProperty(window, 'localStorage', {
     value: localStorageMock
 })
 
-// Mock window.matchMedia for theme detection
+// Mock window.matchMedia for theme testing
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: vi.fn().mockImplementation(query => ({
@@ -49,4 +62,6 @@ beforeEach(() => {
     localStorageMock.setItem.mockClear()
     localStorageMock.removeItem.mockClear()
     localStorageMock.clear.mockClear()
+    localStorage.clear()
+    vi.clearAllMocks()
 }) 

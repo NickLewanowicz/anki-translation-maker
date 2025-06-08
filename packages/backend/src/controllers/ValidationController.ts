@@ -1,7 +1,8 @@
 import type { Context } from 'hono'
-import { RequestValidator, type DeckGenerationRequest } from '../middleware/RequestValidator.js'
+import { RequestValidator, type DeckGenerationRequest, generateDeckSchema } from '../middleware/RequestValidator.js'
 import { ResponseFormatter } from '../utils/ResponseFormatter.js'
-import { ErrorHandler } from '../middleware/ErrorHandler.js'
+import { TranslationService } from '../services/TranslationService'
+import { Hono } from 'hono'
 import { z } from 'zod'
 
 /**
@@ -9,6 +10,44 @@ import { z } from 'zod'
  * Handles configuration validation without performing actual operations
  */
 export class ValidationController {
+    private translationService: TranslationService
+
+    constructor(translationService: TranslationService) {
+        this.translationService = translationService
+    }
+
+    public validate = async (c: Context, deckConfig: DeckGenerationRequest): Promise<Response> => {
+        try {
+            // All validation now happens in the route handler before calling this.
+            // This controller's job is just to format the success response.
+
+            const wordList = deckConfig.words ? deckConfig.words.split(',').map((w: string) => w.trim()) : []
+            const wordCount = wordList.length > 0 ? wordList.length : deckConfig.maxCards
+
+            const summary = {
+                deckType: deckConfig.words ? 'word-list' : 'ai-prompt',
+                wordCount: wordCount,
+                deckName: deckConfig.deckName || 'Auto-Generated Deck',
+                sourceLanguage: deckConfig.sourceLanguage,
+                targetLanguage: deckConfig.targetLanguage,
+                textModel: deckConfig.textModel,
+                voiceModel: deckConfig.voiceModel,
+                generateSourceAudio: deckConfig.generateSourceAudio,
+                generateTargetAudio: deckConfig.generateTargetAudio,
+                useCustomArgs: deckConfig.useCustomArgs,
+            }
+
+            return c.json({
+                status: 'valid',
+                message: 'All validations passed!',
+                summary,
+            })
+        } catch (error: unknown) {
+            console.error('Validation error:', error)
+            return c.json({ status: 'invalid', message: 'An unexpected error occurred during validation.' }, 500)
+        }
+    }
+
     /**
      * Validate deck generation configuration
      */

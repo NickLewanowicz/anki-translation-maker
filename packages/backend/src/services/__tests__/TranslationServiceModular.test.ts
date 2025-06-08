@@ -1,9 +1,13 @@
-import { describe, it, expect, beforeEach } from 'bun:test'
-import { TranslationService } from '../TranslationService.js'
-import { TextGenerationService } from '../translation/ai/TextGenerationService.js'
-import { AudioGenerationService } from '../translation/ai/AudioGenerationService.js'
+import { describe, it, expect, beforeEach, mock } from 'bun:test'
+import { TranslationService } from '../TranslationService'
 import { VoiceMappingService } from '../translation/config/VoiceMappingService.js'
 import { AIInputValidator } from '../translation/validation/AIInputValidator.js'
+
+mock.module('../../../lib/replicate', () => ({
+    Replicate: () => ({
+        run: () => { },
+    }),
+}))
 
 describe('TranslationService', () => {
     let translationService: TranslationService

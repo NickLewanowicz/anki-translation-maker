@@ -5,16 +5,27 @@ const THEME_STORAGE_KEY = 'anki-translation-maker-theme'
 
 function getSystemTheme(): 'light' | 'dark' {
     if (typeof window !== 'undefined' && window.matchMedia) {
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        try {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+            return mediaQuery && mediaQuery.matches ? 'dark' : 'light'
+        } catch (error) {
+            console.warn('Failed to check system theme preference:', error)
+            return 'light'
+        }
     }
     return 'light'
 }
 
 function getStoredTheme(): Theme {
     if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem(THEME_STORAGE_KEY)
-        if (stored && ['light', 'dark', 'system'].includes(stored)) {
-            return stored as Theme
+        try {
+            const stored = localStorage.getItem(THEME_STORAGE_KEY)
+            if (stored && ['light', 'dark', 'system'].includes(stored)) {
+                return stored as Theme
+            }
+        } catch (error) {
+            // Handle localStorage errors (not available, security errors, etc.)
+            console.warn('Failed to read theme from localStorage:', error)
         }
     }
     return 'system'
@@ -55,20 +66,40 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         updateEffectiveTheme()
 
         // Listen for system theme changes
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-        const handleSystemThemeChange = () => {
-            if (theme === 'system') {
-                updateEffectiveTheme()
+        try {
+            if (typeof window !== 'undefined' && window.matchMedia) {
+                const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+                const handleSystemThemeChange = () => {
+                    if (theme === 'system') {
+                        updateEffectiveTheme()
+                    }
+                }
+
+                if (mediaQuery && mediaQuery.addEventListener) {
+                    mediaQuery.addEventListener('change', handleSystemThemeChange)
+                    return () => {
+                        if (mediaQuery.removeEventListener) {
+                            mediaQuery.removeEventListener('change', handleSystemThemeChange)
+                        }
+                    }
+                }
             }
+        } catch (error) {
+            console.warn('Failed to set up system theme change listener:', error)
         }
 
-        mediaQuery.addEventListener('change', handleSystemThemeChange)
-        return () => mediaQuery.removeEventListener('change', handleSystemThemeChange)
+        // Return empty cleanup function if no listener was set up
+        return () => { }
     }, [theme])
 
     const setTheme = (newTheme: Theme) => {
         setThemeState(newTheme)
-        localStorage.setItem(THEME_STORAGE_KEY, newTheme)
+        try {
+            localStorage.setItem(THEME_STORAGE_KEY, newTheme)
+        } catch (error) {
+            // Handle localStorage errors (quota exceeded, not available, etc.)
+            console.warn('Failed to save theme to localStorage:', error)
+        }
     }
 
     const toggleTheme = () => {
