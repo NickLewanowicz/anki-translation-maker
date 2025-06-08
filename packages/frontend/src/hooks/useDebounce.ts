@@ -12,6 +12,12 @@ export function useDebounce(
     dependencies: DependencyList
 ) {
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const callbackRef = useRef(callback)
+
+    // Always update the callback ref to the latest callback
+    useEffect(() => {
+        callbackRef.current = callback
+    }, [callback])
 
     useEffect(() => {
         // Clear the previous timeout
@@ -21,7 +27,8 @@ export function useDebounce(
 
         // Set a new timeout
         timeoutRef.current = setTimeout(() => {
-            callback()
+            // Use the latest callback from the ref
+            callbackRef.current()
         }, delay)
 
         // Cleanup function

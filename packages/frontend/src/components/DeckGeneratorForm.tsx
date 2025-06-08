@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Download, Loader2, AlertCircle } from 'lucide-react'
+import { Download, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
 import { deckService } from '../services/deckService'
 import { analyticsService } from '../services/analyticsService'
 import { useFormState } from './forms/hooks/useFormState'
@@ -18,6 +18,8 @@ export function DeckGeneratorForm() {
         formData,
         errors,
         isLocalStorageLoaded,
+        lastSaved,
+        isAutoSaved,
         deckMode,
         defaultDecks,
         handleInputChange,
@@ -198,6 +200,16 @@ export function DeckGeneratorForm() {
                 </div>
             )}
 
+            {/* Auto-save Indicator */}
+            {isAutoSaved && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-200 px-3 py-2 rounded-md transition-colors animate-pulse">
+                    <div className="flex items-center">
+                        <CheckCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span className="text-sm">Form auto-saved locally</span>
+                    </div>
+                </div>
+            )}
+
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
                 <button
@@ -240,7 +252,7 @@ export function DeckGeneratorForm() {
                     disabled={isGenerating || isTesting}
                     className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:cursor-not-allowed"
                 >
-                    Clear Data
+                    Reset & Clear Storage
                 </button>
             </div>
 

@@ -161,7 +161,7 @@ describe('ThemeToggle', () => {
 
             renderThemeToggle()
 
-            // Check the container has the expected classes
+            // Find the outer container div that has the background classes
             const container = screen.getByTestId('sun-icon').closest('div')?.parentElement
             expect(container).toHaveClass('bg-gray-100', 'dark:bg-gray-800')
         })

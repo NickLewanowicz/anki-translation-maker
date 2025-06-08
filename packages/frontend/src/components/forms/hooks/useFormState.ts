@@ -46,6 +46,8 @@ export function useFormState() {
     const [formData, setFormData] = useState<DeckFormData>(getDefaultFormData())
     const [isLocalStorageLoaded, setIsLocalStorageLoaded] = useState(false)
     const [errors, setErrors] = useState<FormValidationError[]>([])
+    const [lastSaved, setLastSaved] = useState<Date | null>(null)
+    const [isAutoSaved, setIsAutoSaved] = useState(false)
     const validator = useMemo(() => new FormValidator(), [])
 
     /**
@@ -106,6 +108,13 @@ export function useFormState() {
                 voiceModelArgs: data.voiceModelArgs
             }
             localStorageService.saveFormData(mappedData)
+
+            // Update auto-save state
+            setLastSaved(new Date())
+            setIsAutoSaved(true)
+
+            // Hide auto-save indicator after 3 seconds
+            setTimeout(() => setIsAutoSaved(false), 3000)
         } catch (error) {
             console.error('Failed to save data:', error)
         }
@@ -158,6 +167,8 @@ export function useFormState() {
         const defaultData = getDefaultFormData()
         setFormData(defaultData)
         setErrors([])
+        setLastSaved(null)
+        setIsAutoSaved(false)
     }, [])
 
     /**
@@ -216,6 +227,8 @@ export function useFormState() {
         formData,
         errors,
         isLocalStorageLoaded,
+        lastSaved,
+        isAutoSaved,
         deckMode,
         defaultDecks: DEFAULT_DECKS,
 
