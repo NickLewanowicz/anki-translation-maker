@@ -120,10 +120,15 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
 
     it('calls deckService.generateDeck with correct source/target terminology', async () => {
         const targetLanguageSelect = screen.getByLabelText('Target Language *')
+        const apiKeyInput = screen.getByLabelText('Replicate API Key *')
         const generateButton = screen.getByRole('button', { name: /Generate Deck/i })
 
         await act(async () => {
             fireEvent.change(targetLanguageSelect, { target: { value: 'es' } })
+            fireEvent.change(apiKeyInput, { target: { value: 'r8_test_api_key_1234567890' } })
+        })
+
+        await act(async () => {
             fireEvent.click(generateButton)
         })
 
@@ -141,9 +146,11 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
 
     it('calls validation API with correct source/target terminology', async () => {
         const targetLanguageSelect = screen.getByLabelText('Target Language *')
+        const apiKeyInput = screen.getByLabelText('Replicate API Key *')
 
         await act(async () => {
             fireEvent.change(targetLanguageSelect, { target: { value: 'es' } })
+            fireEvent.change(apiKeyInput, { target: { value: 'r8_test_api_key_1234567890' } })
         })
 
         // Wait for the validate button to be available

@@ -5,7 +5,13 @@ const THEME_STORAGE_KEY = 'anki-translation-maker-theme'
 
 function getSystemTheme(): 'light' | 'dark' {
     if (typeof window !== 'undefined' && window.matchMedia) {
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        try {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+            return mediaQuery && mediaQuery.matches ? 'dark' : 'light'
+        } catch (error) {
+            console.warn('Failed to check system theme preference:', error)
+            return 'light'
+        }
     }
     return 'light'
 }
@@ -60,15 +66,30 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         updateEffectiveTheme()
 
         // Listen for system theme changes
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-        const handleSystemThemeChange = () => {
-            if (theme === 'system') {
-                updateEffectiveTheme()
+        try {
+            if (typeof window !== 'undefined' && window.matchMedia) {
+                const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+                const handleSystemThemeChange = () => {
+                    if (theme === 'system') {
+                        updateEffectiveTheme()
+                    }
+                }
+
+                if (mediaQuery && mediaQuery.addEventListener) {
+                    mediaQuery.addEventListener('change', handleSystemThemeChange)
+                    return () => {
+                        if (mediaQuery.removeEventListener) {
+                            mediaQuery.removeEventListener('change', handleSystemThemeChange)
+                        }
+                    }
+                }
             }
+        } catch (error) {
+            console.warn('Failed to set up system theme change listener:', error)
         }
 
-        mediaQuery.addEventListener('change', handleSystemThemeChange)
-        return () => mediaQuery.removeEventListener('change', handleSystemThemeChange)
+        // Return empty cleanup function if no listener was set up
+        return () => { }
     }, [theme])
 
     const setTheme = (newTheme: Theme) => {

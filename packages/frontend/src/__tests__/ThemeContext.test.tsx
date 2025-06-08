@@ -47,14 +47,15 @@ describe('ThemeContext', () => {
         })
     })
 
-    it('should persist theme changes to localStorage', () => {
+    it('should persist theme changes to localStorage', async () => {
         const { result } = renderHook(() => useTheme(), { wrapper: ThemeProvider })
 
-        act(() => {
+        await act(async () => {
             result.current.setTheme('dark')
         })
 
         expect(localStorage.getItem(THEME_KEY)).toBe('dark')
+        expect(result.current.theme).toBe('dark')
     })
 
     it('should handle localStorage being unavailable on read', () => {
