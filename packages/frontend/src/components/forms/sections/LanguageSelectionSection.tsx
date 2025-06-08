@@ -3,13 +3,28 @@ import type { DeckFormData } from '../types/FormTypes'
 
 interface LanguageSelectionSectionProps {
     formData: DeckFormData
-    onInputChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
+    onInputChange: (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => void
     getFieldError: (fieldName: string) => string | null
 }
 
 export function LanguageSelectionSection({ formData, onInputChange, getFieldError }: LanguageSelectionSectionProps) {
     const sourceLanguageError = getFieldError('sourceLanguage')
     const targetLanguageError = getFieldError('targetLanguage')
+
+    // Check if custom language is selected
+    const isSourceCustom = !['en', 'es', 'fr', 'de', 'it', 'pt', 'ja', 'ko', 'zh', 'ru', 'vi'].includes(formData.sourceLanguage) && formData.sourceLanguage !== ''
+    const isTargetCustom = !['en', 'es', 'fr', 'de', 'it', 'pt', 'ja', 'ko', 'zh', 'ru', 'vi'].includes(formData.targetLanguage) && formData.targetLanguage !== ''
+
+    const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>, type: 'source' | 'target') => {
+        if (e.target.value === 'other') {
+            // Clear the language when "other" is selected to show input field
+            onInputChange({
+                target: { name: type === 'source' ? 'sourceLanguage' : 'targetLanguage', value: 'custom' }
+            } as React.ChangeEvent<HTMLInputElement>)
+        } else {
+            onInputChange(e)
+        }
+    }
 
     return (
         <div className="space-y-4">
@@ -30,11 +45,11 @@ export function LanguageSelectionSection({ formData, onInputChange, getFieldErro
                     <select
                         id="sourceLanguage"
                         name="sourceLanguage"
-                        value={formData.sourceLanguage}
-                        onChange={onInputChange}
+                        value={isSourceCustom ? 'other' : formData.sourceLanguage}
+                        onChange={(e) => handleLanguageChange(e, 'source')}
                         className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${sourceLanguageError
-                                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                            ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
                             } text-gray-900 dark:text-gray-100`}
                     >
                         <option value="">Select source language</option>
@@ -44,16 +59,36 @@ export function LanguageSelectionSection({ formData, onInputChange, getFieldErro
                         <option value="de">German</option>
                         <option value="it">Italian</option>
                         <option value="pt">Portuguese</option>
+                        <option value="vi">Vietnamese</option>
                         <option value="ja">Japanese</option>
                         <option value="ko">Korean</option>
                         <option value="zh">Chinese</option>
                         <option value="ru">Russian</option>
+                        <option value="other">Other (specify below)</option>
                     </select>
+
+                    {(isSourceCustom || formData.sourceLanguage === 'custom') && (
+                        <input
+                            type="text"
+                            name="sourceLanguage"
+                            value={formData.sourceLanguage === 'custom' ? '' : formData.sourceLanguage}
+                            onChange={onInputChange}
+                            placeholder="Enter language code (e.g., 'th' for Thai, 'ar' for Arabic)"
+                            className={`mt-2 w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${sourceLanguageError
+                                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                                } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400`}
+                        />
+                    )}
+
                     {sourceLanguageError && (
                         <p className="mt-1 text-sm text-red-600 dark:text-red-400">{sourceLanguageError}</p>
                     )}
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        The language of your input words or prompts
+                        {isSourceCustom || formData.sourceLanguage === 'custom'
+                            ? 'Enter a language code (e.g., "th", "ar", "hi") for your input language'
+                            : 'The language of your input words or prompts'
+                        }
                     </p>
                 </div>
 
@@ -64,11 +99,11 @@ export function LanguageSelectionSection({ formData, onInputChange, getFieldErro
                     <select
                         id="targetLanguage"
                         name="targetLanguage"
-                        value={formData.targetLanguage}
-                        onChange={onInputChange}
+                        value={isTargetCustom ? 'other' : formData.targetLanguage}
+                        onChange={(e) => handleLanguageChange(e, 'target')}
                         className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${targetLanguageError
-                                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                            ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
                             } text-gray-900 dark:text-gray-100`}
                     >
                         <option value="">Select target language</option>
@@ -78,16 +113,36 @@ export function LanguageSelectionSection({ formData, onInputChange, getFieldErro
                         <option value="de">German</option>
                         <option value="it">Italian</option>
                         <option value="pt">Portuguese</option>
+                        <option value="vi">Vietnamese</option>
                         <option value="ja">Japanese</option>
                         <option value="ko">Korean</option>
                         <option value="zh">Chinese</option>
                         <option value="ru">Russian</option>
+                        <option value="other">Other (specify below)</option>
                     </select>
+
+                    {(isTargetCustom || formData.targetLanguage === 'custom') && (
+                        <input
+                            type="text"
+                            name="targetLanguage"
+                            value={formData.targetLanguage === 'custom' ? '' : formData.targetLanguage}
+                            onChange={onInputChange}
+                            placeholder="Enter language code (e.g., 'th' for Thai, 'ar' for Arabic)"
+                            className={`mt-2 w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${targetLanguageError
+                                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                                } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400`}
+                        />
+                    )}
+
                     {targetLanguageError && (
                         <p className="mt-1 text-sm text-red-600 dark:text-red-400">{targetLanguageError}</p>
                     )}
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        The language you want to learn
+                        {isTargetCustom || formData.targetLanguage === 'custom'
+                            ? 'Enter a language code (e.g., "th", "ar", "hi") for the language you want to learn'
+                            : 'The language you want to learn'
+                        }
                     </p>
                 </div>
             </div>
