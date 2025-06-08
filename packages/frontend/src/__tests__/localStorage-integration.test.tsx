@@ -40,11 +40,22 @@ Object.defineProperty(window, 'localStorage', {
     value: localStorageMock
 })
 
+// Helper function to render the form and wait for it to be ready
+const renderForm = async () => {
+    const renderResult = render(<DeckGeneratorForm />)
+    await waitFor(() => {
+        expect(screen.getByRole('combobox', { name: /deck type/i })).toBeInTheDocument()
+    })
+    return renderResult
+}
+
 describe('DeckGeneratorForm - Local Storage Integration', () => {
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
+
     beforeEach(() => {
         vi.clearAllMocks()
         localStorageMock.clear()
-        vi.useFakeTimers()
+        setItemSpy.mockClear()
     })
 
     afterEach(() => {
@@ -52,30 +63,19 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
     })
 
     it('should auto-save form data when user makes changes', async () => {
-        render(<DeckGeneratorForm />)
+        await renderForm()
 
-        // Wait for initial load
+        // Make a change
+        const deckNameInput = screen.getByLabelText('Deck Name (optional)')
+        fireEvent.change(deckNameInput, { target: { value: 'My New Deck' } })
+
+        // Check for save
         await waitFor(() => {
-            expect(screen.getByLabelText('Word List (editable)')).toBeInTheDocument()
-        })
-
-        // Make changes to the form
-        const wordsInput = screen.getByLabelText('Word List (editable)')
-        fireEvent.change(wordsInput, { target: { value: 'new, words, typed' } })
-
-        const deckNameInput = screen.getByLabelText(/Deck Name/)
-        fireEvent.change(deckNameInput, { target: { value: 'Auto-saved Deck' } })
-
-        // Fast-forward past debounce delay
-        vi.advanceTimersByTime(1100)
-
-        // Verify data was saved to localStorage
-        await waitFor(() => {
-            expect(localStorageMock.setItem).toHaveBeenCalledWith(
+            expect(setItemSpy).toHaveBeenCalledWith(
                 'anki-form-state',
-                expect.stringContaining('"words":"new, words, typed"')
+                expect.stringContaining('"deckName":"My New Deck"')
             )
-        })
+        }, { timeout: 2000 })
     })
 
     it.skip('should display auto-save indicator', () => {

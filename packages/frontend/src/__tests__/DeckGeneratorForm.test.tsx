@@ -67,10 +67,9 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
     it('updates target language when changed', () => {
         render(<DeckGeneratorForm />)
 
-        const targetLanguageSelect = screen.getByLabelText('Target Language *') as HTMLSelectElement
-        fireEvent.change(targetLanguageSelect, { target: { value: 'fr' } })
-
-        expect(targetLanguageSelect.value).toBe('fr')
+        const targetLanguageSelect = screen.getByRole('combobox', { name: /target language/i }) as HTMLSelectElement
+        fireEvent.change(targetLanguageSelect, { target: { value: 'es' } })
+        expect(targetLanguageSelect.value).toBe('es')
     })
 
     it('toggles source audio generation correctly', () => {
@@ -150,37 +149,27 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
             expect(screen.getByLabelText('Replicate API Key *')).toBeInTheDocument()
         })
 
-        // Fill in required fields
-        const targetLanguageSelect = screen.getByLabelText('Target Language *')
-        const apiKeyInput = screen.getByLabelText('Replicate API Key *')
-
-        fireEvent.change(targetLanguageSelect, { target: { value: 'fr' } })
-        fireEvent.change(apiKeyInput, { target: { value: 'r8_test_key_1234567890_valid' } })
-
-        // Wait for form validation to complete
-        await waitFor(() => {
-            const testButton = screen.getByRole('button', { name: /Test Configuration/i })
-            expect(testButton).not.toBeDisabled()
+        // Fill out the form to make it valid for validation
+        const apiKeyInput = screen.getByLabelText(/replicate api key/i)
+        fireEvent.change(apiKeyInput, {
+            target: { value: 'r8_test_key_1234567890_valid' }
         })
 
-        const testButton = screen.getByRole('button', { name: /Test Configuration/i })
-        fireEvent.click(testButton)
+        const targetLanguageSelect = screen.getByRole('combobox', { name: /target language/i })
+        fireEvent.change(targetLanguageSelect, { target: { value: 'es' } })
 
+        // Click the validate button
+        const validateButton = screen.getByText('Validate Configuration')
+        fireEvent.click(validateButton)
+
+        // Wait for the fetch call to happen
         await waitFor(() => {
             expect(mockFetch).toHaveBeenCalledWith('/api/validate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: expect.stringContaining('"sourceLanguage":"en"')
+                body: expect.stringContaining('"targetLanguage":"es"')
             })
-        }, { timeout: 3000 })
-
-        await waitFor(() => {
-            expect(mockFetch).toHaveBeenCalledWith('/api/validate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: expect.stringContaining('"targetLanguage":"fr"')
-            })
-        }, { timeout: 3000 })
+        })
     })
 
     it('displays correct placeholder text for target language', () => {

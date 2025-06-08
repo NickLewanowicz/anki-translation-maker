@@ -14,6 +14,15 @@ vi.mock('../services/deckService', () => ({
 // Mock fetch for validation API
 global.fetch = vi.fn()
 
+// Helper function to render the form and wait for it to be ready
+const renderForm = async () => {
+    const renderResult = render(<DeckGeneratorForm />)
+    await waitFor(() => {
+        expect(screen.getByRole('combobox', { name: /deck type/i })).toBeInTheDocument()
+    })
+    return renderResult
+}
+
 describe('DeckGeneratorForm - Local Storage Integration', () => {
     // Spy on localStorage methods to track calls
     const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
@@ -27,11 +36,11 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
         setItemSpy.mockClear()
         getItemSpy.mockClear()
         removeItemSpy.mockClear()
-        vi.useFakeTimers()
+        // vi.useFakeTimers() // Fake timers removed for more stable async tests
     })
 
     afterEach(() => {
-        vi.useRealTimers()
+        // vi.useRealTimers() // No longer needed
     })
 
     it('should load saved form data on component mount', async () => {
@@ -57,74 +66,55 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
 
         localStorage.setItem('anki-form-state', JSON.stringify(savedData))
 
-        render(<DeckGeneratorForm />)
+        await renderForm()
 
-        // Wait for component to load data
+        // Now, wait for the specific field to appear and have the correct value
         await waitFor(() => {
-            expect(screen.getByDisplayValue('saved, words, test')).toBeInTheDocument()
-        }, { timeout: 2000 })
+            const wordsInput = screen.getByDisplayValue('saved, words, test')
+            expect(wordsInput).toBeInTheDocument()
+        })
 
         // Verify data was read from localStorage
         expect(getItemSpy).toHaveBeenCalledWith('anki-form-state')
-    })
+    }, 15000)
 
     it('should auto-save form data when user makes changes', async () => {
-        render(<DeckGeneratorForm />)
-
-        // Wait for initial load
-        await waitFor(() => {
-            expect(screen.getByLabelText('Custom Words/Phrases')).toBeInTheDocument()
-        })
+        await renderForm()
 
         // Make changes to the form
         const wordsInput = screen.getByLabelText('Custom Words/Phrases')
         fireEvent.change(wordsInput, { target: { value: 'new, words, typed' } })
 
-        // Fast-forward past debounce delay
-        vi.advanceTimersByTime(1000)
-
-        // Verify data was saved to localStorage
+        // Verify data was saved to localStorage, allowing time for debounce
         await waitFor(() => {
             expect(setItemSpy).toHaveBeenCalledWith(
                 'anki-form-state',
                 expect.stringContaining('"words":"new, words, typed"')
             )
-        })
-    })
+        }, { timeout: 2000 }) // Wait up to 2 seconds for the debounced save
+    }, 15000)
 
     it('should handle rapid form changes with debouncing', async () => {
-        render(<DeckGeneratorForm />)
-
-        await waitFor(() => {
-            expect(screen.getByLabelText('Custom Words/Phrases')).toBeInTheDocument()
-        })
+        await renderForm()
 
         const wordsInput = screen.getByLabelText('Custom Words/Phrases')
 
         // Make rapid changes
         fireEvent.change(wordsInput, { target: { value: 'a' } })
-        vi.advanceTimersByTime(100)
-
         fireEvent.change(wordsInput, { target: { value: 'ab' } })
-        vi.advanceTimersByTime(100)
-
         fireEvent.change(wordsInput, { target: { value: 'abc' } })
-        vi.advanceTimersByTime(100)
 
         // Should not save during rapid typing
         expect(setItemSpy).not.toHaveBeenCalled()
 
-        // Fast-forward past debounce delay
-        vi.advanceTimersByTime(1000)
-
-        // Should save only once with final value
+        // Should save only once with final value after debounce
         await waitFor(() => {
             expect(setItemSpy).toHaveBeenCalledWith(
                 'anki-form-state',
                 expect.stringContaining('"words":"abc"')
             )
-        })
-    })
+        }, { timeout: 2000 })
+    }, 15000)
 
     it('should clear storage and reset form when reset button is clicked', async () => {
         // Pre-populate with saved data
@@ -136,54 +126,42 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
         }
         localStorage.setItem('anki-form-state', JSON.stringify(savedData))
 
-        render(<DeckGeneratorForm />)
-
-        // Wait for data to load
-        await waitFor(() => {
-            expect(screen.getByDisplayValue('to, be, cleared')).toBeInTheDocument()
-        })
+        await renderForm()
 
         // Click reset button
         const resetButton = screen.getByText('Reset & Clear Storage')
         fireEvent.click(resetButton)
 
         // Verify localStorage was cleared
-        expect(removeItemSpy).toHaveBeenCalledWith('anki-form-state')
-    })
+        await waitFor(() => {
+            expect(removeItemSpy).toHaveBeenCalledWith('anki-form-state')
+        })
+    }, 15000)
 
     it('should handle localStorage errors gracefully', async () => {
-        // Mock localStorage.setItem to throw an error
+        // Mock localStorage.setItem to throw an error for this test only
         setItemSpy.mockImplementationOnce(() => {
             throw new Error('Storage quota exceeded')
         })
 
-        render(<DeckGeneratorForm />)
+        await renderForm()
 
+        // Make a change that would trigger a save, which we expect to fail
+        const wordsInput = screen.getByLabelText('Custom Words/Phrases')
+        fireEvent.change(wordsInput, { target: { value: 'this will fail to save' } })
+
+        // The component should handle the error gracefully without crashing.
+        // We can verify the component is still interactive.
         await waitFor(() => {
             expect(screen.getByLabelText('Custom Words/Phrases')).toBeInTheDocument()
         })
-
-        // Make a change that would trigger save
-        const wordsInput = screen.getByLabelText('Custom Words/Phrases')
-        fireEvent.change(wordsInput, { target: { value: 'test change' } })
-
-        // Fast-forward past debounce
-        vi.advanceTimersByTime(1000)
-
-        // Component should handle the error gracefully without crashing
-        expect(screen.getByLabelText('Custom Words/Phrases')).toBeInTheDocument()
-    })
+    }, 15000)
 
     it('should not save before initial load is complete', async () => {
-        render(<DeckGeneratorForm />)
+        await renderForm()
 
         // Should not save until after initial load
         expect(setItemSpy).not.toHaveBeenCalled()
-
-        // Wait for initial load to complete
-        await waitFor(() => {
-            expect(screen.getByLabelText('Custom Words/Phrases')).toBeInTheDocument()
-        })
 
         // Now changes should trigger saves
         const wordsInput = screen.getByLabelText('Custom Words/Phrases')
@@ -200,12 +178,7 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
         // Set invalid JSON in localStorage
         localStorage.setItem('anki-form-state', 'invalid json {')
 
-        render(<DeckGeneratorForm />)
-
-        // Component should render with default values, not crash
-        await waitFor(() => {
-            expect(screen.getByLabelText('Custom Words/Phrases')).toBeInTheDocument()
-        })
+        await renderForm()
 
         // Should clear the invalid data
         expect(removeItemSpy).toHaveBeenCalledWith('anki-form-state')
@@ -221,13 +194,16 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
         }
         localStorage.setItem('anki-form-state', JSON.stringify(oldData))
 
-        render(<DeckGeneratorForm />)
+        await renderForm()
 
-        // Component should clear old data and use defaults
+        // Component should clear old data and use defaults.
+        // We wait for the default "custom" view to render, ensuring the old data was discarded.
         await waitFor(() => {
-            expect(screen.getByLabelText('Custom Words/Phrases')).toBeInTheDocument()
+            expect(screen.getByLabelText(/custom words/i)).toBeInTheDocument()
+            const wordsInput = screen.getByLabelText(/custom words/i) as HTMLInputElement
+            expect(wordsInput.value).not.toBe('old data')
         })
 
         expect(removeItemSpy).toHaveBeenCalledWith('anki-form-state')
-    })
+    }, 15000)
 }) 

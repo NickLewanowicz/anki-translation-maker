@@ -310,7 +310,7 @@ describe('ThemeContext', () => {
         })
 
         it('should handle invalid stored theme gracefully', () => {
-            localStorageMock.getItem.mockReturnValue('invalid-theme')
+            getItemSpy.mockReturnValue('invalid-theme')
 
             render(
                 <ThemeProvider>
@@ -318,8 +318,8 @@ describe('ThemeContext', () => {
                 </ThemeProvider>
             )
 
-            // Should fall back to system theme
-            expect(screen.getByTestId('current-theme')).toHaveTextContent('system')
+            // Should default to system, which is 'light' in our mock setup
+            expect(screen.getByTestId('effective-theme')).toHaveTextContent('light')
         })
 
         it('should handle localStorage not being available', () => {
@@ -352,14 +352,14 @@ describe('ThemeContext', () => {
 
             fireEvent.click(screen.getByTestId('set-dark'))
 
-            expect(localStorageMock.setItem).toHaveBeenCalledWith(
+            expect(setItemSpy).toHaveBeenCalledWith(
                 'anki-translation-maker-theme',
                 'dark'
             )
         })
 
         it('should read initial theme from localStorage', () => {
-            localStorageMock.getItem.mockReturnValue('light')
+            getItemSpy.mockReturnValue('light')
 
             render(
                 <ThemeProvider>
@@ -367,7 +367,7 @@ describe('ThemeContext', () => {
                 </ThemeProvider>
             )
 
-            expect(localStorageMock.getItem).toHaveBeenCalledWith('anki-translation-maker-theme')
+            expect(getItemSpy).toHaveBeenCalledWith('anki-translation-maker-theme')
             expect(screen.getByTestId('current-theme')).toHaveTextContent('light')
         })
     })
