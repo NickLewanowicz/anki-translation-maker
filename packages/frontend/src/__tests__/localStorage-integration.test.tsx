@@ -42,17 +42,32 @@ Object.defineProperty(window, 'localStorage', {
 
 describe('DeckGeneratorForm - Local Storage Integration', () => {
     beforeEach(() => {
-        vi.clearAllMocks()
-        localStorageMock.clear()
         vi.useFakeTimers()
+        localStorage.clear()
+        vi.clearAllMocks()
+
+        // Mock window.matchMedia
+        Object.defineProperty(window, 'matchMedia', {
+            writable: true,
+            value: vi.fn().mockImplementation(query => ({
+                matches: false,
+                media: query,
+                onchange: null,
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn(),
+            })),
+        })
     })
 
     afterEach(() => {
         vi.useRealTimers()
+        vi.restoreAllMocks()
     })
 
     it('should auto-save form data when user makes changes', async () => {
-        vi.useFakeTimers()
         const setItemSpy = vi.spyOn(localStorage, 'setItem')
 
         render(<DeckGeneratorForm />)
@@ -79,7 +94,6 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
             )
         }, { timeout: 1000 })
 
-        vi.useRealTimers()
         setItemSpy.mockRestore()
     })
 
