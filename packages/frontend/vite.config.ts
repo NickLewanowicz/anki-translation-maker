@@ -8,7 +8,7 @@ export default defineConfig({
     test: {
         globals: true,
         environment: 'jsdom',
-        setupFiles: ['./src/__tests__/setup.ts'],
+        setupFiles: './src/__tests__/setup.ts',
         exclude: [
             '**/node_modules/**',
             '**/dist/**',
@@ -21,10 +21,7 @@ export default defineConfig({
     server: {
         port: 5173,
         proxy: {
-            '/api': {
-                target: 'http://localhost:3000',
-                changeOrigin: true
-            }
+            '/api': 'http://localhost:3000',
         }
     },
     build: {

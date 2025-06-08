@@ -31,7 +31,7 @@ Object.defineProperty(window, 'localStorage', {
     value: localStorageMock
 })
 
-// Mock window.matchMedia for theme detection
+// Mock window.matchMedia for theme testing
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: vi.fn().mockImplementation(query => ({

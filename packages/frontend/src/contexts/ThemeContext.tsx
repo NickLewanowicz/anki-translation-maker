@@ -12,9 +12,14 @@ function getSystemTheme(): 'light' | 'dark' {
 
 function getStoredTheme(): Theme {
     if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem(THEME_STORAGE_KEY)
-        if (stored && ['light', 'dark', 'system'].includes(stored)) {
-            return stored as Theme
+        try {
+            const stored = localStorage.getItem(THEME_STORAGE_KEY)
+            if (stored && ['light', 'dark', 'system'].includes(stored)) {
+                return stored as Theme
+            }
+        } catch (error) {
+            // Handle localStorage errors (not available, security errors, etc.)
+            console.warn('Failed to read theme from localStorage:', error)
         }
     }
     return 'system'
@@ -68,7 +73,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     const setTheme = (newTheme: Theme) => {
         setThemeState(newTheme)
-        localStorage.setItem(THEME_STORAGE_KEY, newTheme)
+        try {
+            localStorage.setItem(THEME_STORAGE_KEY, newTheme)
+        } catch (error) {
+            // Handle localStorage errors (quota exceeded, not available, etc.)
+            console.warn('Failed to save theme to localStorage:', error)
+        }
     }
 
     const toggleTheme = () => {

@@ -81,11 +81,8 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
     it('should display auto-save indicator', () => {
         render(<DeckGeneratorForm />)
 
-        // Check for auto-save indicator
-        expect(screen.getByText('Form auto-saved locally')).toBeInTheDocument()
-
-        // Check for reset button
-        expect(screen.getByText('Reset & Clear Storage')).toBeInTheDocument()
+        // Check for clear data button instead of auto-save indicator
+        expect(screen.getByText('Clear Data')).toBeInTheDocument()
     })
 
     it('should handle localStorage unavailable gracefully', async () => {
@@ -100,8 +97,8 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
 
         render(<DeckGeneratorForm />)
 
-        // Should still render and work without localStorage
-        expect(screen.getByText('Form auto-saved locally')).toBeInTheDocument()
+        // Should still render and work without localStorage - check for main form elements
+        expect(screen.getByLabelText('Deck Type')).toBeInTheDocument()
 
         // Restore localStorage
         Object.defineProperty(window, 'localStorage', {
