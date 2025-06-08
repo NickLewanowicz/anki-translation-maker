@@ -4,7 +4,6 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { DeckGeneratorForm } from '../components/DeckGeneratorForm'
 import * as deckService from '../services/deckService'
 import { ThemeProvider } from '../contexts/ThemeContext'
-import axios from 'axios'
 
 // Mock the deckService
 vi.mock('../services/deckService', () => ({
@@ -13,9 +12,6 @@ vi.mock('../services/deckService', () => ({
         validateConfiguration: vi.fn()
     }
 }))
-
-// Mock axios for API calls
-vi.mock('axios')
 
 // Helper to render with required context
 const renderForm = async () => {

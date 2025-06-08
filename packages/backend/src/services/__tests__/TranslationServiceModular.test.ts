@@ -1,12 +1,14 @@
-import { describe, it, expect, beforeEach } from 'bun:test'
-import { TranslationService } from '../TranslationService.js'
-import { TextGenerationService } from '../translation/ai/TextGenerationService.js'
-import { AudioGenerationService } from '../translation/ai/AudioGenerationService.js'
+import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { TranslationService } from '../TranslationService'
 import { VoiceMappingService } from '../translation/config/VoiceMappingService.js'
 import { AIInputValidator } from '../translation/validation/AIInputValidator.js'
 
-describe('TranslationService', () => {
-    let translationService: TranslationService
+vi.mock('../../../lib/replicate', () => ({
+    Replicate: vi.fn().mockImplementation(() => ({
+        // ... existing code ...
+
+        describe('TranslationService', () => {
+            let translationService: TranslationService
     const mockApiKey = 'test-api-key'
 
     beforeEach(() => {
@@ -14,90 +16,90 @@ describe('TranslationService', () => {
     })
 
     describe('constructor', () => {
-        it('should create service with default models', () => {
-            expect(translationService).toBeInstanceOf(TranslationService)
-        })
+    it('should create service with default models', () => {
+    expect(translationService).toBeInstanceOf(TranslationService)
+})
 
-        it('should create service with custom models and args', () => {
-            const customService = new TranslationService(
-                mockApiKey,
-                'custom/text-model',
-                'custom/voice-model',
-                { temperature: 0.7 },
-                { speed: 1.2 }
-            )
-            expect(customService).toBeInstanceOf(TranslationService)
-        })
+it('should create service with custom models and args', () => {
+    const customService = new TranslationService(
+        mockApiKey,
+        'custom/text-model',
+        'custom/voice-model',
+        { temperature: 0.7 },
+        { speed: 1.2 }
+    )
+    expect(customService).toBeInstanceOf(TranslationService)
+})
     })
 
-    describe('validation methods', () => {
-        it('should validate language codes correctly', () => {
-            expect(translationService.canGenerateAudio('en')).toBe(true)
-            expect(translationService.canGenerateAudio('es')).toBe(true)
-            expect(translationService.canGenerateAudio('invalid')).toBe(false)
-        })
-
-        it('should get voice for language', () => {
-            const voice = translationService.getVoiceForLanguage('en')
-            expect(voice).toBe('English_CalmWoman')
-        })
-
-        it('should get supported languages', () => {
-            const languages = translationService.getSupportedLanguages()
-            expect(languages).toContain('en')
-            expect(languages).toContain('es')
-            expect(languages).toContain('fr')
-        })
-
-        it('should get language codes', () => {
-            expect(translationService.getLanguageCode('en')).toBe('EN')
-            expect(translationService.getLanguageCode('es')).toBe('ES')
-        })
+describe('validation methods', () => {
+    it('should validate language codes correctly', () => {
+        expect(translationService.canGenerateAudio('en')).toBe(true)
+        expect(translationService.canGenerateAudio('es')).toBe(true)
+        expect(translationService.canGenerateAudio('invalid')).toBe(false)
     })
 
-    describe('input validation', () => {
-        it('should reject invalid prompts', async () => {
-            await expect(
-                translationService.generateWordsFromPrompt('', 'en', 10)
-            ).rejects.toThrow('Invalid prompt provided')
-
-            await expect(
-                translationService.generateWordsFromPrompt('ab', 'en', 10)
-            ).rejects.toThrow('Invalid prompt provided')
-        })
-
-        it('should reject invalid language codes', async () => {
-            await expect(
-                translationService.translateWords(['hello'], 'invalid', 'es')
-            ).rejects.toThrow('Invalid source language code')
-
-            await expect(
-                translationService.translateWords(['hello'], 'en', 'invalid')
-            ).rejects.toThrow('Invalid target language code')
-        })
-
-        it('should reject invalid word lists', async () => {
-            await expect(
-                translationService.translateWords([], 'en', 'es')
-            ).rejects.toThrow('Invalid words list provided')
-
-            await expect(
-                translationService.generateAudio([''], 'en')
-            ).rejects.toThrow('Invalid words list provided')
-        })
+    it('should get voice for language', () => {
+        const voice = translationService.getVoiceForLanguage('en')
+        expect(voice).toBe('English_CalmWoman')
     })
 
-    describe('deck name generation', () => {
-        it('should generate fallback name for empty content', async () => {
-            const deckName = await translationService.generateDeckName('', 'en', 'es')
-            expect(deckName).toBe('EN-ES Vocabulary')
-        })
-
-        it('should generate fallback name for null content', async () => {
-            const deckName = await translationService.generateDeckName(null as any, 'en', 'es')
-            expect(deckName).toBe('EN-ES Vocabulary')
-        })
+    it('should get supported languages', () => {
+        const languages = translationService.getSupportedLanguages()
+        expect(languages).toContain('en')
+        expect(languages).toContain('es')
+        expect(languages).toContain('fr')
     })
+
+    it('should get language codes', () => {
+        expect(translationService.getLanguageCode('en')).toBe('EN')
+        expect(translationService.getLanguageCode('es')).toBe('ES')
+    })
+})
+
+describe('input validation', () => {
+    it('should reject invalid prompts', async () => {
+        await expect(
+            translationService.generateWordsFromPrompt('', 'en', 10)
+        ).rejects.toThrow('Invalid prompt provided')
+
+        await expect(
+            translationService.generateWordsFromPrompt('ab', 'en', 10)
+        ).rejects.toThrow('Invalid prompt provided')
+    })
+
+    it('should reject invalid language codes', async () => {
+        await expect(
+            translationService.translateWords(['hello'], 'invalid', 'es')
+        ).rejects.toThrow('Invalid source language code')
+
+        await expect(
+            translationService.translateWords(['hello'], 'en', 'invalid')
+        ).rejects.toThrow('Invalid target language code')
+    })
+
+    it('should reject invalid word lists', async () => {
+        await expect(
+            translationService.translateWords([], 'en', 'es')
+        ).rejects.toThrow('Invalid words list provided')
+
+        await expect(
+            translationService.generateAudio([''], 'en')
+        ).rejects.toThrow('Invalid words list provided')
+    })
+})
+
+describe('deck name generation', () => {
+    it('should generate fallback name for empty content', async () => {
+        const deckName = await translationService.generateDeckName('', 'en', 'es')
+        expect(deckName).toBe('EN-ES Vocabulary')
+    })
+
+    it('should generate fallback name for null content', async () => {
+        const deckName = await translationService.generateDeckName(null as any, 'en', 'es')
+        expect(deckName).toBe('EN-ES Vocabulary')
+    })
+})
 })
 
 describe('VoiceMappingService', () => {
