@@ -3,7 +3,6 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ThemeProvider } from '../contexts/ThemeContext'
 import { useTheme } from '../hooks/useTheme'
-import { localStorageMock } from './setup'
 
 // Mock matchMedia
 const mockMatchMedia = vi.fn()
@@ -30,11 +29,18 @@ function TestComponent() {
 describe('ThemeContext', () => {
     let mockMediaQuery: any
 
+    // Create spies for localStorage
+    const getItemSpy = vi.spyOn(Storage.prototype, 'getItem')
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
+
     beforeEach(() => {
         vi.clearAllMocks()
+        localStorage.clear()
+        getItemSpy.mockClear()
+        setItemSpy.mockClear()
 
-        // Reset localStorage mock
-        localStorageMock.getItem.mockReturnValue(null)
+        // Reset localStorage mock to return null by default
+        getItemSpy.mockReturnValue(null)
 
         // Setup media query mock
         mockMediaQuery = {
@@ -61,7 +67,7 @@ describe('ThemeContext', () => {
         })
 
         it('should load stored theme preference', () => {
-            localStorageMock.getItem.mockReturnValue('dark')
+            getItemSpy.mockReturnValue('dark')
 
             render(
                 <ThemeProvider>
@@ -99,7 +105,7 @@ describe('ThemeContext', () => {
 
             expect(screen.getByTestId('current-theme')).toHaveTextContent('light')
             expect(screen.getByTestId('effective-theme')).toHaveTextContent('light')
-            expect(localStorageMock.setItem).toHaveBeenCalledWith('anki-translation-maker-theme', 'light')
+            expect(setItemSpy).toHaveBeenCalledWith('anki-translation-maker-theme', 'light')
         })
 
         it('should set theme to dark', () => {
@@ -113,7 +119,7 @@ describe('ThemeContext', () => {
 
             expect(screen.getByTestId('current-theme')).toHaveTextContent('dark')
             expect(screen.getByTestId('effective-theme')).toHaveTextContent('dark')
-            expect(localStorageMock.setItem).toHaveBeenCalledWith('anki-translation-maker-theme', 'dark')
+            expect(setItemSpy).toHaveBeenCalledWith('anki-translation-maker-theme', 'dark')
         })
 
         it('should set theme to system', () => {
@@ -126,7 +132,7 @@ describe('ThemeContext', () => {
             fireEvent.click(screen.getByTestId('set-system'))
 
             expect(screen.getByTestId('current-theme')).toHaveTextContent('system')
-            expect(localStorageMock.setItem).toHaveBeenCalledWith('anki-translation-maker-theme', 'system')
+            expect(setItemSpy).toHaveBeenCalledWith('anki-translation-maker-theme', 'system')
         })
     })
 

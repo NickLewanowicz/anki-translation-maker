@@ -4,6 +4,19 @@ import * as matchers from '@testing-library/jest-dom/matchers'
 
 expect.extend(matchers)
 
+// Mock the entire analytics service to prevent PostHog from initializing
+vi.mock('../services/analyticsService', () => ({
+    analyticsService: {
+        initialize: vi.fn(),
+        trackEvent: vi.fn(),
+        trackPageView: vi.fn(),
+        trackFormSubmission: vi.fn(),
+        trackDeckGeneration: vi.fn(),
+        trackError: vi.fn(),
+        trackDeckError: vi.fn()
+    }
+}))
+
 // Clear localStorage before each test (jsdom provides localStorage automatically)
 beforeEach(() => {
     localStorage.clear()
