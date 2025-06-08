@@ -186,6 +186,7 @@ function getLanguageName(code: string): string {
         'de': 'German',
         'it': 'Italian',
         'pt': 'Portuguese',
+        'vi': 'Vietnamese',
         'ja': 'Japanese',
         'ko': 'Korean',
         'zh': 'Chinese',
