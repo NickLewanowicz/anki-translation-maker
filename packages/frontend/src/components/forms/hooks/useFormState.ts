@@ -6,20 +6,20 @@ import { localStorageService } from '../../../services/localStorageService'
 const DEFAULT_DECKS = [
     {
         id: 'basic-verbs',
-        name: 'Basic Spanish Verbs',
-        words: 'ser,estar,tener,hacer,ir,ver,dar,saber,querer,decir',
-        description: 'Essential Spanish verbs for beginners'
+        name: 'Basic English Verbs',
+        words: 'be,have,do,say,get,make,go,know,take,see',
+        description: 'Essential English verbs for beginners'
     },
     {
         id: 'food-vocab',
         name: 'Food Vocabulary',
-        words: 'manzana,pan,agua,leche,carne,pollo,arroz,pasta,queso,ensalada',
+        words: 'apple,bread,water,milk,meat,chicken,rice,pasta,cheese,salad',
         description: 'Common food items and ingredients'
     },
     {
         id: 'daily-phrases',
         name: 'Daily Phrases',
-        words: 'hola,adiós,gracias,por favor,disculpe,buenos días,buenas noches,hasta luego,lo siento,de nada',
+        words: 'hello,goodbye,thank you,please,excuse me,good morning,good night,see you later,sorry,you\'re welcome',
         description: 'Everyday conversational phrases'
     }
 ]
@@ -30,8 +30,8 @@ const getDefaultFormData = (): DeckFormData => ({
     aiPrompt: '',
     maxCards: 20,
     deckName: '',
-    targetLanguage: 'es',
-    sourceLanguage: 'en',
+    targetLanguage: '',
+    sourceLanguage: '',
     replicateApiKey: '',
     textModel: 'openai/gpt-4o-mini',
     voiceModel: 'minimax/speech-02-hd',
@@ -39,7 +39,8 @@ const getDefaultFormData = (): DeckFormData => ({
     generateTargetAudio: true,
     useCustomArgs: false,
     textModelArgs: '{}',
-    voiceModelArgs: '{}'
+    voiceModelArgs: '{}',
+    cardDirection: 'source-to-target'
 })
 
 export function useFormState() {
@@ -71,7 +72,8 @@ export function useFormState() {
                     generateTargetAudio: savedData.generateTargetAudio,
                     useCustomArgs: savedData.useCustomArgs,
                     textModelArgs: savedData.textModelArgs,
-                    voiceModelArgs: savedData.voiceModelArgs
+                    voiceModelArgs: savedData.voiceModelArgs,
+                    cardDirection: savedData.cardDirection || 'source-to-target'
                 }
                 setFormData(prev => ({ ...prev, ...mappedData }))
             }
@@ -103,7 +105,8 @@ export function useFormState() {
                 generateTargetAudio: data.generateTargetAudio,
                 useCustomArgs: data.useCustomArgs,
                 textModelArgs: data.textModelArgs,
-                voiceModelArgs: data.voiceModelArgs
+                voiceModelArgs: data.voiceModelArgs,
+                cardDirection: data.cardDirection
             }
             localStorageService.saveFormData(mappedData)
         } catch (error) {
@@ -117,6 +120,14 @@ export function useFormState() {
     const updateFormData = useCallback((updates: Partial<DeckFormData>) => {
         setFormData(prev => {
             const newData = { ...prev, ...updates }
+
+            // If source language changes, reset deck type if not English
+            if (updates.sourceLanguage && updates.sourceLanguage !== 'en') {
+                if (!['custom', 'ai-generated'].includes(newData.deckType)) {
+                    newData.deckType = 'custom'
+                    newData.words = ''
+                }
+            }
 
             // Save to localStorage
             saveData(newData)
@@ -195,6 +206,7 @@ export function useFormState() {
             useCustomArgs: formData.useCustomArgs,
             textModelArgs: formData.textModelArgs,
             voiceModelArgs: formData.voiceModelArgs
+            // Note: cardDirection is not sent to backend - it's only for frontend UI
         }
     }, [formData])
 

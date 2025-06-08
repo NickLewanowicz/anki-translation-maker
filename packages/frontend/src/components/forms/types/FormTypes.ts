@@ -14,6 +14,7 @@ export interface DeckFormData {
     useCustomArgs: boolean
     textModelArgs: string
     voiceModelArgs: string
+    cardDirection?: string
 }
 
 export interface DeckPreset {

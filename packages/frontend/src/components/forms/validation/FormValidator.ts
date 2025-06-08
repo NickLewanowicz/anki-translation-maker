@@ -74,10 +74,30 @@ export class FormValidator {
     private validateCommonFields(formData: DeckFormData): FormValidationError[] {
         const errors: FormValidationError[] = []
 
+        if (!formData.sourceLanguage.trim()) {
+            errors.push({
+                field: 'sourceLanguage',
+                message: 'Source language is required'
+            })
+        }
+
         if (!formData.targetLanguage.trim()) {
             errors.push({
                 field: 'targetLanguage',
                 message: 'Target language is required'
+            })
+        }
+
+        // Check if source and target languages are the same
+        if (formData.sourceLanguage && formData.targetLanguage &&
+            formData.sourceLanguage === formData.targetLanguage) {
+            errors.push({
+                field: 'sourceLanguage',
+                message: 'Source and target languages cannot be the same'
+            })
+            errors.push({
+                field: 'targetLanguage',
+                message: 'Source and target languages cannot be the same'
             })
         }
 
@@ -175,6 +195,12 @@ export class FormValidator {
                 }
                 break
             }
+
+            case 'sourceLanguage':
+                if (!String(value).trim()) {
+                    return 'Source language is required'
+                }
+                break
 
             case 'targetLanguage':
                 if (!String(value).trim()) {
