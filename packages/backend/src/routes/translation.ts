@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { TranslationService } from '../services/TranslationService.js'
-import { AnkiServiceRefactored } from '../services/AnkiServiceRefactored.js'
+import { AnkiService } from '../services/AnkiService.js'
 import { z } from 'zod'
 import type { Env } from '../types/env.js'
 import type { Translation } from '../types/translation.js'
@@ -71,7 +71,7 @@ translationRouter.post('/generate-deck', async (c) => {
         }
 
         const translationService = new TranslationService(replicateApiKey, textModel, voiceModel, parsedTextArgs, parsedVoiceArgs)
-        const ankiService = new AnkiServiceRefactored()
+        const ankiService = new AnkiService()
 
         // Step 1: Get words (either from provided list or generate from AI prompt)
         let wordList: string[]
