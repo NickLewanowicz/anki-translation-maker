@@ -23,15 +23,7 @@
         ]
     },
     "whitelist": {
-        "files": [
-            {
-                "path": "packages/backend/src/services/AnkiServiceLegacy.ts",
-                "reason": "Legacy service preserved for reference until migration is complete",
-                "expires": "2025-07-15",
-                "pr": "#26",
-                "author": "@nicklewanowicz"
-            }
-        ],
+        "files": [],
         "exports": [
             {
                 "path": "packages/backend/src/services/anki/media/MediaMappingService.ts",
