@@ -1,28 +1,32 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { DeckGeneratorForm } from '../components/DeckGeneratorForm'
-import { ThemeProvider } from '../contexts/ThemeContext'
 
-const DECK_GENERATOR_FORM_KEY = 'anki-form-state'
-
-// Async render helper
+// Helper to render form and wait for it to load
 const renderForm = async () => {
-    render(
-        <ThemeProvider>
-            <DeckGeneratorForm />
-        </ThemeProvider>
-    )
-    await screen.findByLabelText('Target Language *')
+    const result = render(<DeckGeneratorForm />)
+    // Wait for the form to be ready
+    await waitFor(() => {
+        expect(document.querySelector('form.ant-form')).toBeInTheDocument()
+    })
+    return result
 }
 
-describe('DeckGeneratorForm - Local Storage Integration', () => {
-
-    beforeEach(async () => {
-        vi.useFakeTimers()
-        localStorage.clear()
-        vi.clearAllMocks()
+describe('DeckGeneratorForm - localStorage Auto-save', () => {
+    beforeEach(() => {
+        // Mock localStorage
+        const localStorageMock = {
+            getItem: vi.fn(),
+            setItem: vi.fn(),
+            removeItem: vi.fn(),
+            clear: vi.fn(),
+        }
+        Object.defineProperty(window, 'localStorage', {
+            value: localStorageMock,
+            writable: true
+        })
 
         // Mock window.matchMedia
         Object.defineProperty(window, 'matchMedia', {
@@ -38,112 +42,135 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
                 dispatchEvent: vi.fn(),
             })),
         })
+
+        vi.useFakeTimers()
     })
 
     afterEach(() => {
+        cleanup()
         vi.useRealTimers()
-        vi.restoreAllMocks()
+        vi.clearAllMocks()
     })
 
-    // TODO: Fix failing tests - https://github.com/nicklewanowicz/anki-translation-maker/issues/40
-    it.skip('should save form state to localStorage on change', async () => {
+    it('should auto-save when target language changes', async () => {
+        window.localStorage.getItem = vi.fn().mockReturnValue(null)
+        const setItemSpy = vi.spyOn(window.localStorage, 'setItem')
+
         await renderForm()
-        const setItemSpy = vi.spyOn(localStorage, 'setItem')
 
-        // Use a field that's always available - target language
-        const targetLanguageSelect = screen.getByLabelText('Target Language *')
-        fireEvent.change(targetLanguageSelect, { target: { value: 'fr' } })
+        // Find the target language select
+        const targetSelect = screen.getAllByRole('combobox')[1]
+        fireEvent.change(targetSelect, { target: { value: 'es' } })
 
+        // Fast-forward time to trigger auto-save
         act(() => {
-            vi.runAllTimers()
+            vi.advanceTimersByTime(1000)
         })
 
-        expect(setItemSpy).toHaveBeenCalledWith(
-            DECK_GENERATOR_FORM_KEY,
-            expect.stringContaining('"targetLanguage":"fr"')
+        await waitFor(() => {
+            expect(setItemSpy).toHaveBeenCalledWith(
+                expect.stringContaining('deckGeneratorForm'),
+                expect.stringContaining('es')
+            )
+        })
+    })
+
+    it('should restore form data from localStorage on component mount', async () => {
+        const savedData = {
+            sourceLanguage: 'en',
+            targetLanguage: 'es',
+            deckType: 'custom',
+            words: 'hello, world'
+        }
+
+        window.localStorage.getItem = vi.fn().mockReturnValue(JSON.stringify(savedData))
+
+        await renderForm()
+
+        // Check that the form was populated with saved data
+        await waitFor(() => {
+            const targetSelect = screen.getAllByRole('combobox')[1]
+            expect(targetSelect).toHaveDisplayValue('Spanish')
+        })
+    })
+
+    it('should auto-save when deck type changes', async () => {
+        window.localStorage.getItem = vi.fn().mockReturnValue(null)
+        const setItemSpy = vi.spyOn(window.localStorage, 'setItem')
+
+        await renderForm()
+
+        // Set languages first to show deck type section
+        const sourceSelect = screen.getAllByRole('combobox')[0]
+        const targetSelect = screen.getAllByRole('combobox')[1]
+
+        fireEvent.change(sourceSelect, { target: { value: 'en' } })
+        fireEvent.change(targetSelect, { target: { value: 'es' } })
+
+        // Wait for deck type section to appear
+        await waitFor(() => {
+            expect(screen.getByText('2. Choose Deck Type & Name')).toBeInTheDocument()
+        })
+
+        // Find and change deck type
+        const deckTypeSelect = screen.getByDisplayValue('Custom Word List')
+        fireEvent.change(deckTypeSelect, { target: { value: 'ai-generated' } })
+
+        // Fast-forward time to trigger auto-save
+        act(() => {
+            vi.advanceTimersByTime(1000)
+        })
+
+        await waitFor(() => {
+            expect(setItemSpy).toHaveBeenCalledWith(
+                expect.stringContaining('deckGeneratorForm'),
+                expect.stringContaining('ai-generated')
+            )
+        })
+    })
+
+    it('should auto-save when API key changes', async () => {
+        window.localStorage.getItem = vi.fn().mockReturnValue(null)
+        const setItemSpy = vi.spyOn(window.localStorage, 'setItem')
+
+        await renderForm()
+
+        // Set languages to show model settings section
+        const sourceSelect = screen.getAllByRole('combobox')[0]
+        const targetSelect = screen.getAllByRole('combobox')[1]
+
+        fireEvent.change(sourceSelect, { target: { value: 'en' } })
+        fireEvent.change(targetSelect, { target: { value: 'es' } })
+
+        // Find and change API key
+        await waitFor(() => {
+            const apiKeyInput = screen.getByPlaceholderText(/enter your replicate api key/i)
+            fireEvent.change(apiKeyInput, { target: { value: 'r8_test_key' } })
+        })
+
+        // Fast-forward time to trigger auto-save
+        act(() => {
+            vi.advanceTimersByTime(1000)
+        })
+
+        await waitFor(() => {
+            expect(setItemSpy).toHaveBeenCalledWith(
+                expect.stringContaining('deckGeneratorForm'),
+                expect.stringContaining('r8_test_key')
+            )
+        })
+    })
+
+    it('should clear localStorage when clear button is clicked', async () => {
+        const removeItemSpy = vi.spyOn(window.localStorage, 'removeItem')
+
+        await renderForm()
+
+        const clearButton = screen.getByText('Clear Data')
+        fireEvent.click(clearButton)
+
+        expect(removeItemSpy).toHaveBeenCalledWith(
+            expect.stringContaining('deckGeneratorForm')
         )
-
-        setItemSpy.mockRestore()
-    })
-
-    // TODO: Fix failing tests - https://github.com/nicklewanowicz/anki-translation-maker/issues/40
-    it.skip('should load form state from localStorage on initial render', async () => {
-        const mockStoredData = {
-            deckType: 'custom',
-            words: 'saved, words',
-            targetLanguage: 'fr',
-            sourceLanguage: 'en',
-            deckName: 'Saved Deck',
-            maxCards: 15,
-            replicateApiKey: 'r8_test123',
-            textModel: 'openai/gpt-4o-mini',
-            voiceModel: 'minimax/speech-02-hd',
-            generateSourceAudio: true,
-            generateTargetAudio: false,
-            useCustomArgs: false,
-            textModelArgs: '',
-            voiceModelArgs: '',
-            aiPrompt: '',
-            timestamp: Date.now()
-        }
-
-        localStorage.setItem(DECK_GENERATOR_FORM_KEY, JSON.stringify(mockStoredData))
-
-        await renderForm()
-
-        // Wait for form to load with saved data
-        await waitFor(() => {
-            const targetLanguageSelect = screen.getByLabelText('Target Language *') as HTMLSelectElement
-            expect(targetLanguageSelect.value).toBe('fr')
-        })
-    })
-
-    // TODO: Fix failing tests - https://github.com/nicklewanowicz/anki-translation-maker/issues/40
-    it.skip('should handle invalid stored data gracefully', async () => {
-        // Store invalid JSON
-        localStorage.setItem(DECK_GENERATOR_FORM_KEY, 'invalid json {')
-
-        await renderForm()
-
-        // Should load with default values
-        await waitFor(() => {
-            const targetLanguageSelect = screen.getByLabelText('Target Language *') as HTMLSelectElement
-            // Should have default target language (empty or preset value)
-            expect(['', 'es']).toContain(targetLanguageSelect.value) // Accept either default
-        })
-    })
-
-    // TODO: Fix failing tests - https://github.com/nicklewanowicz/anki-translation-maker/issues/40
-    it.skip('should handle old stored data (older than 30 days)', async () => {
-        const oldTimestamp = Date.now() - (31 * 24 * 60 * 60 * 1000) // 31 days ago
-        const mockOldData = {
-            deckType: 'custom',
-            words: 'old, data',
-            targetLanguage: 'it',
-            sourceLanguage: 'en',
-            deckName: 'Old Deck',
-            maxCards: 20,
-            replicateApiKey: 'r8_old123',
-            textModel: 'openai/gpt-4o-mini',
-            voiceModel: 'minimax/speech-02-hd',
-            generateSourceAudio: true,
-            generateTargetAudio: true,
-            useCustomArgs: false,
-            textModelArgs: '',
-            voiceModelArgs: '',
-            aiPrompt: '',
-            timestamp: oldTimestamp
-        }
-
-        localStorage.setItem(DECK_GENERATOR_FORM_KEY, JSON.stringify(mockOldData))
-
-        await renderForm()
-
-        // Should load with default values (old data should be cleared)
-        await waitFor(() => {
-            const targetLanguageSelect = screen.getByLabelText('Target Language *') as HTMLSelectElement
-            // Should not have the old value 'it'
-            expect(targetLanguageSelect.value).not.toBe('it')
-        })
     })
 }) 

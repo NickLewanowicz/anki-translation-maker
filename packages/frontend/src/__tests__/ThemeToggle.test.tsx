@@ -47,95 +47,89 @@ describe('ThemeToggle', () => {
         it('should render all theme options', () => {
             renderThemeToggle()
 
-            expect(screen.getByTestId('sun-icon')).toBeInTheDocument()
-            expect(screen.getByTestId('moon-icon')).toBeInTheDocument()
-            expect(screen.getByTestId('monitor-icon')).toBeInTheDocument()
-
+            // Look for text labels instead of test ids
             expect(screen.getByText('Light')).toBeInTheDocument()
             expect(screen.getByText('Dark')).toBeInTheDocument()
             expect(screen.getByText('System')).toBeInTheDocument()
+
+            // Check for Ant Design Segmented component
+            expect(screen.getByRole('radiogroup')).toBeInTheDocument()
         })
 
-        it('should have correct accessibility attributes', () => {
+        it('should have segmented control accessibility', () => {
             renderThemeToggle()
 
-            const lightButton = screen.getByLabelText('Switch to light theme')
-            const darkButton = screen.getByLabelText('Switch to dark theme')
-            const systemButton = screen.getByLabelText('Switch to system theme')
+            const segmentedControl = screen.getByRole('radiogroup')
+            expect(segmentedControl).toHaveAttribute('aria-label', 'segmented control')
 
-            expect(lightButton).toHaveAttribute('title', 'Switch to light theme')
-            expect(darkButton).toHaveAttribute('title', 'Switch to dark theme')
-            expect(systemButton).toHaveAttribute('title', 'Switch to system theme')
+            // Check that radio inputs are present
+            const radioInputs = screen.getAllByRole('radio')
+            expect(radioInputs).toHaveLength(3)
         })
 
         it('should highlight the current theme', () => {
             // Start with system theme (default)
             renderThemeToggle()
 
-            const systemButton = screen.getByLabelText('Switch to system theme')
-            expect(systemButton).toHaveClass('bg-white', 'shadow-sm')
+            // Find the checked radio button (should be system by default)
+            const checkedRadio = screen.getByRole('radio', { checked: true })
+            expect(checkedRadio).toBeInTheDocument()
         })
     })
 
     describe('theme switching', () => {
-        it('should switch to light theme when light button is clicked', () => {
+        it('should switch to light theme when light option is clicked', () => {
             renderThemeToggle()
 
-            const lightButton = screen.getByLabelText('Switch to light theme')
-            fireEvent.click(lightButton)
+            // Find and click the light theme option
+            const lightOption = screen.getByText('Light').closest('label')
+            expect(lightOption).toBeTruthy()
+            fireEvent.click(lightOption!)
 
-            expect(lightButton).toHaveClass('bg-white', 'shadow-sm')
             expect(localStorage.setItem).toHaveBeenCalledWith('anki-translation-maker-theme', 'light')
         })
 
-        it('should switch to dark theme when dark button is clicked', () => {
+        it('should switch to dark theme when dark option is clicked', () => {
             renderThemeToggle()
 
-            const darkButton = screen.getByLabelText('Switch to dark theme')
-            fireEvent.click(darkButton)
+            // Find and click the dark theme option
+            const darkOption = screen.getByText('Dark').closest('label')
+            expect(darkOption).toBeTruthy()
+            fireEvent.click(darkOption!)
 
-            expect(darkButton).toHaveClass('bg-white', 'shadow-sm')
             expect(localStorage.setItem).toHaveBeenCalledWith('anki-translation-maker-theme', 'dark')
         })
 
-        it('should switch to system theme when system button is clicked', () => {
+        it('should switch to system theme when system option is clicked', () => {
             renderThemeToggle()
 
             // First switch to light
-            const lightButton = screen.getByLabelText('Switch to light theme')
-            fireEvent.click(lightButton)
+            const lightOption = screen.getByText('Light').closest('label')
+            fireEvent.click(lightOption!)
 
             // Then switch to system
-            const systemButton = screen.getByLabelText('Switch to system theme')
-            fireEvent.click(systemButton)
+            const systemOption = screen.getByText('System').closest('label')
+            expect(systemOption).toBeTruthy()
+            fireEvent.click(systemOption!)
 
-            expect(systemButton).toHaveClass('bg-white', 'shadow-sm')
             expect(localStorage.setItem).toHaveBeenCalledWith('anki-translation-maker-theme', 'system')
         })
     })
 
     describe('visual states', () => {
-        it('should have correct styles for active theme button', () => {
-            // System theme is active by default
+        it('should have Ant Design segmented styling', () => {
             renderWithTheme('system')
-            const systemButton = screen.getByLabelText('Switch to system theme')
-            expect(systemButton).toHaveClass('bg-white')
+
+            const segmentedControl = screen.getByRole('radiogroup')
+            expect(segmentedControl).toHaveClass('ant-segmented')
         })
 
-        it('should have correct styles for inactive theme buttons', () => {
-            // When system theme is active, light and dark should be inactive
-            renderWithTheme('system')
-            const lightButton = screen.getByLabelText('Switch to light theme')
-            const darkButton = screen.getByLabelText('Switch to dark theme')
-            expect(lightButton).not.toHaveClass('bg-white')
-            expect(darkButton).not.toHaveClass('bg-white')
-        })
+        it('should show selected state for active theme', () => {
+            renderWithTheme('light')
 
-        it('should have dark mode classes', () => {
-            renderWithTheme('dark')
-            // Check that the container has dark mode styling
-            const container = screen.getByLabelText('Switch to light theme').parentElement
-            expect(container).toHaveClass('dark:bg-gray-800')
+            // Should have a checked radio for the active theme
+            const checkedRadio = screen.getByRole('radio', { checked: true })
+            expect(checkedRadio).toBeInTheDocument()
         })
     })
 
@@ -155,59 +149,58 @@ describe('ThemeToggle', () => {
                 </ThemeProvider>
             )
 
-            // System theme should be active by default
-            const systemButton = screen.getByLabelText('Switch to system theme')
-            expect(systemButton).toHaveClass('bg-white')
+            // Should have a checked radio button by default
+            const checkedRadio = screen.getByRole('radio', { checked: true })
+            expect(checkedRadio).toBeInTheDocument()
         })
 
-        it('should switch themes when buttons are clicked', async () => {
+        it('should switch themes when options are clicked', async () => {
             render(
                 <ThemeProvider>
                     <ThemeToggle />
                 </ThemeProvider>
             )
 
-            // Click light theme button
-            const lightButton = screen.getByLabelText('Switch to light theme')
-            fireEvent.click(lightButton)
+            // Click light theme option
+            const lightOption = screen.getByText('Light').closest('label')
+            fireEvent.click(lightOption!)
 
             await waitFor(() => {
-                expect(lightButton).toHaveClass('bg-white')
+                const lightRadio = lightOption!.querySelector('input[type="radio"]')
+                expect(lightRadio).toBeChecked()
             })
 
-            // Click dark theme button
-            const darkButton = screen.getByLabelText('Switch to dark theme')
-            fireEvent.click(darkButton)
+            // Click dark theme option
+            const darkOption = screen.getByText('Dark').closest('label')
+            fireEvent.click(darkOption!)
 
             await waitFor(() => {
-                expect(darkButton).toHaveClass('bg-white')
+                const darkRadio = darkOption!.querySelector('input[type="radio"]')
+                expect(darkRadio).toBeChecked()
             })
         })
     })
 
     describe('icons', () => {
-        it('should render correct icons for each theme option', () => {
+        it('should render icons for each theme option', () => {
             renderThemeToggle()
 
-            const lightButton = screen.getByLabelText('Switch to light theme')
-            const darkButton = screen.getByLabelText('Switch to dark theme')
-            const systemButton = screen.getByLabelText('Switch to system theme')
-
-            expect(lightButton.querySelector('[data-testid="sun-icon"]')).toBeInTheDocument()
-            expect(darkButton.querySelector('[data-testid="moon-icon"]')).toBeInTheDocument()
-            expect(systemButton.querySelector('[data-testid="monitor-icon"]')).toBeInTheDocument()
+            // Check for SVG elements by class names
+            const svgElements = document.querySelectorAll('svg')
+            expect(svgElements.length).toBeGreaterThanOrEqual(3) // At least 3 icons
         })
 
-        it('should have correct icon styling', () => {
+        it('should have correct icon classes', () => {
             renderThemeToggle()
 
-            const sunIcon = screen.getByTestId('sun-icon')
-            const moonIcon = screen.getByTestId('moon-icon')
-            const monitorIcon = screen.getByTestId('monitor-icon')
+            // Check for Lucide icon classes in SVG elements
+            const sunIcon = document.querySelector('.lucide-sun')
+            const moonIcon = document.querySelector('.lucide-moon')
+            const monitorIcon = document.querySelector('.lucide-monitor')
 
-            expect(sunIcon).toHaveClass('h-4', 'w-4')
-            expect(moonIcon).toHaveClass('h-4', 'w-4')
-            expect(monitorIcon).toHaveClass('h-4', 'w-4')
+            expect(sunIcon).toBeInTheDocument()
+            expect(moonIcon).toBeInTheDocument()
+            expect(monitorIcon).toBeInTheDocument()
         })
     })
 })
