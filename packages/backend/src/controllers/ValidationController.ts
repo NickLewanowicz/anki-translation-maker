@@ -1,10 +1,8 @@
 import type { Context } from 'hono'
-import { RequestValidator, type DeckGenerationRequest } from '../middleware/RequestValidator.js'
+import { RequestValidator, type DeckGenerationRequest, generateDeckSchema } from '../middleware/RequestValidator.js'
 import { ResponseFormatter } from '../utils/ResponseFormatter.js'
 import { TranslationService } from '../services/TranslationService'
-import { generateDeckSchema } from '../routes/translation'
 import { Hono } from 'hono'
-import type { DeckConfig } from '../types/translation'
 import { z } from 'zod'
 
 /**
@@ -18,12 +16,12 @@ export class ValidationController {
         this.translationService = translationService
     }
 
-    public validate = async (c: Context, deckConfig: DeckConfig): Promise<Response> => {
+    public validate = async (c: Context, deckConfig: DeckGenerationRequest): Promise<Response> => {
         try {
             // All validation now happens in the route handler before calling this.
             // This controller's job is just to format the success response.
 
-            const wordList = deckConfig.words ? deckConfig.words.split(',').map(w => w.trim()) : []
+            const wordList = deckConfig.words ? deckConfig.words.split(',').map((w: string) => w.trim()) : []
             const wordCount = wordList.length > 0 ? wordList.length : deckConfig.maxCards
 
             const summary = {

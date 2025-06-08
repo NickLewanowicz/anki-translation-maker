@@ -9,6 +9,7 @@
         "start": "bun run src/index.ts",
         "lint": "eslint src --ext .ts",
         "test": "bun test",
+        "check-types": "tsc --noEmit",
         "clean": "rm -rf node_modules"
     },
     "dependencies": {
