@@ -1,11 +1,15 @@
+import { ConfigProvider, theme } from 'antd'
 import { DeckGeneratorForm } from './components/DeckGeneratorForm'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
-import { ThemeProvider } from './contexts/ThemeContext'
+import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { analyticsService } from './services/analyticsService'
 import { useEffect } from 'react'
 
-function App() {
+function AppContent() {
+    const { effectiveTheme } = useTheme()
+    const isDarkMode = effectiveTheme === 'dark'
+
     // Initialize analytics on app load
     useEffect(() => {
         // Analytics is automatically initialized on import, but we can track app start
@@ -15,8 +19,24 @@ function App() {
             online: navigator.onLine
         })
     }, [])
+
     return (
-        <ThemeProvider>
+        <ConfigProvider
+            theme={{
+                algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
+                token: {
+                    colorPrimary: '#3b82f6', // Blue-500 to match current theme
+                    borderRadius: 8,
+                    colorBgContainer: isDarkMode ? '#1f2937' : '#ffffff', // gray-800 : white
+                },
+                components: {
+                    Card: {
+                        colorBgContainer: isDarkMode ? '#1f2937' : '#ffffff',
+                        colorBorder: isDarkMode ? '#374151' : '#e5e7eb', // gray-700 : gray-200
+                    },
+                }
+            }}
+        >
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 transition-colors">
                 <Header />
                 <main className="container mx-auto px-4 py-8">
@@ -36,6 +56,14 @@ function App() {
                 </main>
                 <Footer />
             </div>
+        </ConfigProvider>
+    )
+}
+
+function App() {
+    return (
+        <ThemeProvider>
+            <AppContent />
         </ThemeProvider>
     )
 }

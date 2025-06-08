@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useContext } from 'react'
 import { Theme, ThemeContextType, ThemeContext } from './theme'
 
 const THEME_STORAGE_KEY = 'anki-translation-maker-theme'
@@ -29,6 +29,14 @@ function getStoredTheme(): Theme {
         }
     }
     return 'system'
+}
+
+export function useTheme(): ThemeContextType {
+    const context = useContext(ThemeContext)
+    if (!context) {
+        throw new Error('useTheme must be used within a ThemeProvider')
+    }
+    return context
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
