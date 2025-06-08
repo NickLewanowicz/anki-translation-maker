@@ -112,7 +112,7 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
 
         // Fill in required fields
         const apiKeyInput = screen.getByLabelText('Replicate API Key *')
-        fireEvent.change(apiKeyInput, { target: { value: 'r8_test_key_12345' } })
+        fireEvent.change(apiKeyInput, { target: { value: 'r8_test_key_1234567890_valid' } })
 
         // Wait for form validation to complete
         await waitFor(() => {
@@ -130,7 +130,7 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
                     targetLanguage: 'es',
                     generateSourceAudio: true,
                     generateTargetAudio: true,
-                    replicateApiKey: 'r8_test_key_12345'
+                    replicateApiKey: 'r8_test_key_1234567890_valid'
                 })
             )
         }, { timeout: 3000 })
@@ -155,7 +155,7 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
         const apiKeyInput = screen.getByLabelText('Replicate API Key *')
 
         fireEvent.change(targetLanguageSelect, { target: { value: 'fr' } })
-        fireEvent.change(apiKeyInput, { target: { value: 'r8_test_key_12345' } })
+        fireEvent.change(apiKeyInput, { target: { value: 'r8_test_key_1234567890_valid' } })
 
         // Wait for form validation to complete
         await waitFor(() => {
