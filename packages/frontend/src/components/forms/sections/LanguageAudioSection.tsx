@@ -1,5 +1,10 @@
 import React from 'react'
+import { Typography, Input, Select, Checkbox, Row, Col, Card, theme } from 'antd'
+import { LinkOutlined } from '@ant-design/icons'
 import type { DeckFormData } from '../types/FormTypes'
+
+const { Title, Paragraph, Text, Link } = Typography
+const { TextArea } = Input
 
 interface ModelSettingsSectionProps {
     formData: DeckFormData
@@ -8,6 +13,7 @@ interface ModelSettingsSectionProps {
 }
 
 export function ModelSettingsSection({ formData, onInputChange, getFieldError }: ModelSettingsSectionProps) {
+    const { token } = theme.useToken()
     const apiKeyError = getFieldError('replicateApiKey')
     const textModelError = getFieldError('textModel')
     const voiceModelError = getFieldError('voiceModel')
@@ -26,221 +32,329 @@ export function ModelSettingsSection({ formData, onInputChange, getFieldError }:
         return null
     }
 
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        onInputChange(e)
+    }
+
+    const handleTextModelChange = (value: string) => {
+        if (value === 'openai/gpt-4o-mini') {
+            const syntheticEvent = {
+                target: { name: 'textModel', value: 'openai/gpt-4o-mini' }
+            } as React.ChangeEvent<HTMLInputElement>
+            onInputChange(syntheticEvent)
+        } else {
+            const syntheticEvent = {
+                target: { name: 'textModel', value: '' }
+            } as React.ChangeEvent<HTMLInputElement>
+            onInputChange(syntheticEvent)
+        }
+    }
+
+    const handleVoiceModelChange = (value: string) => {
+        if (value === 'minimax/speech-02-hd') {
+            const syntheticEvent = {
+                target: { name: 'voiceModel', value: 'minimax/speech-02-hd' }
+            } as React.ChangeEvent<HTMLInputElement>
+            onInputChange(syntheticEvent)
+        } else {
+            const syntheticEvent = {
+                target: { name: 'voiceModel', value: '' }
+            } as React.ChangeEvent<HTMLInputElement>
+            onInputChange(syntheticEvent)
+        }
+    }
+
+    const handleCheckboxChange = (e: any) => {
+        const syntheticEvent = {
+            target: {
+                name: e.target.id,
+                checked: e.target.checked
+            }
+        } as React.ChangeEvent<HTMLInputElement>
+        onInputChange(syntheticEvent)
+    }
+
     return (
-        <div className="space-y-4">
-            <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+        <div style={{ marginBottom: token.marginLG }}>
+            <div style={{ marginBottom: token.marginMD }}>
+                <Title level={4} style={{ margin: 0, marginBottom: token.marginXS }}>
                     5. Model & AI Settings
-                </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                </Title>
+                <Paragraph style={{ color: token.colorTextSecondary, marginBottom: token.marginMD }}>
                     Configure your API key and select AI models for translation and audio generation.
-                </p>
+                </Paragraph>
             </div>
 
             {/* API Key */}
-            <div>
-                <label htmlFor="replicateApiKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
+            <div style={{ marginBottom: token.marginMD }}>
+                <Text strong style={{ display: 'block', marginBottom: token.marginXS }}>
                     Replicate API Key *
-                </label>
-                <input
-                    type="password"
-                    id="replicateApiKey"
+                </Text>
+                <Input.Password
                     name="replicateApiKey"
                     value={formData.replicateApiKey}
-                    onChange={onInputChange}
+                    onChange={handleInputChange}
                     placeholder="r8_..."
-                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${apiKeyError
-                        ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
-                        } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400`}
+                    size="large"
+                    status={apiKeyError ? 'error' : undefined}
                 />
                 {apiKeyError && (
-                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{apiKeyError}</p>
+                    <Text
+                        type="danger"
+                        style={{
+                            display: 'block',
+                            marginTop: token.marginXXS,
+                            fontSize: token.fontSizeSM
+                        }}
+                    >
+                        {apiKeyError}
+                    </Text>
                 )}
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Your Replicate API key is required for AI translation and audio generation.
-                    <a href="https://replicate.com/account/api-tokens" target="_blank" rel="noopener noreferrer" className="ml-1 text-blue-600 dark:text-blue-400 hover:underline">
-                        Get your key here
-                    </a>
-                </p>
+                <Text
+                    type="secondary"
+                    style={{
+                        display: 'block',
+                        marginTop: token.marginXXS,
+                        fontSize: token.fontSizeSM
+                    }}
+                >
+                    Your Replicate API key is required for AI translation and audio generation.{' '}
+                    <Link
+                        href="https://replicate.com/account/api-tokens"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <LinkOutlined /> Get your key here
+                    </Link>
+                </Text>
             </div>
 
             {/* Model Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label htmlFor="textModel" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
-                        Text Model
-                    </label>
-                    <select
-                        id="textModel"
-                        name="textModel"
-                        value={formData.textModel === 'openai/gpt-4o-mini' ? 'openai/gpt-4o-mini' : 'custom'}
-                        onChange={(e) => {
-                            if (e.target.value === 'openai/gpt-4o-mini') {
-                                onInputChange({
-                                    target: { name: 'textModel', value: 'openai/gpt-4o-mini' }
-                                } as React.ChangeEvent<HTMLInputElement>)
-                            } else {
-                                onInputChange({
-                                    target: { name: 'textModel', value: '' }
-                                } as React.ChangeEvent<HTMLInputElement>)
+            <Row gutter={[16, 16]} style={{ marginBottom: token.marginMD }}>
+                <Col xs={24} md={12}>
+                    <div>
+                        <Text strong style={{ display: 'block', marginBottom: token.marginXS }}>
+                            Text Model
+                        </Text>
+                        <Select
+                            value={formData.textModel === 'openai/gpt-4o-mini' ? 'openai/gpt-4o-mini' : 'custom'}
+                            onChange={handleTextModelChange}
+                            style={{ width: '100%' }}
+                            size="large"
+                            status={textModelError ? 'error' : undefined}
+                        >
+                            <Select.Option value="openai/gpt-4o-mini">OpenAI GPT-4o Mini (recommended)</Select.Option>
+                            <Select.Option value="custom">Custom Model</Select.Option>
+                        </Select>
+                        {formData.textModel !== 'openai/gpt-4o-mini' && (
+                            <Input
+                                name="textModel"
+                                value={formData.textModel}
+                                onChange={handleInputChange}
+                                placeholder="e.g., openai/gpt-4o, meta/llama-3.1-70b-instruct"
+                                size="large"
+                                status={textModelError ? 'error' : undefined}
+                                style={{ marginTop: token.marginXS }}
+                            />
+                        )}
+                        {textModelError && (
+                            <Text
+                                type="danger"
+                                style={{
+                                    display: 'block',
+                                    marginTop: token.marginXXS,
+                                    fontSize: token.fontSizeSM
+                                }}
+                            >
+                                {textModelError}
+                            </Text>
+                        )}
+                        <Text
+                            type="secondary"
+                            style={{
+                                display: 'block',
+                                marginTop: token.marginXXS,
+                                fontSize: token.fontSizeSM
+                            }}
+                        >
+                            {formData.textModel === 'openai/gpt-4o-mini'
+                                ? 'Tested and recommended for translation and deck name generation'
+                                : 'Enter a custom model identifier (e.g., openai/gpt-4o)'
                             }
-                        }}
-                        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${textModelError
-                            ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
-                            } text-gray-900 dark:text-gray-100`}
-                    >
-                        <option value="openai/gpt-4o-mini">OpenAI GPT-4o Mini (recommended)</option>
-                        <option value="custom">Custom Model</option>
-                    </select>
-                    {formData.textModel !== 'openai/gpt-4o-mini' && (
-                        <input
-                            type="text"
-                            name="textModel"
-                            value={formData.textModel}
-                            onChange={onInputChange}
-                            placeholder="e.g., openai/gpt-4o, meta/llama-3.1-70b-instruct"
-                            className={`mt-2 w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${textModelError
-                                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
-                                } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400`}
-                        />
-                    )}
-                    {textModelError && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{textModelError}</p>
-                    )}
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        {formData.textModel === 'openai/gpt-4o-mini'
-                            ? 'Tested and recommended for translation and deck name generation'
-                            : 'Enter a custom model identifier (e.g., openai/gpt-4o)'
-                        }
-                    </p>
-                </div>
+                        </Text>
+                    </div>
+                </Col>
 
-                <div>
-                    <label htmlFor="voiceModel" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
-                        Voice Model
-                    </label>
-                    <select
-                        id="voiceModel"
-                        name="voiceModel"
-                        value={formData.voiceModel === 'minimax/speech-02-hd' ? 'minimax/speech-02-hd' : 'custom'}
-                        onChange={(e) => {
-                            if (e.target.value === 'minimax/speech-02-hd') {
-                                onInputChange({
-                                    target: { name: 'voiceModel', value: 'minimax/speech-02-hd' }
-                                } as React.ChangeEvent<HTMLInputElement>)
-                            } else {
-                                onInputChange({
-                                    target: { name: 'voiceModel', value: '' }
-                                } as React.ChangeEvent<HTMLInputElement>)
+                <Col xs={24} md={12}>
+                    <div>
+                        <Text strong style={{ display: 'block', marginBottom: token.marginXS }}>
+                            Voice Model
+                        </Text>
+                        <Select
+                            value={formData.voiceModel === 'minimax/speech-02-hd' ? 'minimax/speech-02-hd' : 'custom'}
+                            onChange={handleVoiceModelChange}
+                            style={{ width: '100%' }}
+                            size="large"
+                            status={voiceModelError ? 'error' : undefined}
+                        >
+                            <Select.Option value="minimax/speech-02-hd">Minimax Speech 02 HD (recommended)</Select.Option>
+                            <Select.Option value="custom">Custom Model</Select.Option>
+                        </Select>
+                        {formData.voiceModel !== 'minimax/speech-02-hd' && (
+                            <Input
+                                name="voiceModel"
+                                value={formData.voiceModel}
+                                onChange={handleInputChange}
+                                placeholder="e.g., parler-tts/parler-tts-large-v1"
+                                size="large"
+                                status={voiceModelError ? 'error' : undefined}
+                                style={{ marginTop: token.marginXS }}
+                            />
+                        )}
+                        {voiceModelError && (
+                            <Text
+                                type="danger"
+                                style={{
+                                    display: 'block',
+                                    marginTop: token.marginXXS,
+                                    fontSize: token.fontSizeSM
+                                }}
+                            >
+                                {voiceModelError}
+                            </Text>
+                        )}
+                        <Text
+                            type="secondary"
+                            style={{
+                                display: 'block',
+                                marginTop: token.marginXXS,
+                                fontSize: token.fontSizeSM
+                            }}
+                        >
+                            {formData.voiceModel === 'minimax/speech-02-hd'
+                                ? 'Tested and recommended for audio generation'
+                                : 'Enter a custom model identifier (e.g., parler-tts/parler-tts-mini-v1)'
                             }
-                        }}
-                        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${voiceModelError
-                            ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
-                            } text-gray-900 dark:text-gray-100`}
-                    >
-                        <option value="minimax/speech-02-hd">Minimax Speech 02 HD (recommended)</option>
-                        <option value="custom">Custom Model</option>
-                    </select>
-                    {formData.voiceModel !== 'minimax/speech-02-hd' && (
-                        <input
-                            type="text"
-                            name="voiceModel"
-                            value={formData.voiceModel}
-                            onChange={onInputChange}
-                            placeholder="e.g., parler-tts/parler-tts-large-v1"
-                            className={`mt-2 w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${voiceModelError
-                                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
-                                } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400`}
-                        />
-                    )}
-                    {voiceModelError && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{voiceModelError}</p>
-                    )}
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        {formData.voiceModel === 'minimax/speech-02-hd'
-                            ? 'Tested and recommended for audio generation'
-                            : 'Enter a custom model identifier (e.g., parler-tts/parler-tts-mini-v1)'
-                        }
-                    </p>
-                </div>
-            </div>
+                        </Text>
+                    </div>
+                </Col>
+            </Row>
 
             {/* Advanced Model Arguments */}
-            <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                    <input
-                        type="checkbox"
+            <div style={{ marginBottom: token.marginMD }}>
+                <div style={{ marginBottom: token.marginSM }}>
+                    <Checkbox
                         id="useCustomArgs"
-                        name="useCustomArgs"
                         checked={formData.useCustomArgs}
-                        onChange={onInputChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded transition-colors"
-                    />
-                    <label htmlFor="useCustomArgs" className="text-sm text-gray-700 dark:text-gray-300">
+                        onChange={handleCheckboxChange}
+                    >
                         Use custom model arguments (advanced)
-                    </label>
+                    </Checkbox>
                 </div>
 
                 {formData.useCustomArgs && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-7">
-                        <div>
-                            <label htmlFor="textModelArgs" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
-                                Text Model Arguments
-                            </label>
-                            <textarea
-                                id="textModelArgs"
-                                name="textModelArgs"
-                                value={formData.textModelArgs}
-                                onChange={onInputChange}
-                                rows={3}
-                                placeholder='{"temperature": 0.7, "max_tokens": 100}'
-                                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-vertical ${textArgsError
-                                    ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
-                                    } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 font-mono text-sm`}
-                            />
-                            {textArgsError && (
-                                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{textArgsError}</p>
-                            )}
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                JSON object with model parameters
-                            </p>
-                        </div>
+                    <Card
+                        size="small"
+                        style={{
+                            background: token.colorBgLayout,
+                            borderColor: token.colorBorder,
+                            marginTop: token.marginSM
+                        }}
+                    >
+                        <Row gutter={[16, 16]}>
+                            <Col xs={24} md={12}>
+                                <div>
+                                    <Text strong style={{ display: 'block', marginBottom: token.marginXS }}>
+                                        Text Model Arguments
+                                    </Text>
+                                    <TextArea
+                                        name="textModelArgs"
+                                        value={formData.textModelArgs}
+                                        onChange={handleInputChange}
+                                        rows={3}
+                                        placeholder='{"temperature": 0.7, "max_tokens": 100}'
+                                        size="large"
+                                        status={textArgsError ? 'error' : undefined}
+                                        style={{ fontFamily: 'monospace', fontSize: token.fontSizeSM }}
+                                    />
+                                    {textArgsError && (
+                                        <Text
+                                            type="danger"
+                                            style={{
+                                                display: 'block',
+                                                marginTop: token.marginXXS,
+                                                fontSize: token.fontSizeSM
+                                            }}
+                                        >
+                                            {textArgsError}
+                                        </Text>
+                                    )}
+                                    <Text
+                                        type="secondary"
+                                        style={{
+                                            display: 'block',
+                                            marginTop: token.marginXXS,
+                                            fontSize: token.fontSizeSM
+                                        }}
+                                    >
+                                        JSON object with model parameters
+                                    </Text>
+                                </div>
+                            </Col>
 
-                        <div>
-                            <label htmlFor="voiceModelArgs" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
-                                Voice Model Arguments
-                            </label>
-                            <textarea
-                                id="voiceModelArgs"
-                                name="voiceModelArgs"
-                                value={formData.voiceModelArgs}
-                                onChange={onInputChange}
-                                rows={3}
-                                placeholder='{"speed": 1.0, "voice": "default"}'
-                                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-vertical ${voiceArgsError
-                                    ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
-                                    } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 font-mono text-sm`}
-                            />
-                            {voiceArgsError && (
-                                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{voiceArgsError}</p>
-                            )}
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                JSON object with voice parameters
-                            </p>
-                        </div>
-                    </div>
+                            <Col xs={24} md={12}>
+                                <div>
+                                    <Text strong style={{ display: 'block', marginBottom: token.marginXS }}>
+                                        Voice Model Arguments
+                                    </Text>
+                                    <TextArea
+                                        name="voiceModelArgs"
+                                        value={formData.voiceModelArgs}
+                                        onChange={handleInputChange}
+                                        rows={3}
+                                        placeholder='{"speed": 1.0, "voice": "default"}'
+                                        size="large"
+                                        status={voiceArgsError ? 'error' : undefined}
+                                        style={{ fontFamily: 'monospace', fontSize: token.fontSizeSM }}
+                                    />
+                                    {voiceArgsError && (
+                                        <Text
+                                            type="danger"
+                                            style={{
+                                                display: 'block',
+                                                marginTop: token.marginXXS,
+                                                fontSize: token.fontSizeSM
+                                            }}
+                                        >
+                                            {voiceArgsError}
+                                        </Text>
+                                    )}
+                                    <Text
+                                        type="secondary"
+                                        style={{
+                                            display: 'block',
+                                            marginTop: token.marginXXS,
+                                            fontSize: token.fontSizeSM
+                                        }}
+                                    >
+                                        JSON object with voice parameters
+                                    </Text>
+                                </div>
+                            </Col>
+                        </Row>
+                    </Card>
                 )}
 
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <Text
+                    type="secondary"
+                    style={{
+                        display: 'block',
+                        marginTop: token.marginXS,
+                        fontSize: token.fontSizeSM
+                    }}
+                >
                     Advanced users can customize model behavior with JSON parameters. Leave unchecked for optimal defaults.
-                </p>
+                </Text>
             </div>
         </div>
     )
