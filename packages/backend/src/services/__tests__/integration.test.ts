@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'bun:test'
 import { Hono } from 'hono'
+import { translationRouter } from '../../routes/translation.js'
 import { cors } from 'hono/cors'
 import { serve } from 'bun'
-import { translationRouter } from '../../routes/translation.js'
 
 describe('Integration Tests', () => {
     let server: { stop?: () => void }
