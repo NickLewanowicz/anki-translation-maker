@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { Download, Loader2, AlertCircle } from 'lucide-react'
+import { Form, Button, Alert, Spin, Space, theme } from 'antd'
+import { DownloadOutlined, LoadingOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
 import { deckService } from '../services/deckService'
 import { analyticsService } from '../services/analyticsService'
 import { useFormState } from './forms/hooks/useFormState'
@@ -10,6 +11,7 @@ import { CardDirectionSection } from './forms/sections/CardDirectionSection'
 import { ModelSettingsSection } from './forms/sections/LanguageAudioSection'
 
 export function DeckGeneratorForm() {
+    const { token } = theme.useToken()
     const [isGenerating, setIsGenerating] = useState(false)
     const [isTesting, setIsTesting] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -142,15 +144,28 @@ export function DeckGeneratorForm() {
     // Show loading state while localStorage is being loaded
     if (!isLocalStorageLoaded) {
         return (
-            <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-                <span className="ml-2 text-gray-600 dark:text-gray-300">Loading saved data...</span>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: `${token.paddingLG}px 0`
+            }}>
+                <Spin
+                    indicator={<LoadingOutlined style={{ fontSize: 24, color: token.colorPrimary }} spin />}
+                    size="large"
+                />
+                <span style={{
+                    marginLeft: token.marginSM,
+                    color: token.colorTextSecondary
+                }}>
+                    Loading saved data...
+                </span>
             </div>
         )
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <Form onFinish={handleSubmit} layout="vertical" style={{ gap: token.marginLG }}>
             {/* Step 1: Language Selection */}
             <LanguageSelectionSection
                 formData={formData}
@@ -189,81 +204,94 @@ export function DeckGeneratorForm() {
 
             {/* Error Display */}
             {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-4 py-3 rounded-md transition-colors">
-                    <div className="flex items-center">
-                        <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
-                        <span>{error}</span>
-                    </div>
-                </div>
+                <Alert
+                    message="Error"
+                    description={error}
+                    type="error"
+                    icon={<ExclamationCircleOutlined />}
+                    showIcon
+                    style={{ marginBottom: token.marginMD }}
+                />
             )}
 
             {/* Test Result Display */}
             {testResult && (
-                <div className={`border px-4 py-3 rounded-md transition-colors ${testResult.includes('✅')
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-200'
-                    : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-200'
-                    }`}>
-                    <p>{testResult}</p>
-                </div>
+                <Alert
+                    message={testResult.includes('✅') ? 'Configuration Valid' : 'Configuration Error'}
+                    description={testResult}
+                    type={testResult.includes('✅') ? 'success' : 'error'}
+                    showIcon
+                    style={{ marginBottom: token.marginMD }}
+                />
             )}
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                    type="submit"
-                    disabled={isGenerating || isTesting}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed flex items-center justify-center"
+            <Space.Compact
+                direction="vertical"
+                style={{ width: '100%' }}
+                size="middle"
+            >
+                <Space
+                    direction="horizontal"
+                    style={{ width: '100%', flexWrap: 'wrap' }}
+                    size="middle"
                 >
-                    {isGenerating ? (
-                        <>
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            Generating Deck...
-                        </>
-                    ) : (
-                        <>
-                            <Download className="h-4 w-4 mr-2" />
-                            Generate Deck
-                        </>
-                    )}
-                </button>
+                    <Button
+                        type="primary"
+                        htmlType="submit"
+                        loading={isGenerating}
+                        disabled={isTesting}
+                        icon={isGenerating ? <LoadingOutlined /> : <DownloadOutlined />}
+                        size="large"
+                        style={{ flex: 1, minWidth: '200px' }}
+                    >
+                        {isGenerating ? 'Generating Deck...' : 'Generate Deck'}
+                    </Button>
 
-                <button
-                    type="button"
-                    onClick={handleTestConfiguration}
-                    disabled={isGenerating || isTesting}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                    {isTesting ? (
-                        <>
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            Testing...
-                        </>
-                    ) : (
-                        'Test Configuration'
-                    )}
-                </button>
+                    <Button
+                        type="default"
+                        onClick={handleTestConfiguration}
+                        loading={isTesting}
+                        disabled={isGenerating}
+                        size="large"
+                        style={{
+                            backgroundColor: token.colorSuccess,
+                            borderColor: token.colorSuccess,
+                            color: 'white'
+                        }}
+                    >
+                        {isTesting ? 'Testing...' : 'Test Configuration'}
+                    </Button>
 
-                <button
-                    type="button"
-                    onClick={handleClearStoredData}
-                    disabled={isGenerating || isTesting}
-                    className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:cursor-not-allowed"
-                >
-                    Clear Data
-                </button>
-            </div>
+                    <Button
+                        type="default"
+                        onClick={handleClearStoredData}
+                        disabled={isGenerating || isTesting}
+                        size="large"
+                    >
+                        Clear Data
+                    </Button>
+                </Space>
+            </Space.Compact>
 
             {/* Validation Errors Summary */}
             {errors.length > 0 && (
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-200 px-4 py-3 rounded-md transition-colors">
-                    <h4 className="font-medium mb-2">Please fix the following errors:</h4>
-                    <ul className="list-disc list-inside space-y-1">
-                        {errors.map((error, index) => (
-                            <li key={index} className="text-sm">{error.message}</li>
-                        ))}
-                    </ul>
-                </div>
+                <Alert
+                    message="Please fix the following errors:"
+                    description={
+                        <ul style={{ margin: 0, paddingLeft: token.paddingMD }}>
+                            {errors.map((error, index) => (
+                                <li key={index} style={{ fontSize: token.fontSizeSM }}>
+                                    {error.message}
+                                </li>
+                            ))}
+                        </ul>
+                    }
+                    type="warning"
+                    showIcon
+                    style={{ marginTop: token.marginMD }}
+                />
             )}
-        </form>
+        </Form>
     )
 } 
