@@ -1,5 +1,8 @@
 import React from 'react'
+import { Typography, Select, Card, Row, Col, theme } from 'antd'
 import type { DeckFormData } from '../types/FormTypes'
+
+const { Title, Paragraph, Text } = Typography
 
 interface CardDirectionSectionProps {
     formData: DeckFormData
@@ -7,6 +10,8 @@ interface CardDirectionSectionProps {
 }
 
 export function CardDirectionSection({ formData, onInputChange }: CardDirectionSectionProps) {
+    const { token } = theme.useToken()
+
     // Only show if we have content (words or AI prompt) and languages are selected
     const hasContent = (formData.deckType === 'ai-generated' && formData.aiPrompt) ||
         (formData.deckType !== 'ai-generated' && formData.words)
@@ -22,64 +27,133 @@ export function CardDirectionSection({ formData, onInputChange }: CardDirectionS
     const sourceLanguageName = getLanguageName(formData.sourceLanguage)
     const targetLanguageName = getLanguageName(formData.targetLanguage)
 
+    const handleSelectChange = (value: string) => {
+        // Create a synthetic event to match the existing interface
+        const syntheticEvent = {
+            target: {
+                name: 'cardDirection',
+                value: value
+            }
+        } as React.ChangeEvent<HTMLSelectElement>
+        onInputChange(syntheticEvent)
+    }
+
     return (
-        <div className="space-y-4">
-            <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+        <div style={{ marginBottom: token.marginLG }}>
+            <div style={{ marginBottom: token.marginMD }}>
+                <Title level={4} style={{ margin: 0, marginBottom: token.marginXS }}>
                     4. Card Direction
-                </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                </Title>
+                <Paragraph style={{ color: token.colorTextSecondary, marginBottom: token.marginMD }}>
                     Choose how to arrange your cards. This determines what you'll see on the front and back of each flashcard.
-                </p>
+                </Paragraph>
             </div>
 
-            <div>
-                <label htmlFor="cardDirection" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
+            <div style={{ marginBottom: token.marginMD }}>
+                <Text strong style={{ display: 'block', marginBottom: token.marginXS }}>
                     Card Layout
-                </label>
-                <select
-                    id="cardDirection"
-                    name="cardDirection"
+                </Text>
+                <Select
                     value={formData.cardDirection || 'source-to-target'}
-                    onChange={onInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors"
+                    onChange={handleSelectChange}
+                    style={{ width: '100%' }}
+                    size="large"
                 >
-                    <option value="source-to-target">
+                    <Select.Option value="source-to-target">
                         {sourceLanguageName} → {targetLanguageName} (Front: {sourceLanguageName}, Back: {targetLanguageName})
-                    </option>
-                    <option value="target-to-source">
+                    </Select.Option>
+                    <Select.Option value="target-to-source">
                         {targetLanguageName} → {sourceLanguageName} (Front: {targetLanguageName}, Back: {sourceLanguageName})
-                    </option>
-                </select>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    </Select.Option>
+                </Select>
+                <Text
+                    type="secondary"
+                    style={{
+                        display: 'block',
+                        marginTop: token.marginXXS,
+                        fontSize: token.fontSizeSM
+                    }}
+                >
                     Choose which language appears on the front of your flashcards
-                </p>
+                </Text>
             </div>
 
             {/* Preview */}
-            <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-4">
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Card Preview:</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md p-3">
-                        <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Front</div>
-                        <div className="font-medium text-gray-900 dark:text-gray-100">
-                            {(formData.cardDirection || 'source-to-target') === 'source-to-target'
-                                ? `[${sourceLanguageName} word/phrase]`
-                                : `[${targetLanguageName} word/phrase]`
-                            }
-                        </div>
-                    </div>
-                    <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md p-3">
-                        <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Back</div>
-                        <div className="font-medium text-gray-900 dark:text-gray-100">
-                            {(formData.cardDirection || 'source-to-target') === 'source-to-target'
-                                ? `[${targetLanguageName} translation]`
-                                : `[${sourceLanguageName} translation]`
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <Card
+                title="Card Preview:"
+                size="small"
+                style={{
+                    background: token.colorBgLayout,
+                    borderColor: token.colorBorder
+                }}
+                headStyle={{
+                    fontSize: token.fontSizeSM,
+                    fontWeight: 500,
+                    color: token.colorTextSecondary,
+                    minHeight: 'auto',
+                    padding: `${token.paddingSM}px ${token.padding}px`
+                }}
+                bodyStyle={{ padding: token.padding }}
+            >
+                <Row gutter={[16, 16]}>
+                    <Col xs={24} md={12}>
+                        <Card
+                            size="small"
+                            style={{
+                                background: token.colorBgContainer,
+                                borderColor: token.colorBorder
+                            }}
+                        >
+                            <Text
+                                type="secondary"
+                                style={{
+                                    fontSize: token.fontSizeSM,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.025em',
+                                    display: 'block',
+                                    marginBottom: token.marginXXS
+                                }}
+                            >
+                                Front
+                            </Text>
+                            <Text strong>
+                                {(formData.cardDirection || 'source-to-target') === 'source-to-target'
+                                    ? `[${sourceLanguageName} word/phrase]`
+                                    : `[${targetLanguageName} word/phrase]`
+                                }
+                            </Text>
+                        </Card>
+                    </Col>
+                    <Col xs={24} md={12}>
+                        <Card
+                            size="small"
+                            style={{
+                                background: token.colorBgContainer,
+                                borderColor: token.colorBorder
+                            }}
+                        >
+                            <Text
+                                type="secondary"
+                                style={{
+                                    fontSize: token.fontSizeSM,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.025em',
+                                    display: 'block',
+                                    marginBottom: token.marginXXS
+                                }}
+                            >
+                                Back
+                            </Text>
+                            <Text strong>
+                                {(formData.cardDirection || 'source-to-target') === 'source-to-target'
+                                    ? `[${targetLanguageName} translation]`
+                                    : `[${sourceLanguageName} translation]`
+                                }
+                            </Text>
+                        </Card>
+                    </Col>
+                </Row>
+            </Card>
         </div>
     )
 }
@@ -95,7 +169,8 @@ function getLanguageName(code: string): string {
         'ja': 'Japanese',
         'ko': 'Korean',
         'zh': 'Chinese',
-        'ru': 'Russian'
+        'ru': 'Russian',
+        'vi': 'Vietnamese'
     }
     return languageNames[code] || code.toUpperCase()
 } 
