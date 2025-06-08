@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import type { DeckFormData, FormValidationError } from '../types/FormTypes'
 import { FormValidator } from '../validation/FormValidator'
 import { localStorageService } from '../../../services/localStorageService'
@@ -46,7 +46,7 @@ export function useFormState() {
     const [formData, setFormData] = useState<DeckFormData>(getDefaultFormData())
     const [isLocalStorageLoaded, setIsLocalStorageLoaded] = useState(false)
     const [errors, setErrors] = useState<FormValidationError[]>([])
-    const validator = new FormValidator()
+    const validator = useMemo(() => new FormValidator(), [])
 
     /**
      * Load saved data from localStorage

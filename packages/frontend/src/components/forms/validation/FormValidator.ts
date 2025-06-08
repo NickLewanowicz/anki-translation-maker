@@ -154,7 +154,7 @@ export class FormValidator {
     /**
      * Quick validation for specific fields (for real-time validation)
      */
-    validateField(fieldName: keyof DeckFormData, value: any, formData: DeckFormData): string | null {
+    validateField(fieldName: keyof DeckFormData, value: unknown, formData: DeckFormData): string | null {
         switch (fieldName) {
             case 'aiPrompt':
                 if (formData.deckType === 'ai-generated' && !String(value).trim()) {
@@ -168,12 +168,13 @@ export class FormValidator {
                 }
                 break
 
-            case 'maxCards':
+            case 'maxCards': {
                 const numValue = Number(value)
                 if (formData.deckType === 'ai-generated' && (numValue < 1 || numValue > 100)) {
                     return 'Max cards must be between 1 and 100'
                 }
                 break
+            }
 
             case 'targetLanguage':
                 if (!String(value).trim()) {

@@ -31,7 +31,7 @@ export interface FormValidationError {
 export interface TestResult {
     status: 'success' | 'error'
     message: string
-    details?: any
+    details?: Record<string, unknown>
 }
 
 export type FormMode = 'basic-verbs' | 'ai-generated' | 'custom' 
