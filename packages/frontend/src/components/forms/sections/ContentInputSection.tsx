@@ -1,5 +1,9 @@
 import React from 'react'
+import { Typography, Input, InputNumber, Checkbox, Divider, Card, theme } from 'antd'
 import type { DeckFormData } from '../types/FormTypes'
+
+const { Title, Paragraph, Text } = Typography
+const { TextArea } = Input
 
 interface ContentInputSectionProps {
     formData: DeckFormData
@@ -13,6 +17,7 @@ interface ContentInputSectionProps {
 }
 
 export function ContentInputSection({ formData, deckMode, onInputChange, getFieldError }: ContentInputSectionProps) {
+    const { token } = theme.useToken()
     const wordsError = getFieldError('words')
     const aiPromptError = getFieldError('aiPrompt')
     const maxCardsError = getFieldError('maxCards')
@@ -30,149 +35,224 @@ export function ContentInputSection({ formData, deckMode, onInputChange, getFiel
     const sourceLanguageName = getLanguageName(formData.sourceLanguage)
     const targetLanguageName = getLanguageName(formData.targetLanguage)
 
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        onInputChange(e)
+    }
+
+    const handleNumberChange = (value: number | null) => {
+        const syntheticEvent = {
+            target: {
+                name: 'maxCards',
+                value: value?.toString() || ''
+            }
+        } as React.ChangeEvent<HTMLInputElement>
+        onInputChange(syntheticEvent)
+    }
+
+    const handleCheckboxChange = (e: any) => {
+        const syntheticEvent = {
+            target: {
+                name: e.target.id,
+                checked: e.target.checked
+            }
+        } as React.ChangeEvent<HTMLInputElement>
+        onInputChange(syntheticEvent)
+    }
+
     return (
-        <div className="space-y-4">
-            <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+        <div style={{ marginBottom: token.marginLG }}>
+            <div style={{ marginBottom: token.marginMD }}>
+                <Title level={4} style={{ margin: 0, marginBottom: token.marginXS }}>
                     3. Content & Audio
-                </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                </Title>
+                <Paragraph style={{ color: token.colorTextSecondary, marginBottom: token.marginMD }}>
                     {deckMode.isAiGeneratedDeck && 'Describe what you want to learn and configure audio generation.'}
                     {deckMode.isCustomDeck && 'Enter the words or phrases you want to learn and configure audio.'}
                     {deckMode.isPresetDeck && 'Review the included words and configure audio generation.'}
-                </p>
+                </Paragraph>
             </div>
 
             {/* AI Generated Deck Content */}
             {deckMode.isAiGeneratedDeck && (
                 <>
-                    <div>
-                        <label htmlFor="maxCards" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
+                    <div style={{ marginBottom: token.marginMD }}>
+                        <Text strong style={{ display: 'block', marginBottom: token.marginXS }}>
                             Max Cards (1-100)
-                        </label>
-                        <input
-                            type="number"
-                            id="maxCards"
-                            name="maxCards"
-                            min="1"
-                            max="100"
+                        </Text>
+                        <InputNumber
+                            min={1}
+                            max={100}
                             value={formData.maxCards}
-                            onChange={onInputChange}
-                            className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${maxCardsError
-                                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
-                                } text-gray-900 dark:text-gray-100`}
+                            onChange={handleNumberChange}
+                            style={{ width: '100%' }}
+                            size="large"
+                            status={maxCardsError ? 'error' : undefined}
                         />
                         {maxCardsError && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{maxCardsError}</p>
+                            <Text
+                                type="danger"
+                                style={{
+                                    display: 'block',
+                                    marginTop: token.marginXXS,
+                                    fontSize: token.fontSizeSM
+                                }}
+                            >
+                                {maxCardsError}
+                            </Text>
                         )}
                     </div>
 
-                    <div>
-                        <label htmlFor="aiPrompt" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
+                    <div style={{ marginBottom: token.marginMD }}>
+                        <Text strong style={{ display: 'block', marginBottom: token.marginXS }}>
                             AI Prompt
-                        </label>
-                        <textarea
-                            id="aiPrompt"
+                        </Text>
+                        <TextArea
                             name="aiPrompt"
                             value={formData.aiPrompt}
-                            onChange={onInputChange}
+                            onChange={handleInputChange}
                             rows={4}
                             placeholder={`Describe what kind of vocabulary you want to learn (e.g., '${formData.targetLanguage === 'es' ? 'Spanish' : formData.targetLanguage === 'fr' ? 'French' : 'Target language'} words for cooking and kitchen utensils')`}
-                            className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-vertical ${aiPromptError
-                                ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
-                                } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400`}
+                            size="large"
+                            status={aiPromptError ? 'error' : undefined}
                         />
                         {aiPromptError && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{aiPromptError}</p>
+                            <Text
+                                type="danger"
+                                style={{
+                                    display: 'block',
+                                    marginTop: token.marginXXS,
+                                    fontSize: token.fontSizeSM
+                                }}
+                            >
+                                {aiPromptError}
+                            </Text>
                         )}
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        <Text
+                            type="secondary"
+                            style={{
+                                display: 'block',
+                                marginTop: token.marginXXS,
+                                fontSize: token.fontSizeSM
+                            }}
+                        >
                             Describe the topic or theme for your vocabulary deck. The AI will generate relevant words.
-                        </p>
+                        </Text>
                     </div>
                 </>
             )}
 
             {/* Custom Word List */}
             {deckMode.isCustomDeck && (
-                <div>
-                    <label htmlFor="words" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
+                <div style={{ marginBottom: token.marginMD }}>
+                    <Text strong style={{ display: 'block', marginBottom: token.marginXS }}>
                         Word List
-                    </label>
-                    <textarea
-                        id="words"
+                    </Text>
+                    <TextArea
                         name="words"
                         value={formData.words}
-                        onChange={onInputChange}
+                        onChange={handleInputChange}
                         rows={6}
                         placeholder="Enter words separated by commas (e.g., hello, world, good, bad)"
-                        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-vertical ${wordsError
-                            ? 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
-                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
-                            } text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400`}
+                        size="large"
+                        status={wordsError ? 'error' : undefined}
                     />
                     {wordsError && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{wordsError}</p>
+                        <Text
+                            type="danger"
+                            style={{
+                                display: 'block',
+                                marginTop: token.marginXXS,
+                                fontSize: token.fontSizeSM
+                            }}
+                        >
+                            {wordsError}
+                        </Text>
                     )}
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <Text
+                        type="secondary"
+                        style={{
+                            display: 'block',
+                            marginTop: token.marginXXS,
+                            fontSize: token.fontSizeSM
+                        }}
+                    >
                         Enter words or phrases separated by commas. Each will become a flashcard.
-                    </p>
+                    </Text>
                 </div>
             )}
 
             {/* Preset Deck - Show current words (read-only) */}
             {deckMode.isPresetDeck && (
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
+                <div style={{ marginBottom: token.marginMD }}>
+                    <Text strong style={{ display: 'block', marginBottom: token.marginXS }}>
                         Included Words
-                    </label>
-                    <div className="bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md p-3">
-                        <p className="text-sm text-gray-700 dark:text-gray-300 font-mono">
+                    </Text>
+                    <Card
+                        size="small"
+                        style={{
+                            background: token.colorBgLayout,
+                            borderColor: token.colorBorder
+                        }}
+                    >
+                        <Text
+                            style={{
+                                fontFamily: 'monospace',
+                                fontSize: token.fontSizeSM
+                            }}
+                        >
                             {formData.words}
-                        </p>
-                    </div>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        </Text>
+                    </Card>
+                    <Text
+                        type="secondary"
+                        style={{
+                            display: 'block',
+                            marginTop: token.marginXXS,
+                            fontSize: token.fontSizeSM
+                        }}
+                    >
                         This preset includes {formData.words.split(',').length} words. Choose "Custom Word List" to modify.
-                    </p>
+                    </Text>
                 </div>
             )}
 
             {/* Audio Generation Settings */}
-            <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Audio Generation</h3>
+            <Divider orientation="left" style={{ margin: `${token.marginMD}px 0` }}>
+                <Text strong style={{ fontSize: token.fontSizeSM }}>
+                    Audio Generation
+                </Text>
+            </Divider>
 
-                <div className="flex items-center space-x-3">
-                    <input
-                        type="checkbox"
+            <div style={{ marginBottom: token.marginMD }}>
+                <div style={{ marginBottom: token.marginSM }}>
+                    <Checkbox
                         id="generateSourceAudio"
-                        name="generateSourceAudio"
                         checked={formData.generateSourceAudio}
-                        onChange={onInputChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded transition-colors"
-                    />
-                    <label htmlFor="generateSourceAudio" className="text-sm text-gray-700 dark:text-gray-300">
+                        onChange={handleCheckboxChange}
+                    >
                         Generate audio for source language ({sourceLanguageName})
-                    </label>
+                    </Checkbox>
                 </div>
 
-                <div className="flex items-center space-x-3">
-                    <input
-                        type="checkbox"
+                <div style={{ marginBottom: token.marginSM }}>
+                    <Checkbox
                         id="generateTargetAudio"
-                        name="generateTargetAudio"
                         checked={formData.generateTargetAudio}
-                        onChange={onInputChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded transition-colors"
-                    />
-                    <label htmlFor="generateTargetAudio" className="text-sm text-gray-700 dark:text-gray-300">
+                        onChange={handleCheckboxChange}
+                    >
                         Generate audio for target language ({targetLanguageName})
-                    </label>
+                    </Checkbox>
                 </div>
 
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <Text
+                    type="secondary"
+                    style={{
+                        display: 'block',
+                        fontSize: token.fontSizeSM
+                    }}
+                >
                     Audio generation helps with pronunciation. Disable to speed up deck creation.
-                </p>
+                </Text>
             </div>
         </div>
     )
