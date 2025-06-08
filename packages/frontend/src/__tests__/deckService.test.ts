@@ -4,7 +4,7 @@ import { deckService } from '../services/deckService'
 
 // Mock axios
 vi.mock('axios')
-const mockedAxios = vi.mocked(axios)
+const mockedAxios = vi.mocked(axios, true)
 
 // Mock DOM APIs
 Object.defineProperty(window, 'URL', {
@@ -28,47 +28,49 @@ Object.defineProperty(document.body, 'appendChild', {
     value: vi.fn()
 })
 
-describe('deckService - Front/Back to Source/Target Mapping', () => {
+describe('deckService - Source/Target API Integration', () => {
     beforeEach(() => {
         vi.clearAllMocks()
     })
 
-    it('maps frontend terminology to backend API correctly', async () => {
+    it('sends correct data to backend API', async () => {
         // Mock successful response
         mockedAxios.post.mockResolvedValue({
             data: new Blob(['mock-deck-data'])
         })
 
-        const frontendData = {
+        const requestData = {
             words: 'hello, world',
             aiPrompt: '',
-            frontLanguage: 'en',
-            backLanguage: 'es',
+            sourceLanguage: 'en',
+            targetLanguage: 'es',
             replicateApiKey: 'r8_test_key',
             textModel: 'openai/gpt-4o-mini',
             voiceModel: 'minimax/speech-02-hd',
-            generateFrontAudio: true,
-            generateBackAudio: false,
+            generateSourceAudio: true,
+            generateTargetAudio: false,
             useCustomArgs: false,
             textModelArgs: '{}',
-            voiceModelArgs: '{}'
+            voiceModelArgs: '{}',
+            maxCards: 20,
+            deckName: ''
         }
 
-        await deckService.generateDeck(frontendData)
+        await deckService.generateDeck(requestData)
 
-        // Verify axios was called with mapped terminology
+        // Verify axios was called with correct data
         expect(mockedAxios.post).toHaveBeenCalledWith(
             '/api/generate-deck',
             expect.objectContaining({
                 words: 'hello, world',
                 aiPrompt: '',
-                sourceLanguage: 'en',  // mapped from frontLanguage
-                targetLanguage: 'es',  // mapped from backLanguage
+                sourceLanguage: 'en',
+                targetLanguage: 'es',
                 replicateApiKey: 'r8_test_key',
                 textModel: 'openai/gpt-4o-mini',
                 voiceModel: 'minimax/speech-02-hd',
-                generateSourceAudio: true,  // mapped from generateFrontAudio
-                generateTargetAudio: false, // mapped from generateBackAudio
+                generateSourceAudio: true,
+                generateTargetAudio: false,
                 useCustomArgs: false,
                 textModelArgs: '{}',
                 voiceModelArgs: '{}'
@@ -80,27 +82,29 @@ describe('deckService - Front/Back to Source/Target Mapping', () => {
         )
     })
 
-    it('preserves all other fields while mapping terminology', async () => {
+    it('preserves all fields in API request', async () => {
         mockedAxios.post.mockResolvedValue({
             data: new Blob(['mock-deck-data'])
         })
 
-        const frontendData = {
+        const requestData = {
             words: '',
             aiPrompt: 'Generate kitchen vocabulary',
-            frontLanguage: 'fr',
-            backLanguage: 'de',
+            sourceLanguage: 'fr',
+            targetLanguage: 'de',
             replicateApiKey: 'r8_another_key',
             textModel: 'custom/model',
             voiceModel: 'custom/voice',
-            generateFrontAudio: false,
-            generateBackAudio: true,
+            generateSourceAudio: false,
+            generateTargetAudio: true,
             useCustomArgs: true,
             textModelArgs: '{"temperature": 0.8}',
-            voiceModelArgs: '{"speed": 1.2}'
+            voiceModelArgs: '{"speed": 1.2}',
+            maxCards: 50,
+            deckName: 'Kitchen Vocabulary'
         }
 
-        await deckService.generateDeck(frontendData)
+        await deckService.generateDeck(requestData)
 
         expect(mockedAxios.post).toHaveBeenCalledWith(
             '/api/generate-deck',
@@ -130,21 +134,23 @@ describe('deckService - Front/Back to Source/Target Mapping', () => {
         mockedAxios.post.mockRejectedValue(mockError)
         mockedAxios.isAxiosError.mockReturnValue(true)
 
-        const frontendData = {
+        const requestData = {
             words: 'test',
             aiPrompt: '',
-            frontLanguage: 'en',
-            backLanguage: 'es',
+            sourceLanguage: 'en',
+            targetLanguage: 'es',
             replicateApiKey: 'r8_test',
             textModel: 'test/model',
             voiceModel: 'test/voice',
-            generateFrontAudio: true,
-            generateBackAudio: true,
+            generateSourceAudio: true,
+            generateTargetAudio: true,
             useCustomArgs: false,
             textModelArgs: '{}',
-            voiceModelArgs: '{}'
+            voiceModelArgs: '{}',
+            maxCards: 20,
+            deckName: ''
         }
 
-        await expect(deckService.generateDeck(frontendData)).rejects.toThrow('Failed to generate deck')
+        await expect(deckService.generateDeck(requestData)).rejects.toThrow('Failed to generate deck')
     })
 }) 
