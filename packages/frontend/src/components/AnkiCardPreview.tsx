@@ -1,5 +1,5 @@
 import React from 'react'
-import { Volume2, VolumeX, RotateCcw } from 'lucide-react'
+import { Volume2, VolumeX, RotateCcw, Image, ImageOff } from 'lucide-react'
 
 export interface CardPreviewData {
     frontText: string
@@ -65,6 +65,45 @@ const AudioToggle: React.FC<{
     )
 }
 
+const ImageToggle: React.FC<{
+    enabled: boolean
+    disabled?: boolean
+    size?: 'sm' | 'md'
+}> = ({ enabled, disabled = true, size = 'md' }) => {
+    const iconSize = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'
+    const buttonSize = size === 'sm' ? 'p-1' : 'p-2'
+
+    return (
+        <div className="relative group">
+            <button
+                type="button"
+                disabled={disabled}
+                className={`
+                    ${buttonSize} rounded-full transition-all duration-200
+                    ${enabled
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+                    }
+                    ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600'}
+                    focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1
+                `}
+                title={disabled ? 'Images coming soon' : (enabled ? 'Images enabled' : 'Images disabled')}
+            >
+                {enabled ? (
+                    <Image className={iconSize} />
+                ) : (
+                    <ImageOff className={iconSize} />
+                )}
+            </button>
+            {disabled && (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-10">
+                    Coming Soon
+                </div>
+            )}
+        </div>
+    )
+}
+
 const CardSide: React.FC<{
     title: string
     text: string
@@ -96,42 +135,48 @@ const CardSide: React.FC<{
                             ({languageCode.toUpperCase()})
                         </span>
                     </div>
-                    <AudioToggle
-                        enabled={audioEnabled}
-                        onToggle={onAudioToggle}
-                        disabled={!audioControlsEnabled || isLoading}
-                        size="sm"
-                    />
                 </div>
 
                 {/* Card Content */}
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 min-h-[120px] flex items-center justify-center transition-colors">
-                    {isLoading ? (
-                        <div className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
-                            <div className="w-4 h-4 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 rounded-full animate-spin"></div>
-                            <span className="text-sm">Loading...</span>
-                        </div>
-                    ) : text ? (
-                        <div className="text-center">
-                            <p className="text-gray-900 dark:text-gray-100 text-lg leading-relaxed">
-                                {text}
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                {language}
-                            </p>
-                            {audioEnabled && (
-                                <div className="flex items-center justify-center mt-2 text-blue-600 dark:text-blue-400">
-                                    <Volume2 className="h-3 w-3 mr-1" />
-                                    <span className="text-xs">Audio included</span>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="text-center text-gray-400 dark:text-gray-500">
-                            <p className="text-sm">No content</p>
-                            <p className="text-xs mt-1">{language}</p>
-                        </div>
-                    )}
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 min-h-[120px] flex flex-col transition-colors">
+                    {/* Card Controls */}
+                    <div className="flex items-center justify-end gap-2 mb-3">
+                        <AudioToggle
+                            enabled={audioEnabled}
+                            onToggle={onAudioToggle}
+                            disabled={!audioControlsEnabled || isLoading}
+                            size="sm"
+                        />
+                        <ImageToggle
+                            enabled={false}
+                            disabled={true}
+                            size="sm"
+                        />
+                    </div>
+
+                    {/* Card Content */}
+                    <div className="flex-1 flex items-center justify-center">
+                        {isLoading ? (
+                            <div className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+                                <div className="w-4 h-4 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 rounded-full animate-spin"></div>
+                                <span className="text-sm">Loading...</span>
+                            </div>
+                        ) : text ? (
+                            <div className="text-center">
+                                <p className="text-gray-900 dark:text-gray-100 text-lg leading-relaxed">
+                                    {text}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    {language}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="text-center text-gray-400 dark:text-gray-500">
+                                <p className="text-sm">No content</p>
+                                <p className="text-xs mt-1">{language}</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         )
@@ -195,22 +240,6 @@ export const AnkiCardPreview: React.FC<AnkiCardPreviewProps> = ({
                         isLoading={isLoading}
                     />
                 </div>
-
-                {/* Future extensibility placeholder */}
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                    <div className="flex items-center justify-center text-xs text-gray-400 dark:text-gray-500">
-                        <span>Future features: Images, Multiple Choice, Fill-in-the-Blank</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Card Information */}
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-                <p>
-                    This preview shows how your Anki cards will appear.
-                    Use the audio toggles to control which sides include generated audio.
-                    {showLanguageSwap && " Use the swap button to reverse the card direction."}
-                </p>
             </div>
         </div>
     )
