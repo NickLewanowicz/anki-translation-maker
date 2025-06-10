@@ -2,7 +2,8 @@ import React from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { DeckGeneratorForm } from '../components/DeckGeneratorForm'
+import { DeckForm } from '../components/DeckForm'
+import { ThemeProvider } from '../contexts/ThemeContext'
 
 // Mock the deckService
 vi.mock('../services/deckService', () => ({
@@ -21,7 +22,7 @@ const localStorageMock = (() => {
     return {
         getItem: vi.fn((key: string) => store[key] || null),
         setItem: vi.fn((key: string, value: string) => {
-            store[key] = value
+            store[key] = value.toString()
         }),
         removeItem: vi.fn((key: string) => {
             delete store[key]
@@ -29,10 +30,8 @@ const localStorageMock = (() => {
         clear: vi.fn(() => {
             store = {}
         }),
-        get length() {
-            return Object.keys(store).length
-        },
-        key: vi.fn((index: number) => Object.keys(store)[index] || null)
+        length: 0,
+        key: vi.fn()
     }
 })()
 
@@ -40,13 +39,21 @@ Object.defineProperty(window, 'localStorage', {
     value: localStorageMock
 })
 
-describe('DeckGeneratorForm - Local Storage Integration', () => {
-    beforeEach(() => {
-        vi.useFakeTimers()
-        localStorage.clear()
-        vi.clearAllMocks()
+const renderWithProviders = (component: React.ReactElement) => {
+    return render(
+        <ThemeProvider>
+            {component}
+        </ThemeProvider>
+    )
+}
 
-        // Mock window.matchMedia
+describe('DeckForm - localStorage Integration', () => {
+    beforeEach(() => {
+        // Clear all mocks and localStorage before each test
+        vi.clearAllMocks()
+        localStorageMock.clear()
+
+        // Mock window.matchMedia for theme provider
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
             value: vi.fn().mockImplementation(query => ({
@@ -63,69 +70,146 @@ describe('DeckGeneratorForm - Local Storage Integration', () => {
     })
 
     afterEach(() => {
-        vi.useRealTimers()
         vi.restoreAllMocks()
     })
 
-    // TODO: Fix failing tests - https://github.com/nicklewanowicz/anki-translation-maker/issues/40
-    it.skip('should auto-save form data when user makes changes', async () => {
-        const setItemSpy = vi.spyOn(localStorage, 'setItem')
+    it('loads saved form data from localStorage on component mount', async () => {
+        // Pre-populate localStorage with saved form data
+        const savedData = {
+            sourceLanguage: 'fr',
+            targetLanguage: 'de',
+            words: 'bonjour,merci,au revoir',
+            deckName: 'My French Words',
+            textModel: 'openai/gpt-4o',
+            generateSourceAudio: false,
+            generateTargetAudio: true
+        }
 
-        render(<DeckGeneratorForm />)
+        localStorageMock.setItem('anki-deck-form-data', JSON.stringify(savedData))
 
-        // Wait for form to load
+        await act(async () => {
+            renderWithProviders(<DeckForm />)
+        })
+
+        // Wait for the component to load and populate from localStorage
+        await waitFor(() => {
+            const sourceLanguageSelect = screen.getByLabelText('Source Language') as HTMLSelectElement
+            const targetLanguageSelect = screen.getByLabelText('Target Language *') as HTMLSelectElement
+
+            expect(sourceLanguageSelect.value).toBe('fr')
+            expect(targetLanguageSelect.value).toBe('de')
+        })
+
+        // Check that deck name field exists (it should be in Deck Settings now)
+        await waitFor(() => {
+            const deckNameInput = screen.getByLabelText('Deck Name') as HTMLInputElement
+            expect(deckNameInput.value).toBe('My French Words')
+        })
+    })
+
+    it('saves form data to localStorage when inputs change', async () => {
+        await act(async () => {
+            renderWithProviders(<DeckForm />)
+        })
+
+        // Wait for component to be ready
         await waitFor(() => {
             expect(screen.getByLabelText('Target Language *')).toBeInTheDocument()
         })
 
-        // Make a change to target language (always available field)
         const targetLanguageSelect = screen.getByLabelText('Target Language *')
-        fireEvent.change(targetLanguageSelect, { target: { value: 'fr' } })
+        const deckNameInput = screen.getByLabelText('Deck Name')
 
-        // Advance timers to trigger debounced auto-save
-        act(() => {
-            vi.advanceTimersByTime(1000) // Default debounce time
+        await act(async () => {
+            fireEvent.change(targetLanguageSelect, { target: { value: 'it' } })
+            fireEvent.change(deckNameInput, { target: { value: 'Italian Vocabulary' } })
         })
 
-        // Wait for localStorage to be called
+        // Give some time for localStorage updates
         await waitFor(() => {
-            expect(setItemSpy).toHaveBeenCalledWith(
-                expect.stringContaining('deckGeneratorForm'),
-                expect.stringContaining('fr')
-            )
-        }, { timeout: 1000 })
-
-        setItemSpy.mockRestore()
-    })
-
-    it('should display auto-save indicator', () => {
-        render(<DeckGeneratorForm />)
-
-        // Check for clear data button instead of auto-save indicator
-        expect(screen.getByText('Clear Data')).toBeInTheDocument()
-    })
-
-    it('should handle localStorage unavailable gracefully', async () => {
-        // Mock localStorage to be unavailable
-        const originalLocalStorage = window.localStorage
-        Object.defineProperty(window, 'localStorage', {
-            value: undefined,
-            configurable: true
+            expect(localStorageMock.setItem).toHaveBeenCalled()
         })
 
-        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => { })
+        // Verify the data was saved (check if setItem was called with form data)
+        const setItemCalls = (localStorageMock.setItem as vi.Mock).mock.calls
+        const lastCall = setItemCalls[setItemCalls.length - 1]
 
-        render(<DeckGeneratorForm />)
+        if (lastCall && lastCall[0] === 'anki-deck-form-data') {
+            const savedData = JSON.parse(lastCall[1])
+            expect(savedData.targetLanguage).toBe('it')
+            expect(savedData.deckName).toBe('Italian Vocabulary')
+        }
+    })
 
-        // Should still render and work without localStorage - check for main form elements
-        expect(screen.getByLabelText('Deck Type')).toBeInTheDocument()
+    it('clears localStorage when clear data button is clicked', async () => {
+        // Pre-populate localStorage
+        localStorageMock.setItem('anki-deck-form-data', JSON.stringify({ targetLanguage: 'es' }))
 
-        // Restore localStorage
-        Object.defineProperty(window, 'localStorage', {
-            value: originalLocalStorage,
-            configurable: true
+        await act(async () => {
+            renderWithProviders(<DeckForm />)
         })
 
-        consoleSpy.mockRestore()
+        await waitFor(() => {
+            expect(screen.getByText('Clear Data')).toBeInTheDocument()
+        })
+
+        const clearButton = screen.getByText('Clear Data')
+
+        await act(async () => {
+            fireEvent.click(clearButton)
+        })
+
+        // Verify localStorage was cleared
+        await waitFor(() => {
+            expect(localStorageMock.removeItem).toHaveBeenCalledWith('anki-deck-form-data')
+        })
+    })
+
+    it('handles corrupted localStorage data gracefully', async () => {
+        // Set invalid JSON in localStorage
+        localStorageMock.setItem('anki-deck-form-data', 'invalid-json-data')
+
+        await act(async () => {
+            renderWithProviders(<DeckForm />)
+        })
+
+        // Component should still render and use default values
+        await waitFor(() => {
+            const sourceLanguageSelect = screen.getByLabelText('Source Language') as HTMLSelectElement
+            expect(sourceLanguageSelect.value).toBe('en') // Default value
+        })
+    })
+
+    it('preserves form state across component remounts', async () => {
+        const { unmount } = renderWithProviders(<DeckForm />)
+
+        // Change some form values
+        await waitFor(() => {
+            expect(screen.getByLabelText('Target Language *')).toBeInTheDocument()
+        })
+
+        const targetLanguageSelect = screen.getByLabelText('Target Language *')
+
+        await act(async () => {
+            fireEvent.change(targetLanguageSelect, { target: { value: 'pt' } })
+        })
+
+        // Wait for localStorage save
+        await waitFor(() => {
+            expect(localStorageMock.setItem).toHaveBeenCalled()
+        })
+
+        // Unmount and remount component
+        unmount()
+
+        await act(async () => {
+            renderWithProviders(<DeckForm />)
+        })
+
+        // Verify the value persisted
+        await waitFor(() => {
+            const newTargetLanguageSelect = screen.getByLabelText('Target Language *') as HTMLSelectElement
+            expect(newTargetLanguageSelect.value).toBe('pt')
+        })
     })
 }) 

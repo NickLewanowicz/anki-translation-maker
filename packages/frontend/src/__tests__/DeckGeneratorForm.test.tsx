@@ -1,7 +1,7 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
-import { DeckGeneratorForm } from '../components/DeckGeneratorForm'
+import { DeckForm } from '../components/DeckForm'
 import * as deckService from '../services/deckService'
 import { ThemeProvider } from '../contexts/ThemeContext'
 
@@ -17,14 +17,14 @@ vi.mock('../services/deckService', () => ({
 const renderForm = async () => {
     render(
         <ThemeProvider>
-            <DeckGeneratorForm />
+            <DeckForm />
         </ThemeProvider>
     )
     // Wait for a stable element to ensure the form has loaded
     await screen.findByLabelText('Target Language *')
 }
 
-describe('DeckGeneratorForm - Source/Target Terminology', () => {
+describe('DeckForm - Source/Target Terminology', () => {
     let mockGenerateDeck: any
     let mockValidateConfiguration: any
 
@@ -59,9 +59,11 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
         expect(screen.getByLabelText('Target Language *')).toBeInTheDocument()
     })
 
-    it('renders audio generation options with source/target terminology', () => {
-        expect(screen.getByLabelText('Generate audio for source language')).toBeInTheDocument()
-        expect(screen.getByLabelText('Generate audio for target language')).toBeInTheDocument()
+    it('renders card preview with audio controls', () => {
+        // Check that the card preview exists
+        expect(screen.getByText('Card Preview')).toBeInTheDocument()
+        // Check for audio controls in the preview (use getAllBy since there are multiple buttons)
+        expect(screen.getAllByTitle('Audio enabled').length).toBeGreaterThan(0)
     })
 
     it('has correct default values for source and target languages', async () => {
@@ -78,14 +80,6 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
         })
     })
 
-    it('has correct default values for audio generation', () => {
-        const sourceAudioCheckbox = screen.getByLabelText('Generate audio for source language') as HTMLInputElement
-        const targetAudioCheckbox = screen.getByLabelText('Generate audio for target language') as HTMLInputElement
-
-        expect(sourceAudioCheckbox.checked).toBe(true)
-        expect(targetAudioCheckbox.checked).toBe(true)
-    })
-
     it('updates source language when changed', () => {
         const sourceLanguageSelect = screen.getByLabelText('Source Language') as HTMLSelectElement
         fireEvent.change(sourceLanguageSelect, { target: { value: 'es' } })
@@ -100,35 +94,20 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
         expect(targetLanguageSelect.value).toBe('fr')
     })
 
-    it('toggles source audio generation correctly', () => {
-        const sourceAudioCheckbox = screen.getByLabelText('Generate audio for source language') as HTMLInputElement
-        expect(sourceAudioCheckbox.checked).toBe(true)
-
-        fireEvent.click(sourceAudioCheckbox)
-        expect(sourceAudioCheckbox.checked).toBe(false)
-
-        fireEvent.click(sourceAudioCheckbox)
-        expect(sourceAudioCheckbox.checked).toBe(true)
-    })
-
-    it('toggles target audio generation correctly', () => {
-        const targetAudioCheckbox = screen.getByLabelText('Generate audio for target language') as HTMLInputElement
-        expect(targetAudioCheckbox.checked).toBe(true)
-
-        fireEvent.click(targetAudioCheckbox)
-        expect(targetAudioCheckbox.checked).toBe(false)
-
-        fireEvent.click(targetAudioCheckbox)
-        expect(targetAudioCheckbox.checked).toBe(true)
-    })
-
     it('calls deckService.generateDeck with correct source/target terminology', async () => {
         const targetLanguageSelect = screen.getByLabelText('Target Language *')
-        const apiKeyInput = screen.getByLabelText('Replicate API Key *')
         const generateButton = screen.getByRole('button', { name: /Generate Deck/i })
 
         await act(async () => {
             fireEvent.change(targetLanguageSelect, { target: { value: 'es' } })
+        })
+
+        // Expand AI Settings to access API key field
+        const aiSettingsButton = screen.getByText('AI Settings')
+        fireEvent.click(aiSettingsButton)
+
+        const apiKeyInput = screen.getByLabelText('Replicate API Key *')
+        await act(async () => {
             fireEvent.change(apiKeyInput, { target: { value: 'r8_test_api_key_1234567890' } })
         })
 
@@ -150,10 +129,17 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
 
     it('calls validation API with correct source/target terminology', async () => {
         const targetLanguageSelect = screen.getByLabelText('Target Language *')
-        const apiKeyInput = screen.getByLabelText('Replicate API Key *')
 
         await act(async () => {
             fireEvent.change(targetLanguageSelect, { target: { value: 'es' } })
+        })
+
+        // Expand AI Settings to access API key field
+        const aiSettingsButton = screen.getByText('AI Settings')
+        fireEvent.click(aiSettingsButton)
+
+        const apiKeyInput = screen.getByLabelText('Replicate API Key *')
+        await act(async () => {
             fireEvent.change(apiKeyInput, { target: { value: 'r8_test_api_key_1234567890' } })
         })
 
@@ -176,10 +162,9 @@ describe('DeckGeneratorForm - Source/Target Terminology', () => {
 
     it('displays correct placeholder text for target language', () => {
         const targetLanguageSelect = screen.getByLabelText('Target Language *')
-        const placeholderOption = screen.getByText('Select target language')
-
-        expect(placeholderOption).toBeInTheDocument()
-        expect(targetLanguageSelect).toContainElement(placeholderOption)
+        // The DeckForm doesn't have placeholder text, it shows language options directly
+        // Just verify the select exists and works
+        expect(targetLanguageSelect).toBeInTheDocument()
     })
 
     it('maintains all language options in both source and target selects', () => {
