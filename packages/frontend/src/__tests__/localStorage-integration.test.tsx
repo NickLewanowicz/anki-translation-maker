@@ -85,7 +85,7 @@ describe('DeckForm - localStorage Integration', () => {
             generateTargetAudio: true
         }
 
-        localStorageMock.setItem('anki-deck-form-data', JSON.stringify(savedData))
+        localStorageMock.setItem('anki-form-state', JSON.stringify(savedData))
 
         await act(async () => {
             renderWithProviders(<DeckForm />)
@@ -131,10 +131,10 @@ describe('DeckForm - localStorage Integration', () => {
         })
 
         // Verify the data was saved (check if setItem was called with form data)
-        const setItemCalls = (localStorageMock.setItem as vi.Mock).mock.calls
+        const setItemCalls = (localStorageMock.setItem as any).mock.calls
         const lastCall = setItemCalls[setItemCalls.length - 1]
 
-        if (lastCall && lastCall[0] === 'anki-deck-form-data') {
+        if (lastCall && lastCall[0] === 'anki-form-state') {
             const savedData = JSON.parse(lastCall[1])
             expect(savedData.targetLanguage).toBe('it')
             expect(savedData.deckName).toBe('Italian Vocabulary')
@@ -143,17 +143,17 @@ describe('DeckForm - localStorage Integration', () => {
 
     it('clears localStorage when clear data button is clicked', async () => {
         // Pre-populate localStorage
-        localStorageMock.setItem('anki-deck-form-data', JSON.stringify({ targetLanguage: 'es' }))
+        localStorageMock.setItem('anki-form-state', JSON.stringify({ targetLanguage: 'es' }))
 
         await act(async () => {
             renderWithProviders(<DeckForm />)
         })
 
         await waitFor(() => {
-            expect(screen.getByText('Clear Data')).toBeInTheDocument()
+            expect(screen.getByRole('button', { name: /clear.*data/i })).toBeInTheDocument()
         })
 
-        const clearButton = screen.getByText('Clear Data')
+        const clearButton = screen.getByRole('button', { name: /clear.*data/i })
 
         await act(async () => {
             fireEvent.click(clearButton)
@@ -161,13 +161,13 @@ describe('DeckForm - localStorage Integration', () => {
 
         // Verify localStorage was cleared
         await waitFor(() => {
-            expect(localStorageMock.removeItem).toHaveBeenCalledWith('anki-deck-form-data')
+            expect(localStorageMock.removeItem).toHaveBeenCalledWith('anki-form-state')
         })
     })
 
     it('handles corrupted localStorage data gracefully', async () => {
         // Set invalid JSON in localStorage
-        localStorageMock.setItem('anki-deck-form-data', 'invalid-json-data')
+        localStorageMock.setItem('anki-form-state', 'invalid-json-data')
 
         await act(async () => {
             renderWithProviders(<DeckForm />)

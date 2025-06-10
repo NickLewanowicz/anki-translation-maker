@@ -164,7 +164,8 @@ export function DeckForm() {
         clearStoredData,
         isFormValid,
         getFieldError,
-        getSubmitData
+        getSubmitData,
+        updateFormData
     } = useFormState()
 
     const [isGenerating, setIsGenerating] = useState(false)
@@ -196,16 +197,10 @@ export function DeckForm() {
     const handleLanguageSwap = () => {
         setIsLanguageSwapped(!isLanguageSwapped)
 
-        // Actually swap the languages in the form data
-        const newFormData = {
-            ...formData,
+        // Swap the languages in the form data using a single bulk update
+        updateFormData({
             sourceLanguage: formData.targetLanguage,
             targetLanguage: formData.sourceLanguage
-        }
-
-        // Update form data through input change handler
-        Object.entries(newFormData).forEach(([key, value]) => {
-            handleInputChange({ target: { name: key, value } } as any)
         })
     }
 
@@ -723,7 +718,7 @@ export function DeckForm() {
                             <MultiActionButton
                                 isGenerating={isGenerating}
                                 isTesting={isTesting}
-                                isFormValid={isFormValid()}
+                                isFormValid={errors.length === 0}
                                 onGenerate={handleGenerate}
                                 onTest={handleTestConfiguration}
                             />
