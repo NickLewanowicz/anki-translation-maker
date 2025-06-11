@@ -6,20 +6,6 @@ import JSZip from 'jszip'
 import * as fs from 'fs'
 import path from 'path'
 
-interface DatabaseRow {
-    [key: string]: unknown
-}
-
-interface ColRow {
-    models: string
-    [key: string]: unknown
-}
-
-interface NoteRow {
-    flds: string
-    [key: string]: unknown
-}
-
 // Helper to query the database and return results as a promise
 const queryDatabase = <T>(db: sqlite3.Database, sql: string): Promise<T[]> => {
     return new Promise((resolve, reject) => {
@@ -39,6 +25,7 @@ const getAnkiStructure = async (db: sqlite3.Database) => {
         db,
         "SELECT name FROM sqlite_master WHERE type='table'"
     )
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const structure: Record<string, any> = {
         tables: tables.map(t => t.name).sort(),
     }

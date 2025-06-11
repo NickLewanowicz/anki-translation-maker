@@ -2,7 +2,6 @@ import type { Context } from 'hono'
 import { TranslationService } from '../services/TranslationService.js'
 import { AnkiService } from '../services/AnkiService.js'
 import { RequestValidator } from '../middleware/RequestValidator.js'
-import type { DeckGenerationRequest } from '../middleware/RequestValidator.js'
 import { ResponseFormatter } from '../utils/ResponseFormatter.js'
 
 /**

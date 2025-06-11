@@ -59,8 +59,7 @@ export function useFormState() {
         try {
             const savedData = localStorageService.loadFormData()
             if (savedData) {
-                // Map localStorage field names to form field names
-                const mappedData: Partial<DeckFormData> = {
+                const mappedData = {
                     deckType: savedData.deckType,
                     words: savedData.words,
                     aiPrompt: savedData.aiPrompt,
@@ -68,9 +67,9 @@ export function useFormState() {
                     deckName: savedData.deckName,
                     targetLanguage: savedData.targetLanguage,
                     sourceLanguage: savedData.sourceLanguage,
-                    frontLanguage: (savedData as any).frontLanguage || 'en',
-                    backLanguage: (savedData as any).backLanguage || '',
-                    contentLanguage: (savedData as any).contentLanguage || '',
+                    frontLanguage: (savedData as typeof savedData & { frontLanguage?: string }).frontLanguage || 'en',
+                    backLanguage: (savedData as typeof savedData & { backLanguage?: string }).backLanguage || '',
+                    contentLanguage: (savedData as typeof savedData & { contentLanguage?: string }).contentLanguage || '',
                     replicateApiKey: savedData.replicateApiKey,
                     textModel: savedData.textModel,
                     voiceModel: savedData.voiceModel,

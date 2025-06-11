@@ -1,8 +1,7 @@
 import type { Context } from 'hono'
-import { RequestValidator, type DeckGenerationRequest, generateDeckSchema } from '../middleware/RequestValidator.js'
+import { RequestValidator, type DeckGenerationRequest } from '../middleware/RequestValidator.js'
 import { ResponseFormatter } from '../utils/ResponseFormatter.js'
 import { TranslationService } from '../services/TranslationService'
-import { Hono } from 'hono'
 import { z } from 'zod'
 
 /**

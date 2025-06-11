@@ -16,6 +16,7 @@ describe('Front/Back Language Mapping Tests', () => {
             }
 
             expect(() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 RequestValidator.validateBusinessRules(requestData as any)
             }).not.toThrow()
         })
@@ -31,6 +32,7 @@ describe('Front/Back Language Mapping Tests', () => {
             }
 
             expect(() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 RequestValidator.validateBusinessRules(requestData as any)
             }).toThrow("Front language 'fr' must be either source or target language")
         })
@@ -46,6 +48,7 @@ describe('Front/Back Language Mapping Tests', () => {
             }
 
             expect(() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 RequestValidator.validateBusinessRules(requestData as any)
             }).toThrow('Front and back languages cannot be the same')
         })
@@ -64,6 +67,7 @@ describe('Front/Back Language Mapping Tests', () => {
             }
 
             expect(() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 RequestValidator.validateBusinessRules(requestData as any)
             }).not.toThrow()
 
@@ -87,6 +91,7 @@ describe('Front/Back Language Mapping Tests', () => {
             }
 
             expect(() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 RequestValidator.validateBusinessRules(requestData as any)
             }).not.toThrow()
 
@@ -110,6 +115,7 @@ describe('Front/Back Language Mapping Tests', () => {
             }
 
             expect(() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 RequestValidator.validateBusinessRules(requestData as any)
             }).not.toThrow()
 
@@ -133,6 +139,7 @@ describe('Front/Back Language Mapping Tests', () => {
             }
 
             expect(() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 RequestValidator.validateBusinessRules(requestData as any)
             }).not.toThrow()
         })
@@ -148,6 +155,7 @@ describe('Front/Back Language Mapping Tests', () => {
             }
 
             expect(() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 RequestValidator.validateBusinessRules(requestData as any)
             }).not.toThrow()
         })
@@ -165,6 +173,7 @@ describe('Front/Back Language Mapping Tests', () => {
             }
 
             expect(() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 RequestValidator.validateBusinessRules(requestData as any)
             }).not.toThrow()
         })
@@ -182,6 +191,7 @@ describe('Front/Back Language Mapping Tests', () => {
             }
 
             expect(() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 RequestValidator.validateBusinessRules(requestData as any)
             }).not.toThrow()
 
