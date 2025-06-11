@@ -6,13 +6,11 @@ interface DeckSettingsProps {
     deckName: string
     sourceLanguage: string
     targetLanguage: string
-    maxCards: number
     generateSourceAudio: boolean
     generateTargetAudio: boolean
     onDeckNameChange: (name: string) => void
     onSourceLanguageChange: (language: string) => void
     onTargetLanguageChange: (language: string) => void
-    onMaxCardsChange: (count: number) => void
     onLanguageSwap: () => void
     onSourceAudioToggle: (enabled: boolean) => void
     onTargetAudioToggle: (enabled: boolean) => void
@@ -23,13 +21,11 @@ export const DeckSettings: React.FC<DeckSettingsProps> = ({
     deckName,
     sourceLanguage,
     targetLanguage,
-    maxCards,
     generateSourceAudio,
     generateTargetAudio,
     onDeckNameChange,
     onSourceLanguageChange,
     onTargetLanguageChange,
-    onMaxCardsChange,
     onLanguageSwap,
     onSourceAudioToggle,
     onTargetAudioToggle,
@@ -153,27 +149,7 @@ export const DeckSettings: React.FC<DeckSettingsProps> = ({
                     </div>
                 </div>
 
-                {/* Max Cards */}
-                <div>
-                    <label htmlFor="maxCards" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Maximum Cards (1-100)
-                    </label>
-                    <input
-                        type="number"
-                        id="maxCards"
-                        name="maxCards"
-                        min="1"
-                        max="100"
-                        value={maxCards}
-                        onChange={(e) => onMaxCardsChange(parseInt(e.target.value) || 20)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    />
-                    {getFieldError('maxCards') && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                            {getFieldError('maxCards')}
-                        </p>
-                    )}
-                </div>
+
             </div>
         </div>
     )

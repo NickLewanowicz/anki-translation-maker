@@ -191,9 +191,23 @@ export function useFormState() {
      * Get submit data (prepared for API)
      */
     const getSubmitData = useCallback(() => {
+        // Determine words based on deck type
+        let words = ''
+        let aiPrompt = ''
+
+        if (formData.deckType === 'ai-generated') {
+            aiPrompt = formData.aiPrompt
+        } else if (formData.deckType === 'custom') {
+            words = formData.words
+        } else {
+            // Default deck - use the preset words
+            const selectedDeck = DEFAULT_DECKS.find(deck => deck.id === formData.deckType)
+            words = selectedDeck ? selectedDeck.words : formData.words
+        }
+
         return {
-            words: formData.deckType === 'ai-generated' ? '' : formData.words,
-            aiPrompt: formData.deckType === 'ai-generated' ? formData.aiPrompt : '',
+            words,
+            aiPrompt,
             maxCards: formData.maxCards,
             deckName: formData.deckName,
             targetLanguage: formData.targetLanguage,

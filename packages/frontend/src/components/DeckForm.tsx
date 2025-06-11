@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react'
 import { useFormState } from './forms/hooks/useFormState'
 import { deckService } from '../services/deckService'
 import { analyticsService } from '../services/analyticsService'
-import { AnkiCardPreview, CardPreviewData } from './AnkiCardPreview'
+import { CardPreviewData } from './AnkiCardPreview'
 import { getLanguageName } from '../constants/languages'
 import { SaveIndicator } from './SaveIndicator'
 import { MultiActionButton } from './MultiActionButton'
@@ -34,10 +34,26 @@ export function DeckForm() {
 
     // Create card preview data from form state
     const cardPreviewData: CardPreviewData = useMemo(() => {
-        const firstWord = formData.words?.split(',')[0]?.trim() || 'example'
+        let frontText = 'example'
+
+        // Get the appropriate word based on deck type
+        if (formData.deckType === 'ai-generated') {
+            frontText = 'AI-generated word'
+        } else if (formData.deckType === 'custom') {
+            frontText = formData.words?.split(',')[0]?.trim() || 'example'
+        } else {
+            // Default deck - get words from the preset
+            const DEFAULT_DECKS = [
+                { id: 'basic-verbs', words: 'be,have,do,say,get,make,go,know,take,see' },
+                { id: 'food-vocab', words: 'apple,bread,water,milk,meat,chicken,rice,pasta,cheese,salad' },
+                { id: 'daily-phrases', words: 'hello,goodbye,thank you,please,excuse me,good morning,good night,see you later,sorry,you\'re welcome' }
+            ]
+            const selectedDeck = DEFAULT_DECKS.find(deck => deck.id === formData.deckType)
+            frontText = selectedDeck?.words.split(',')[0]?.trim() || formData.words?.split(',')[0]?.trim() || 'example'
+        }
 
         return {
-            frontText: firstWord,
+            frontText,
             backText: `Translation in ${getLanguageName(formData.targetLanguage)}`,
             frontLanguage: getLanguageName(formData.sourceLanguage),
             backLanguage: getLanguageName(formData.targetLanguage),
@@ -72,8 +88,8 @@ export function DeckForm() {
         try {
             const submitData = {
                 ...getSubmitData(),
-                // Override deckType based on our local state - for now all map to wordList since only basic works
-                deckType: 'wordList'
+                // Map frontend deckType to backend format
+                deckType: formData.deckType === 'ai-generated' ? 'aiGenerated' : 'wordList'
             }
             console.log('Submitting deck generation request:', submitData)
 
@@ -84,7 +100,7 @@ export function DeckForm() {
                 maxCards: submitData.maxCards
             })
 
-            const result = await deckService.generateDeck(submitData)
+            await deckService.generateDeck(submitData)
 
             analyticsService.track('deck_generation_completed', {
                 deckType: submitData.deckType,
@@ -115,8 +131,8 @@ export function DeckForm() {
         try {
             const submitData = {
                 ...getSubmitData(),
-                // Override deckType based on our local state - for now all map to wordList since only basic works
-                deckType: 'wordList'
+                // Map frontend deckType to backend format
+                deckType: formData.deckType === 'ai-generated' ? 'aiGenerated' : 'wordList'
             }
             console.log('Testing configuration with:', submitData)
 
@@ -187,13 +203,11 @@ export function DeckForm() {
                             deckName={formData.deckName}
                             sourceLanguage={formData.sourceLanguage}
                             targetLanguage={formData.targetLanguage}
-                            maxCards={formData.maxCards}
                             generateSourceAudio={formData.generateSourceAudio}
                             generateTargetAudio={formData.generateTargetAudio}
                             onDeckNameChange={(name) => updateFormData({ deckName: name })}
                             onSourceLanguageChange={(language) => updateFormData({ sourceLanguage: language })}
                             onTargetLanguageChange={(language) => updateFormData({ targetLanguage: language })}
-                            onMaxCardsChange={(count) => updateFormData({ maxCards: count })}
                             onLanguageSwap={handleLanguageSwap}
                             onSourceAudioToggle={(enabled) => updateFormData({ generateSourceAudio: enabled })}
                             onTargetAudioToggle={(enabled) => updateFormData({ generateTargetAudio: enabled })}
@@ -203,11 +217,15 @@ export function DeckForm() {
                         {/* Content Input - Only show for basic cards since others are coming soon */}
                         {deckType === 'basic' && (
                             <ContentInput
-                                deckType="wordList"
+                                deckType={formData.deckType}
                                 words={formData.words}
                                 aiPrompt={formData.aiPrompt}
+                                maxCards={formData.maxCards}
+                                sourceLanguage={formData.sourceLanguage}
+                                onDeckTypeChange={(type) => updateFormData({ deckType: type })}
                                 onWordsChange={(words) => updateFormData({ words })}
                                 onAiPromptChange={(prompt) => updateFormData({ aiPrompt: prompt })}
+                                onMaxCardsChange={(maxCards) => updateFormData({ maxCards })}
                                 getFieldError={getFieldErrorWrapper}
                             />
                         )}
