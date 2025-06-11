@@ -39,10 +39,11 @@ describe('DeckForm', () => {
         it('renders the form with main sections', () => {
             render(<DeckForm />)
 
-            // Check for sections that exist based on the error output
-            expect(screen.getByText('Deck Type')).toBeInTheDocument()
-            expect(screen.getByText('Basic Translation Cards')).toBeInTheDocument()
-            expect(screen.getByText('Bidirectional Translation Cards')).toBeInTheDocument()
+            // Check for sections that exist in the refactored components
+            expect(screen.getByText('Word List Deck')).toBeInTheDocument()
+            expect(screen.getByText('Generate Deck')).toBeInTheDocument()
+            // Use getAllByText to handle multiple "Card Preview" texts
+            expect(screen.getAllByText('Card Preview')).toHaveLength(2)
         })
 
         it('renders language selection fields', () => {
