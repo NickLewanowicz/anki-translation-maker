@@ -324,17 +324,15 @@ export function DeckForm() {
                             </div>
                         )}
 
-                        {/* Action Button - Moved to be more prominent */}
-                        <div className="sticky bottom-4 z-10 flex justify-center">
-                            <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4">
-                                <MultiActionButton
-                                    isGenerating={isGenerating}
-                                    isTesting={isTesting}
-                                    isFormValid={errors.length === 0}
-                                    onGenerate={handleGenerate}
-                                    onTest={handleTestConfiguration}
-                                />
-                            </div>
+                        {/* Action Button */}
+                        <div className="flex justify-center pt-4">
+                            <MultiActionButton
+                                isGenerating={isGenerating}
+                                isTesting={isTesting}
+                                isFormValid={errors.length === 0}
+                                onGenerate={handleGenerate}
+                                onTest={handleTestConfiguration}
+                            />
                         </div>
                     </form>
                 </>
