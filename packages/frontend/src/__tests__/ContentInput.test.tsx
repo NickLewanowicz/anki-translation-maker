@@ -10,10 +10,14 @@ describe('ContentInput', () => {
         aiPrompt: '',
         maxCards: 20,
         sourceLanguage: 'en',
+        frontLanguage: 'en',
+        backLanguage: 'es',
+        contentLanguage: 'en',
         onDeckTypeChange: vi.fn(),
         onWordsChange: vi.fn(),
         onAiPromptChange: vi.fn(),
         onMaxCardsChange: vi.fn(),
+        onContentLanguageChange: vi.fn(),
         getFieldError: vi.fn()
     }
 
@@ -128,6 +132,26 @@ describe('ContentInput', () => {
             const { container } = render(<ContentInput {...mockProps} deckType="ai-generated" maxCards={50} />)
             const input = container.querySelector('input[name="maxCards"]') as HTMLInputElement
             expect(input?.value).toBe('50')
+        })
+    })
+
+    describe('Content Language Selector', () => {
+        it('shows content language dropdown when front and back are different', () => {
+            const { container } = render(<ContentInput {...mockProps} frontLanguage="en" backLanguage="es" contentLanguage="" />)
+            expect(container.textContent).toContain('Content Language')
+            expect(container.textContent).toContain('Choose the language of your input content')
+        })
+
+        it('disables content language selector when front and back are the same', () => {
+            const { container } = render(<ContentInput {...mockProps} frontLanguage="en" backLanguage="en" contentLanguage="" />)
+            const select = container.querySelector('select[name="contentLanguage"]') as HTMLSelectElement
+            expect(select?.disabled).toBe(true)
+            expect(container.textContent).toContain('Both card sides use the same language')
+        })
+
+        it('shows instruction to select languages first when none are selected', () => {
+            const { container } = render(<ContentInput {...mockProps} frontLanguage="" backLanguage="" contentLanguage="" />)
+            expect(container.textContent).toContain('Please select front and back languages first')
         })
     })
 }) 

@@ -19,7 +19,14 @@ describe('DeckTypeSelector', () => {
     const defaultProps = {
         deckType: 'basic' as const,
         onChange: vi.fn(),
-        cardPreviewData: mockCardPreviewData
+        cardPreviewData: mockCardPreviewData,
+        deckName: 'Test Deck',
+        frontLanguage: 'en',
+        backLanguage: 'es',
+        onDeckNameChange: vi.fn(),
+        onFrontLanguageChange: vi.fn(),
+        onBackLanguageChange: vi.fn(),
+        getFieldError: vi.fn().mockReturnValue(undefined)
     }
 
     beforeEach(() => {
@@ -102,5 +109,31 @@ describe('DeckTypeSelector', () => {
 
         const select = screen.getByRole('combobox')
         expect(select).toHaveClass('focus:outline-none', 'focus:ring-2')
+    })
+
+    it('swaps front and back languages when swap button is clicked', () => {
+        const mockOnFrontLanguageChange = vi.fn()
+        const mockOnBackLanguageChange = vi.fn()
+        render(<DeckTypeSelector
+            {...defaultProps}
+            frontLanguage="en"
+            backLanguage="es"
+            onFrontLanguageChange={mockOnFrontLanguageChange}
+            onBackLanguageChange={mockOnBackLanguageChange}
+        />)
+
+        const swapButton = screen.getByTitle('Swap front and back languages')
+        fireEvent.click(swapButton)
+
+        expect(mockOnFrontLanguageChange).toHaveBeenCalledWith('es')
+        expect(mockOnBackLanguageChange).toHaveBeenCalledWith('en')
+    })
+
+    it('displays language dropdowns in flashcard previews', () => {
+        render(<DeckTypeSelector {...defaultProps} />)
+
+        // Should have two language dropdowns (front and back)
+        const languageSelects = screen.getAllByDisplayValue('Select language')
+        expect(languageSelects).toHaveLength(2)
     })
 }) 
