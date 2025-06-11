@@ -3,7 +3,6 @@ import AdmZip from 'adm-zip'
 import sqlite3 from 'sqlite3'
 import * as fs from 'fs'
 import type { DeckCard } from '../../../types/translation.js'
-import JSZip from 'jszip'
 
 export interface DatabaseNote {
     flds: string

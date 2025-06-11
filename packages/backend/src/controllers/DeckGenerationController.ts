@@ -1,146 +1,260 @@
+import type { Context } from 'hono'
 import { TranslationService } from '../services/TranslationService.js'
 import { AnkiService } from '../services/AnkiService.js'
-import type { Translation } from '../types/translation.js'
-import type { DeckGenerationRequest } from '../middleware/RequestValidator.js'
+import { RequestValidator } from '../middleware/RequestValidator.js'
+import { ResponseFormatter } from '../utils/ResponseFormatter.js'
 
 /**
- * Controller for deck generation business logic
- * Handles the complete flow from request to Anki package creation
+ * Handles deck generation requests with comprehensive error handling
  */
 export class DeckGenerationController {
     /**
-     * Generate complete Anki deck from validated request data
+     * Main deck generation endpoint handler
      */
-    static async generateDeck(data: DeckGenerationRequest): Promise<Buffer> {
-        console.log('🎯 Starting deck generation process')
+    static async generateDeck(c: Context): Promise<Response> {
+        try {
+            console.log('🎯 Deck generation request received')
 
-        // Parse custom arguments
-        const { textArgs, voiceArgs } = this.parseCustomArgs(data)
+            // 1. Validate request data
+            const validatedData = await RequestValidator.validateDeckGenerationRequest(c)
+            console.log('✅ Request validation passed')
 
-        // Initialize services
-        const translationService = new TranslationService(
-            data.replicateApiKey,
-            data.textModel,
-            data.voiceModel,
-            textArgs,
-            voiceArgs
-        )
-        const ankiService = new AnkiService()
+            // 2. Set API key in context
+            RequestValidator.setApiKey(c, validatedData.replicateApiKey)
 
-        // Step 1: Get words (either from provided list or generate from AI prompt)
-        const wordList = await this.getWords(translationService, data)
+            // 3. Initialize services
+            const { textArgs, voiceArgs } = RequestValidator.parseCustomArgs(validatedData)
+            const translationService = new TranslationService(
+                validatedData.replicateApiKey,
+                validatedData.textModel,
+                validatedData.voiceModel,
+                textArgs,
+                voiceArgs
+            )
+            const ankiService = new AnkiService()
 
-        if (wordList.length === 0) {
-            throw new Error('No valid words found to translate')
+            // 4. Extract word list or generate via AI
+            let wordList = RequestValidator.extractWordList(validatedData)
+            let finalDeckName = validatedData.deckName
+
+            if (validatedData.aiPrompt) {
+                console.log('🤖 Generating words with AI...')
+                wordList = await translationService.generateWordsFromPrompt(
+                    validatedData.aiPrompt,
+                    validatedData.sourceLanguage,
+                    validatedData.maxCards
+                )
+                if (!finalDeckName) {
+                    finalDeckName = await translationService.generateDeckName(
+                        validatedData.aiPrompt,
+                        validatedData.sourceLanguage,
+                        validatedData.targetLanguage
+                    )
+                }
+            }
+
+            // Validate we have words to translate
+            if (wordList.length === 0) {
+                throw new Error('No words to translate')
+            }
+
+            console.log(`🔄 Translating ${wordList.length} words from ${validatedData.sourceLanguage} to ${validatedData.targetLanguage}...`)
+
+            // 5. Translate words and create deck data
+            const translations = await translationService.translateWords(
+                wordList,
+                validatedData.sourceLanguage,
+                validatedData.targetLanguage
+            )
+
+            // 6. Generate audio conditionally
+            let sourceAudio: Buffer[] = []
+            let targetAudio: Buffer[] = []
+
+            if (validatedData.generateSourceAudio) {
+                console.log('🔊 Generating source audio...')
+                sourceAudio = await translationService.generateAudio(wordList, validatedData.sourceLanguage)
+            } else {
+                sourceAudio = new Array(wordList.length).fill(Buffer.alloc(0))
+            }
+
+            if (validatedData.generateTargetAudio) {
+                console.log('🔊 Generating target audio...')
+                targetAudio = await translationService.generateAudio(
+                    translations.map(t => t.translation),
+                    validatedData.targetLanguage
+                )
+            } else {
+                targetAudio = new Array(translations.length).fill(Buffer.alloc(0))
+            }
+
+            // 7. Convert to DeckCard format
+            const deckData = translations.map((translation, index) => ({
+                source: translation.source,
+                target: translation.translation,
+                sourceAudio: sourceAudio[index],
+                targetAudio: targetAudio[index],
+            }))
+
+            console.log(`✅ Translated ${deckData.length} cards successfully`)
+
+            // 8. Generate final deck name if not provided
+            if (!finalDeckName) {
+                const content = validatedData.aiPrompt || wordList.slice(0, 10).join(', ')
+                finalDeckName = await translationService.generateDeckName(
+                    content,
+                    validatedData.sourceLanguage,
+                    validatedData.targetLanguage
+                )
+            }
+
+            console.log(`📚 Creating Anki package: "${finalDeckName}"`)
+
+            // 9. Create Anki package with explicit language parameters
+            const ankiPackage = await ankiService.createDeck(
+                deckData,
+                finalDeckName,
+                validatedData.frontLanguage,  // NEW: Explicit front language
+                validatedData.backLanguage,   // NEW: Explicit back language
+                validatedData.sourceLanguage, // For card content mapping
+                validatedData.targetLanguage  // For card content mapping
+            )
+
+            console.log(`✅ Created Anki package with ${deckData.length} cards`)
+
+            // 10. Return file download response
+            return ResponseFormatter.formatFileResponse(ankiPackage, finalDeckName)
+
+        } catch (error) {
+            console.error('❌ Error generating deck:', error)
+            return DeckGenerationController.handleError(c, error as Error)
         }
-
-        // Step 2: Generate deck name if not provided
-        const finalDeckName = await this.getDeckName(translationService, data, wordList)
-
-        // Step 3: Translate words
-        console.log(`🔄 Translating ${wordList.length} words from ${data.sourceLanguage} to ${data.targetLanguage}...`)
-        const translations = await translationService.translateWords(wordList, data.sourceLanguage, data.targetLanguage)
-        console.log(`✅ Translated ${translations.length} words. Sample:`, translations.slice(0, 3).map((t: Translation) => `${t.source} → ${t.translation}`))
-
-        // Step 4: Generate audio for source and target languages (conditionally)
-        const { sourceAudio, targetAudio } = await this.generateAudio(translationService, wordList, translations, data)
-
-        // Step 5: Create Anki deck
-        console.log('📦 Creating Anki deck package...')
-        const deckData = translations.map((translation: Translation, index: number) => ({
-            source: translation.source,
-            target: translation.translation,
-            sourceAudio: sourceAudio[index],
-            targetAudio: targetAudio[index],
-        }))
-
-        const ankiPackage = await ankiService.createDeck(deckData, finalDeckName)
-        console.log(`✅ Created Anki package with ${deckData.length} cards`)
-
-        return ankiPackage
     }
 
     /**
-     * Parse custom arguments from request data
+     * Validates request data without generating deck
      */
-    private static parseCustomArgs(data: DeckGenerationRequest): { textArgs: Record<string, unknown>, voiceArgs: Record<string, unknown> } {
-        let textArgs = {}
-        let voiceArgs = {}
+    static async validateRequest(c: Context): Promise<Response> {
+        try {
+            console.log('🔍 Validation request received')
 
-        if (data.useCustomArgs) {
-            textArgs = JSON.parse(data.textModelArgs)
-            voiceArgs = JSON.parse(data.voiceModelArgs)
-            console.log('✅ Using custom args - Text:', textArgs, 'Voice:', voiceArgs)
+            const validatedData = await RequestValidator.validateDeckGenerationRequest(c)
+            const wordList = RequestValidator.extractWordList(validatedData)
+
+            // Determine deck type
+            const deckType = validatedData.aiPrompt ? 'ai-generated' : 'word-list'
+            const wordCount = validatedData.aiPrompt ? validatedData.maxCards : wordList.length
+
+            console.log('✅ Validation completed successfully')
+
+            return c.json({
+                status: "valid",
+                message: "All validations passed!",
+                summary: {
+                    deckType,
+                    wordCount,
+                    deckName: validatedData.deckName || 'Auto-generated',
+                    sourceLanguage: validatedData.sourceLanguage,
+                    targetLanguage: validatedData.targetLanguage,
+                    frontLanguage: validatedData.frontLanguage,
+                    backLanguage: validatedData.backLanguage,
+                    textModel: validatedData.textModel,
+                    voiceModel: validatedData.voiceModel,
+                    generateSourceAudio: validatedData.generateSourceAudio,
+                    generateTargetAudio: validatedData.generateTargetAudio,
+                    useCustomArgs: validatedData.useCustomArgs,
+                    hasWords: wordList.length > 0,
+                    hasAiPrompt: !!validatedData.aiPrompt
+                }
+            })
+        } catch (error) {
+            console.error('❌ Validation error:', error)
+            return DeckGenerationController.handleError(c, error as Error)
         }
-
-        return { textArgs, voiceArgs }
     }
 
     /**
-     * Get word list either from provided list or generate from AI prompt
+     * Centralized error handling with specific error type detection
      */
-    private static async getWords(translationService: TranslationService, data: DeckGenerationRequest): Promise<string[]> {
-        if (data.aiPrompt) {
-            console.log('🤖 Generating words from AI prompt:', data.aiPrompt.substring(0, 50) + '...')
-            const wordList = await translationService.generateWordsFromPrompt(data.aiPrompt, data.sourceLanguage, data.maxCards)
-            console.log(`✅ Generated ${wordList.length} words:`, wordList.slice(0, 5).join(', ') + '...')
-            return wordList
-        } else {
-            console.log('📝 Using provided word list...')
-            const wordList = data.words.split(',').map(word => word.trim()).filter(word => word.length > 0)
-            console.log(`✅ Parsed ${wordList.length} words:`, wordList.slice(0, 5).join(', ') + '...')
-            return wordList
-        }
-    }
+    private static handleError(c: Context, error: Error): Response {
+        const errorMessage = error.message || 'An unknown error occurred'
+        console.error('❌ Error details:', errorMessage)
 
-    /**
-     * Generate deck name if not provided by user
-     */
-    private static async getDeckName(translationService: TranslationService, data: DeckGenerationRequest, wordList: string[]): Promise<string> {
-        if (data.deckName && data.deckName.trim() !== '') {
-            console.log(`✅ Using provided deck name: "${data.deckName}"`)
-            return data.deckName
+        // Check if it's a Zod validation error
+        if (error.constructor.name === 'ZodError' || errorMessage.includes('ZodError')) {
+            return c.json({
+                status: 'invalid',
+                error: 'Validation error',
+                message: 'Request validation failed. Please check all required fields.',
+                type: 'validation_error'
+            }, 400)
         }
 
-        console.log('🏷️ Generating deck name using AI...')
-        const content = data.aiPrompt || wordList.slice(0, 10).join(', ')
-        const finalDeckName = await translationService.generateDeckName(content, data.sourceLanguage, data.targetLanguage)
-        console.log(`✅ Generated deck name: "${finalDeckName}"`)
-        return finalDeckName
-    }
-
-    /**
-     * Generate audio for source and target languages based on user preferences
-     */
-    private static async generateAudio(
-        translationService: TranslationService,
-        wordList: string[],
-        translations: Translation[],
-        data: DeckGenerationRequest
-    ): Promise<{ sourceAudio: Buffer[], targetAudio: Buffer[] }> {
-        let sourceAudio: Buffer[] = []
-        let targetAudio: Buffer[] = []
-
-        // Generate source audio
-        if (data.generateSourceAudio) {
-            console.log(`🔊 Generating audio for ${wordList.length} source words...`)
-            sourceAudio = await translationService.generateAudio(wordList, data.sourceLanguage)
-            console.log(`✅ Generated ${sourceAudio.length} source audio files`)
-        } else {
-            console.log('⏭️ Skipping source audio generation (disabled)')
-            sourceAudio = new Array(wordList.length).fill(Buffer.alloc(0))
+        // JSON parsing errors (400)
+        if (errorMessage.includes('JSON') || errorMessage.includes('parse') || errorMessage.includes('Expected')) {
+            return c.json({
+                status: 'invalid',
+                error: 'JSON error',
+                message: errorMessage,
+                type: 'validation_error'
+            }, 400)
         }
 
-        // Generate target audio
-        if (data.generateTargetAudio) {
-            console.log(`🔊 Generating audio for ${translations.length} target words...`)
-            targetAudio = await translationService.generateAudio(translations.map((t: Translation) => t.translation), data.targetLanguage)
-            console.log(`✅ Generated ${targetAudio.length} target audio files`)
-        } else {
-            console.log('⏭️ Skipping target audio generation (disabled)')
-            targetAudio = new Array(translations.length).fill(Buffer.alloc(0))
+        // Business rule validation errors (400)
+        if (errorMessage.includes('Either words or aiPrompt must be provided') ||
+            errorMessage.includes('must be provided') ||
+            errorMessage.includes('Required')) {
+            return c.json({
+                status: 'invalid',
+                error: 'Validation error',
+                message: errorMessage,
+                type: 'validation_error'
+            }, 400)
         }
 
-        return { sourceAudio, targetAudio }
+        // Authentication errors (401)
+        if (errorMessage.includes('API key') || errorMessage.includes('authentication') || errorMessage.includes('unauthorized')) {
+            return c.json({
+                error: 'Authentication error',
+                message: 'Invalid or missing Replicate API key. Please check your API key and try again.',
+                type: 'auth_error'
+            }, 401)
+        }
+
+        // Model errors (400)
+        if (errorMessage.includes('model') || errorMessage.includes('404') || errorMessage.includes('not found')) {
+            return c.json({
+                error: 'Model error',
+                message: 'The specified AI model was not found or is not available. Please try a different model.',
+                type: 'model_error'
+            }, 400)
+        }
+
+        // Rate limiting (429)
+        if (errorMessage.includes('rate limit') || errorMessage.includes('too many requests')) {
+            return c.json({
+                error: 'Rate limit exceeded',
+                message: 'Too many requests to the AI service. Please wait a moment and try again.',
+                type: 'rate_limit_error'
+            }, 429)
+        }
+
+        // Generic validation errors (400)
+        if (errorMessage.includes('validation') || errorMessage.includes('invalid') || errorMessage.includes('required')) {
+            return c.json({
+                status: 'invalid',
+                error: 'Validation error',
+                message: errorMessage,
+                type: 'validation_error'
+            }, 400)
+        }
+
+        // Generic server errors (500)
+        return c.json({
+            error: 'Internal server error',
+            message: 'An unexpected error occurred while processing your request. Please try again.',
+            type: 'server_error',
+            details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+        }, 500)
     }
 } 

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
 import { AnkiService } from '../../AnkiService.js'
 import { AnkiAudioTestUtils } from './test-utils.js'
-import type { DeckCard } from '../../../types/translation.js'
 
 /**
  * 🎯 AUDIO PLACEMENT RULES:

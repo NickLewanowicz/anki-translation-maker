@@ -98,6 +98,7 @@ describe('TranslationService', () => {
         })
 
         it('should generate fallback name for null content', async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const deckName = await translationService.generateDeckName(null as any, 'en', 'es')
             expect(deckName).toBe('EN-ES Vocabulary')
         })
@@ -191,6 +192,7 @@ describe('AIInputValidator', () => {
         it('should reject invalid prompts', () => {
             expect(validator.validatePrompt('')).toBe(false)
             expect(validator.validatePrompt('ab')).toBe(false)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             expect(validator.validatePrompt(null as any)).toBe(false)
             expect(validator.validatePrompt('a'.repeat(2001))).toBe(false)
         })
@@ -205,7 +207,9 @@ describe('AIInputValidator', () => {
         it('should reject invalid word arrays', () => {
             expect(validator.validateWords([])).toBe(false)
             expect(validator.validateWords(['', 'valid'])).toBe(false)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             expect(validator.validateWords([null as any])).toBe(false)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             expect(validator.validateWords(null as any)).toBe(false)
         })
     })
@@ -221,6 +225,7 @@ describe('AIInputValidator', () => {
             expect(validator.validateLanguageCode('')).toBe(false)
             expect(validator.validateLanguageCode('e')).toBe(false)
             expect(validator.validateLanguageCode('english')).toBe(false)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             expect(validator.validateLanguageCode(null as any)).toBe(false)
         })
     })
@@ -234,6 +239,7 @@ describe('AIInputValidator', () => {
 
         it('should handle edge cases', () => {
             expect(validator.sanitizeDeckName('')).toBe('Vocabulary Deck')
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             expect(validator.sanitizeDeckName(null as any)).toBe('Vocabulary Deck')
             expect(validator.sanitizeDeckName('a'.repeat(150))).toHaveLength(100)
         })

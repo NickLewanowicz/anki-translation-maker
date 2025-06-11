@@ -31,7 +31,10 @@ const getDefaultFormData = (): DeckFormData => ({
     maxCards: 20,
     deckName: '',
     targetLanguage: '',
-    sourceLanguage: '',
+    sourceLanguage: 'en',        // Keep for backward compatibility
+    frontLanguage: 'en',         // Default front to English
+    backLanguage: '',            // Default back to empty (user must choose)
+    contentLanguage: '',         // Default to empty (user must choose)
     replicateApiKey: '',
     textModel: 'openai/gpt-4o-mini',
     voiceModel: 'minimax/speech-02-hd',
@@ -56,8 +59,7 @@ export function useFormState() {
         try {
             const savedData = localStorageService.loadFormData()
             if (savedData) {
-                // Map localStorage field names to form field names
-                const mappedData: Partial<DeckFormData> = {
+                const mappedData = {
                     deckType: savedData.deckType,
                     words: savedData.words,
                     aiPrompt: savedData.aiPrompt,
@@ -65,6 +67,9 @@ export function useFormState() {
                     deckName: savedData.deckName,
                     targetLanguage: savedData.targetLanguage,
                     sourceLanguage: savedData.sourceLanguage,
+                    frontLanguage: (savedData as typeof savedData & { frontLanguage?: string }).frontLanguage || 'en',
+                    backLanguage: (savedData as typeof savedData & { backLanguage?: string }).backLanguage || '',
+                    contentLanguage: (savedData as typeof savedData & { contentLanguage?: string }).contentLanguage || '',
                     replicateApiKey: savedData.replicateApiKey,
                     textModel: savedData.textModel,
                     voiceModel: savedData.voiceModel,
@@ -98,6 +103,9 @@ export function useFormState() {
                 deckName: data.deckName,
                 targetLanguage: data.targetLanguage,
                 sourceLanguage: data.sourceLanguage,
+                frontLanguage: data.frontLanguage,
+                backLanguage: data.backLanguage,
+                contentLanguage: data.contentLanguage,
                 replicateApiKey: data.replicateApiKey,
                 textModel: data.textModel,
                 voiceModel: data.voiceModel,
@@ -126,6 +134,25 @@ export function useFormState() {
                 if (!['custom', 'ai-generated'].includes(newData.deckType)) {
                     newData.deckType = 'custom'
                     newData.words = ''
+                }
+            }
+
+            // Handle content language validation
+            if (updates.frontLanguage !== undefined || updates.backLanguage !== undefined) {
+                const availableLanguages = [newData.frontLanguage, newData.backLanguage].filter(Boolean)
+
+                // Clear content language if it's no longer available
+                if (newData.contentLanguage && !availableLanguages.includes(newData.contentLanguage)) {
+                    newData.contentLanguage = ''
+                }
+
+                // Update legacy sourceLanguage/targetLanguage for compatibility
+                if (newData.contentLanguage) {
+                    newData.sourceLanguage = newData.contentLanguage
+                    const otherLanguage = availableLanguages.find(lang => lang !== newData.contentLanguage)
+                    if (otherLanguage) {
+                        newData.targetLanguage = otherLanguage
+                    }
                 }
             }
 
@@ -191,13 +218,40 @@ export function useFormState() {
      * Get submit data (prepared for API)
      */
     const getSubmitData = useCallback(() => {
+        // Determine words based on deck type
+        let words = ''
+        let aiPrompt = ''
+
+        if (formData.deckType === 'ai-generated') {
+            aiPrompt = formData.aiPrompt
+        } else if (formData.deckType === 'custom') {
+            words = formData.words
+        } else {
+            // Default deck - use the preset words
+            const selectedDeck = DEFAULT_DECKS.find(deck => deck.id === formData.deckType)
+            words = selectedDeck ? selectedDeck.words : formData.words
+        }
+
+        // Map language fields to API format
+        // sourceLanguage = content language (what user inputs)
+        // targetLanguage = the other language (what gets translated to)
+        const sourceLanguage = formData.contentLanguage || formData.sourceLanguage
+        let targetLanguage = formData.targetLanguage
+
+        // If front and back languages are different, determine target from the non-content language
+        if (formData.frontLanguage && formData.backLanguage && formData.frontLanguage !== formData.backLanguage) {
+            targetLanguage = formData.contentLanguage === formData.frontLanguage ? formData.backLanguage : formData.frontLanguage
+        }
+
         return {
-            words: formData.deckType === 'ai-generated' ? '' : formData.words,
-            aiPrompt: formData.deckType === 'ai-generated' ? formData.aiPrompt : '',
+            words,
+            aiPrompt,
             maxCards: formData.maxCards,
             deckName: formData.deckName,
-            targetLanguage: formData.targetLanguage,
-            sourceLanguage: formData.sourceLanguage,
+            targetLanguage,
+            sourceLanguage,
+            frontLanguage: formData.frontLanguage,
+            backLanguage: formData.backLanguage,
             replicateApiKey: formData.replicateApiKey,
             textModel: formData.textModel,
             voiceModel: formData.voiceModel,

@@ -1,4 +1,4 @@
-import sqlite3 from 'sqlite3'
+import * as sqlite3 from 'sqlite3'
 import { v4 as uuidv4 } from 'uuid'
 import type { DeckCard } from '../../../types/translation.js'
 import { AnkiSchemaBuilder } from './AnkiSchemaBuilder.js'
@@ -16,7 +16,7 @@ export class AnkiDatabaseService {
     /**
      * Creates and populates a complete SQLite database for an Anki deck
      */
-    async createDatabase(dbPath: string, cards: DeckCard[], deckName: string): Promise<void> {
+    async createDatabase(dbPath: string, cards: DeckCard[], deckName: string, frontLanguage?: string, backLanguage?: string, sourceLanguage?: string, targetLanguage?: string): Promise<void> {
         return new Promise((resolve, reject) => {
             const db = new sqlite3.Database(dbPath, (err) => {
                 if (err) {
@@ -34,7 +34,7 @@ export class AnkiDatabaseService {
                         return
                     }
 
-                    // Insert data
+                    // Insert data with language parameters
                     this.insertData(db, cards, deckName, (dataErr) => {
                         db.close((closeErr) => {
                             if (dataErr) {
@@ -46,7 +46,7 @@ export class AnkiDatabaseService {
                                 resolve()
                             }
                         })
-                    })
+                    }, frontLanguage, backLanguage, sourceLanguage, targetLanguage)
                 })
             })
         })
@@ -55,7 +55,7 @@ export class AnkiDatabaseService {
     /**
      * Inserts all data including collection info, deck, model, notes, and cards
      */
-    private insertData(db: sqlite3.Database, cards: DeckCard[], deckName: string, callback: (err?: Error) => void): void {
+    private insertData(db: sqlite3.Database, cards: DeckCard[], deckName: string, callback: (err?: Error) => void, frontLanguage?: string, backLanguage?: string, sourceLanguage?: string, targetLanguage?: string): void {
         // Use realistic timestamps like the working deck
         const now = Date.now()
         const baseTime = 1436126400  // Base timestamp from working deck
@@ -176,8 +176,8 @@ export class AnkiDatabaseService {
                     return
                 }
 
-                // Insert notes and cards
-                this.insertNotesAndCards(db, cards, modelId, deckId, callback)
+                // Insert notes and cards with language parameters
+                this.insertNotesAndCards(db, cards, modelId, deckId, callback, frontLanguage, backLanguage, sourceLanguage, targetLanguage)
             }
         )
     }
@@ -185,7 +185,7 @@ export class AnkiDatabaseService {
     /**
      * Inserts notes and cards for each DeckCard
      */
-    private insertNotesAndCards(db: sqlite3.Database, cards: DeckCard[], modelId: number, deckId: number, callback: (err?: Error) => void): void {
+    private insertNotesAndCards(db: sqlite3.Database, cards: DeckCard[], modelId: number, deckId: number, callback: (err?: Error) => void, frontLanguage?: string, backLanguage?: string, sourceLanguage?: string, targetLanguage?: string): void {
         const now = Date.now()
         let completed = 0
         const total = cards.length * 2 // notes + cards
@@ -205,33 +205,62 @@ export class AnkiDatabaseService {
             const noteId = baseId + index + 100
             const cardId = baseId + index + 200
 
-            // Determine card orientation based on which audio is present
+            // Determine card orientation based on explicit front/back language preferences
             const hasSourceAudio = this.mediaMappingService.hasValidAudio(card, 'source')
             const hasTargetAudio = this.mediaMappingService.hasValidAudio(card, 'target')
 
             let frontField: string
             let backField: string
 
-            if (hasSourceAudio && !hasTargetAudio) {
-                // Source audio only: Front = source + audio, Back = target
-                const sourceMediaIndex = mediaMapping.sourceAudio[index]
-                frontField = `${card.source}[sound:${sourceMediaIndex}.mp3]`
-                backField = card.target
-            } else if (hasTargetAudio && !hasSourceAudio) {
-                // Target audio only: Front = target + audio, Back = source  
-                const targetMediaIndex = mediaMapping.targetAudio[index]
-                frontField = `${card.target}[sound:${targetMediaIndex}.mp3]`
-                backField = card.source
-            } else if (hasSourceAudio && hasTargetAudio) {
-                // Both audio: Front = target + target audio, Back = source + source audio
-                const targetMediaIndex = mediaMapping.targetAudio[index]
-                const sourceMediaIndex = mediaMapping.sourceAudio[index]
-                frontField = `${card.target}[sound:${targetMediaIndex}.mp3]`
-                backField = `${card.source}[sound:${sourceMediaIndex}.mp3]`
+            // NEW: Use explicit front/back language preferences if provided
+            if (frontLanguage && backLanguage && sourceLanguage && targetLanguage) {
+                // Determine which content goes on front/back based on language preferences
+                const frontContent = frontLanguage === sourceLanguage ? card.source : card.target
+                const backContent = backLanguage === sourceLanguage ? card.source : card.target
+
+                // Add audio to the appropriate side
+                if (frontLanguage === sourceLanguage && hasSourceAudio) {
+                    const sourceMediaIndex = mediaMapping.sourceAudio[index]
+                    frontField = `${frontContent}[sound:${sourceMediaIndex}.mp3]`
+                } else if (frontLanguage === targetLanguage && hasTargetAudio) {
+                    const targetMediaIndex = mediaMapping.targetAudio[index]
+                    frontField = `${frontContent}[sound:${targetMediaIndex}.mp3]`
+                } else {
+                    frontField = frontContent
+                }
+
+                if (backLanguage === sourceLanguage && hasSourceAudio) {
+                    const sourceMediaIndex = mediaMapping.sourceAudio[index]
+                    backField = `${backContent}[sound:${sourceMediaIndex}.mp3]`
+                } else if (backLanguage === targetLanguage && hasTargetAudio) {
+                    const targetMediaIndex = mediaMapping.targetAudio[index]
+                    backField = `${backContent}[sound:${targetMediaIndex}.mp3]`
+                } else {
+                    backField = backContent
+                }
             } else {
-                // No audio: Front = target, Back = source (default behavior)
-                frontField = card.target
-                backField = card.source
+                // LEGACY: Audio-based orientation (backwards compatibility)
+                if (hasSourceAudio && !hasTargetAudio) {
+                    // Source audio only: Front = source + audio, Back = target
+                    const sourceMediaIndex = mediaMapping.sourceAudio[index]
+                    frontField = `${card.source}[sound:${sourceMediaIndex}.mp3]`
+                    backField = card.target
+                } else if (hasTargetAudio && !hasSourceAudio) {
+                    // Target audio only: Front = target + audio, Back = source  
+                    const targetMediaIndex = mediaMapping.targetAudio[index]
+                    frontField = `${card.target}[sound:${targetMediaIndex}.mp3]`
+                    backField = card.source
+                } else if (hasSourceAudio && hasTargetAudio) {
+                    // Both audio: Front = target + target audio, Back = source + source audio
+                    const targetMediaIndex = mediaMapping.targetAudio[index]
+                    const sourceMediaIndex = mediaMapping.sourceAudio[index]
+                    frontField = `${card.target}[sound:${targetMediaIndex}.mp3]`
+                    backField = `${card.source}[sound:${sourceMediaIndex}.mp3]`
+                } else {
+                    // No audio: Front = target, Back = source (default behavior)
+                    frontField = card.target
+                    backField = card.source
+                }
             }
 
             // Simple checksum - just use the length of the target text

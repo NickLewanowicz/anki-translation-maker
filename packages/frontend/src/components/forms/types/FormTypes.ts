@@ -6,6 +6,9 @@ export interface DeckFormData {
     deckName: string
     targetLanguage: string
     sourceLanguage: string
+    frontLanguage: string      // Language displayed on front of cards
+    backLanguage: string       // Language displayed on back of cards
+    contentLanguage: string    // Language of input content (words/AI prompt)
     replicateApiKey: string
     textModel: string
     voiceModel: string

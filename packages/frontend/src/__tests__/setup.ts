@@ -56,6 +56,13 @@ Object.defineProperty(navigator, 'userAgent', {
 global.URL.createObjectURL = vi.fn(() => 'mocked-url')
 global.URL.revokeObjectURL = vi.fn()
 
+// Mock ResizeObserver for Headless UI
+global.ResizeObserver = vi.fn().mockImplementation(() => ({
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+}))
+
 // Reset mocks before each test
 beforeEach(() => {
     localStorageMock.getItem.mockClear()
