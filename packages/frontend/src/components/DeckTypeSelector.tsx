@@ -9,14 +9,14 @@ interface DeckTypeSelectorProps {
     cardPreviewData: CardPreviewData
     onFrontAudioToggle?: (enabled: boolean) => void
     onBackAudioToggle?: (enabled: boolean) => void
-    onLanguageSwap?: () => void
+
     // New props for deck settings
     deckName: string
-    sourceLanguage: string
-    targetLanguage: string
+    frontLanguage: string
+    backLanguage: string
     onDeckNameChange: (name: string) => void
-    onSourceLanguageChange: (language: string) => void
-    onTargetLanguageChange: (language: string) => void
+    onFrontLanguageChange: (language: string) => void
+    onBackLanguageChange: (language: string) => void
     getFieldError?: (field: string) => string | undefined
 }
 
@@ -26,13 +26,13 @@ export const DeckTypeSelector: React.FC<DeckTypeSelectorProps> = ({
     cardPreviewData,
     onFrontAudioToggle,
     onBackAudioToggle,
-    onLanguageSwap,
+
     deckName,
-    sourceLanguage,
-    targetLanguage,
+    frontLanguage,
+    backLanguage,
     onDeckNameChange,
-    onSourceLanguageChange,
-    onTargetLanguageChange,
+    onFrontLanguageChange,
+    onBackLanguageChange,
     getFieldError
 }) => {
     const options = [
@@ -110,87 +110,25 @@ export const DeckTypeSelector: React.FC<DeckTypeSelectorProps> = ({
 
             {/* Deck Settings and Card Preview */}
             <div className="mt-6">
-                {/* Deck Name and Language Settings */}
-                <div className="mb-4 space-y-3">
-                    {/* Deck Name */}
-                    <div>
-                        <label htmlFor="deckName" className="block text-sm font-medium text-white/90 mb-2">
-                            Deck Name
-                        </label>
-                        <input
-                            type="text"
-                            id="deckName"
-                            name="deckName"
-                            value={deckName}
-                            onChange={(e) => onDeckNameChange(e.target.value)}
-                            className="w-full px-3 py-2 bg-white/10 backdrop-blur border border-white/30 text-white placeholder-white/50 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50"
-                            placeholder="My Spanish Vocabulary Deck"
-                        />
-                        {getFieldError && getFieldError('deckName') && (
-                            <p className="mt-1 text-sm text-red-300">
-                                {getFieldError('deckName')}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Language Selection */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label htmlFor="sourceLanguage" className="block text-sm font-medium text-white/90 mb-2">
-                                Source Language
-                            </label>
-                            <div className="relative">
-                                <select
-                                    id="sourceLanguage"
-                                    name="sourceLanguage"
-                                    value={sourceLanguage}
-                                    onChange={(e) => onSourceLanguageChange(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white/10 backdrop-blur border border-white/30 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 appearance-none"
-                                >
-                                    {LANGUAGE_OPTIONS.filter(lang => lang.code !== 'other').map(lang => (
-                                        <option key={lang.code} value={lang.code} className="text-gray-900 bg-white">
-                                            {lang.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/70 pointer-events-none" />
-                            </div>
-                            {getFieldError && getFieldError('sourceLanguage') && (
-                                <p className="mt-1 text-sm text-red-300">
-                                    {getFieldError('sourceLanguage')}
-                                </p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label htmlFor="targetLanguage" className="block text-sm font-medium text-white/90 mb-2">
-                                Target Language
-                            </label>
-                            <div className="relative">
-                                <select
-                                    id="targetLanguage"
-                                    name="targetLanguage"
-                                    value={targetLanguage}
-                                    onChange={(e) => onTargetLanguageChange(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white/10 backdrop-blur border border-white/30 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 appearance-none"
-                                    required
-                                >
-                                    <option value="" className="text-gray-900 bg-white">Select target language</option>
-                                    {LANGUAGE_OPTIONS.filter(lang => lang.code !== 'other').map(lang => (
-                                        <option key={lang.code} value={lang.code} className="text-gray-900 bg-white">
-                                            {lang.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/70 pointer-events-none" />
-                            </div>
-                            {getFieldError && getFieldError('targetLanguage') && (
-                                <p className="mt-1 text-sm text-red-300">
-                                    {getFieldError('targetLanguage')}
-                                </p>
-                            )}
-                        </div>
-                    </div>
+                {/* Deck Name */}
+                <div className="mb-4">
+                    <label htmlFor="deckName" className="block text-sm font-medium text-white/90 mb-2">
+                        Deck Name
+                    </label>
+                    <input
+                        type="text"
+                        id="deckName"
+                        name="deckName"
+                        value={deckName}
+                        onChange={(e) => onDeckNameChange(e.target.value)}
+                        className="w-full px-3 py-2 bg-white/10 backdrop-blur border border-white/30 text-white placeholder-white/50 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50"
+                        placeholder="My Spanish Vocabulary Deck"
+                    />
+                    {getFieldError && getFieldError('deckName') && (
+                        <p className="mt-1 text-sm text-red-300">
+                            {getFieldError('deckName')}
+                        </p>
+                    )}
                 </div>
 
                 {/* Card Preview Section */}
@@ -198,28 +136,28 @@ export const DeckTypeSelector: React.FC<DeckTypeSelectorProps> = ({
                     <h3 className="text-sm font-medium text-white/90">
                         Card Preview
                     </h3>
-                    {onLanguageSwap && (
-                        <button
-                            type="button"
-                            onClick={onLanguageSwap}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-md transition-colors"
-                            title="Swap languages"
-                        >
-                            <RotateCcw className="h-3 w-3" />
-                            <span className="hidden sm:inline">Swap</span>
-                        </button>
-                    )}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            // Only swap front and back languages, not content selection
+                            const tempFront = frontLanguage
+                            onFrontLanguageChange(backLanguage)
+                            onBackLanguageChange(tempFront)
+                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-md transition-colors"
+                        title="Swap front and back languages"
+                    >
+                        <RotateCcw className="h-3 w-3" />
+                        <span className="hidden sm:inline">Swap</span>
+                    </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     {/* Front Flashcard */}
-                    <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4 min-h-[100px] sm:min-h-[120px] flex flex-col">
+                    <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4 min-h-[140px] sm:min-h-[160px] flex flex-col">
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
                                 <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Front</span>
-                                <span className="text-xs text-gray-500 font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                    {cardPreviewData.frontLanguageCode?.toUpperCase() || 'EN'}
-                                </span>
                             </div>
                             {onFrontAudioToggle && (
                                 <button
@@ -239,6 +177,26 @@ export const DeckTypeSelector: React.FC<DeckTypeSelectorProps> = ({
                                 </button>
                             )}
                         </div>
+
+                        {/* Language Selector */}
+                        <div className="mb-3">
+                            <div className="relative">
+                                <select
+                                    value={frontLanguage}
+                                    onChange={(e) => onFrontLanguageChange(e.target.value)}
+                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+                                >
+                                    <option value="">Select language</option>
+                                    {LANGUAGE_OPTIONS.filter(lang => lang.code !== 'other').map(lang => (
+                                        <option key={lang.code} value={lang.code}>
+                                            {lang.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
+                            </div>
+                        </div>
+
                         <div className="flex-1 flex items-center justify-center">
                             <div className="text-center">
                                 <div className="text-base sm:text-lg font-medium text-gray-900 mb-1">
@@ -252,13 +210,10 @@ export const DeckTypeSelector: React.FC<DeckTypeSelectorProps> = ({
                     </div>
 
                     {/* Back Flashcard */}
-                    <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4 min-h-[100px] sm:min-h-[120px] flex flex-col">
+                    <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4 min-h-[140px] sm:min-h-[160px] flex flex-col">
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
                                 <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Back</span>
-                                <span className="text-xs text-gray-500 font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                                    {cardPreviewData.backLanguageCode?.toUpperCase() || 'ES'}
-                                </span>
                             </div>
                             {onBackAudioToggle && (
                                 <button
@@ -278,6 +233,26 @@ export const DeckTypeSelector: React.FC<DeckTypeSelectorProps> = ({
                                 </button>
                             )}
                         </div>
+
+                        {/* Language Selector */}
+                        <div className="mb-3">
+                            <div className="relative">
+                                <select
+                                    value={backLanguage}
+                                    onChange={(e) => onBackLanguageChange(e.target.value)}
+                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+                                >
+                                    <option value="">Select language</option>
+                                    {LANGUAGE_OPTIONS.filter(lang => lang.code !== 'other').map(lang => (
+                                        <option key={lang.code} value={lang.code}>
+                                            {lang.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
+                            </div>
+                        </div>
+
                         <div className="flex-1 flex items-center justify-center">
                             <div className="text-center">
                                 <div className="text-base sm:text-lg font-medium text-gray-900 mb-1">

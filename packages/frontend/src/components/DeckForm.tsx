@@ -54,24 +54,17 @@ export function DeckForm() {
 
         return {
             frontText,
-            backText: `Translation in ${getLanguageName(formData.targetLanguage)}`,
-            frontLanguage: getLanguageName(formData.sourceLanguage),
-            backLanguage: getLanguageName(formData.targetLanguage),
-            frontLanguageCode: formData.sourceLanguage,
-            backLanguageCode: formData.targetLanguage,
+            backText: `Translation in ${getLanguageName(formData.backLanguage)}`,
+            frontLanguage: getLanguageName(formData.frontLanguage),
+            backLanguage: getLanguageName(formData.backLanguage),
+            frontLanguageCode: formData.frontLanguage,
+            backLanguageCode: formData.backLanguage,
             frontAudio: formData.generateSourceAudio,
             backAudio: formData.generateTargetAudio
         }
     }, [formData])
 
-    const handleLanguageSwap = () => {
-        updateFormData({
-            sourceLanguage: formData.targetLanguage,
-            targetLanguage: formData.sourceLanguage,
-            generateSourceAudio: formData.generateTargetAudio,
-            generateTargetAudio: formData.generateSourceAudio
-        })
-    }
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -194,13 +187,12 @@ export function DeckForm() {
                         cardPreviewData={cardPreviewData}
                         onFrontAudioToggle={(enabled) => updateFormData({ generateSourceAudio: enabled })}
                         onBackAudioToggle={(enabled) => updateFormData({ generateTargetAudio: enabled })}
-                        onLanguageSwap={handleLanguageSwap}
                         deckName={formData.deckName}
-                        sourceLanguage={formData.sourceLanguage}
-                        targetLanguage={formData.targetLanguage}
+                        frontLanguage={formData.frontLanguage}
+                        backLanguage={formData.backLanguage}
                         onDeckNameChange={(name) => updateFormData({ deckName: name })}
-                        onSourceLanguageChange={(language) => updateFormData({ sourceLanguage: language })}
-                        onTargetLanguageChange={(language) => updateFormData({ targetLanguage: language })}
+                        onFrontLanguageChange={(language: string) => updateFormData({ frontLanguage: language })}
+                        onBackLanguageChange={(language: string) => updateFormData({ backLanguage: language })}
                         getFieldError={getFieldErrorWrapper}
                     />
 
@@ -215,10 +207,14 @@ export function DeckForm() {
                                 aiPrompt={formData.aiPrompt}
                                 maxCards={formData.maxCards}
                                 sourceLanguage={formData.sourceLanguage}
+                                frontLanguage={formData.frontLanguage}
+                                backLanguage={formData.backLanguage}
+                                contentLanguage={formData.contentLanguage}
                                 onDeckTypeChange={(type) => updateFormData({ deckType: type })}
                                 onWordsChange={(words) => updateFormData({ words })}
                                 onAiPromptChange={(prompt) => updateFormData({ aiPrompt: prompt })}
                                 onMaxCardsChange={(maxCards) => updateFormData({ maxCards })}
+                                onContentLanguageChange={(language: string) => updateFormData({ contentLanguage: language })}
                                 getFieldError={getFieldErrorWrapper}
                             />
                         )}

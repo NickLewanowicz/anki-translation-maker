@@ -1,5 +1,6 @@
 import React from 'react'
 import { ChevronDown } from 'lucide-react'
+import { LANGUAGE_OPTIONS } from '../constants/languages'
 
 const DEFAULT_DECKS = [
     {
@@ -28,10 +29,14 @@ interface ContentInputProps {
     aiPrompt: string
     maxCards: number
     sourceLanguage: string
+    frontLanguage: string
+    backLanguage: string
+    contentLanguage: string
     onDeckTypeChange: (type: string) => void
     onWordsChange: (words: string) => void
     onAiPromptChange: (prompt: string) => void
     onMaxCardsChange: (maxCards: number) => void
+    onContentLanguageChange: (language: string) => void
     getFieldError: (field: string) => string | undefined
 }
 
@@ -41,10 +46,14 @@ export const ContentInput: React.FC<ContentInputProps> = ({
     aiPrompt,
     maxCards,
     sourceLanguage,
+    frontLanguage,
+    backLanguage,
+    contentLanguage,
     onDeckTypeChange,
     onWordsChange,
     onAiPromptChange,
     onMaxCardsChange,
+    onContentLanguageChange,
     getFieldError
 }) => {
     const isEnglishSource = sourceLanguage === 'en'
@@ -186,6 +195,64 @@ export const ContentInput: React.FC<ContentInputProps> = ({
         </div>
     )
 
+    const renderContentLanguageSelector = () => {
+        // Get available languages from front and back
+        const availableLanguages = [frontLanguage, backLanguage].filter(Boolean)
+        const isSameLanguage = frontLanguage && backLanguage && frontLanguage === backLanguage
+        const isDisabled = isSameLanguage || availableLanguages.length === 0
+
+        return (
+            <div className="mt-4">
+                <label htmlFor="contentLanguage" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Content Language *
+                </label>
+                <div className="relative">
+                    <select
+                        id="contentLanguage"
+                        name="contentLanguage"
+                        value={isSameLanguage ? frontLanguage : contentLanguage}
+                        onChange={(e) => onContentLanguageChange(e.target.value)}
+                        disabled={isDisabled}
+                        className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 appearance-none ${isDisabled ? 'opacity-60 cursor-not-allowed' : ''
+                            }`}
+                        required
+                    >
+                        {isSameLanguage ? (
+                            <option value={frontLanguage}>
+                                {LANGUAGE_OPTIONS.find(lang => lang.code === frontLanguage)?.name || frontLanguage}
+                            </option>
+                        ) : (
+                            <>
+                                <option value="">Select content language</option>
+                                {availableLanguages.map(langCode => {
+                                    const lang = LANGUAGE_OPTIONS.find(l => l.code === langCode)
+                                    return lang ? (
+                                        <option key={langCode} value={langCode}>
+                                            {lang.name}
+                                        </option>
+                                    ) : null
+                                })}
+                            </>
+                        )}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+                {getFieldError('contentLanguage') && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {getFieldError('contentLanguage')}
+                    </p>
+                )}
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    {isSameLanguage
+                        ? 'Both card sides use the same language - content will be in this language too.'
+                        : availableLanguages.length === 0
+                            ? 'Please select front and back languages first.'
+                            : 'Choose the language of your input content (words or AI prompt).'}
+                </p>
+            </div>
+        )
+    }
+
     return (
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
@@ -193,6 +260,7 @@ export const ContentInput: React.FC<ContentInputProps> = ({
             </h3>
 
             {renderContentSelector()}
+            {renderContentLanguageSelector()}
             {renderSelectedDeckInfo()}
             {isCustom && renderCustomWordsInput()}
             {isAiGenerated && renderAiPromptInput()}

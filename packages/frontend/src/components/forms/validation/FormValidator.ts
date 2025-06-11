@@ -88,6 +88,39 @@ export class FormValidator {
             })
         }
 
+        // Validate new language fields
+        if (!formData.frontLanguage.trim()) {
+            errors.push({
+                field: 'frontLanguage',
+                message: 'Front language is required'
+            })
+        }
+
+        if (!formData.backLanguage.trim()) {
+            errors.push({
+                field: 'backLanguage',
+                message: 'Back language is required'
+            })
+        }
+
+        if (!formData.contentLanguage.trim()) {
+            errors.push({
+                field: 'contentLanguage',
+                message: 'Content language is required'
+            })
+        }
+
+        // Validate content language is available in front/back options
+        if (formData.contentLanguage && formData.frontLanguage && formData.backLanguage) {
+            const availableLanguages = [formData.frontLanguage, formData.backLanguage]
+            if (!availableLanguages.includes(formData.contentLanguage)) {
+                errors.push({
+                    field: 'contentLanguage',
+                    message: 'Content language must match one of the card languages'
+                })
+            }
+        }
+
         // Check if source and target languages are the same
         if (formData.sourceLanguage && formData.targetLanguage &&
             formData.sourceLanguage === formData.targetLanguage) {
