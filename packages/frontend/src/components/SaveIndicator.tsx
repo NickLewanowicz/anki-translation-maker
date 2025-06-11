@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Check, Clock, Trash2 } from 'lucide-react'
+import { Clock, Trash2 } from 'lucide-react'
+import { Menu } from '@headlessui/react'
 
 interface SaveIndicatorProps {
     isLocalStorageLoaded: boolean
@@ -15,35 +16,41 @@ export const SaveIndicator: React.FC<SaveIndicatorProps> = ({ isLocalStorageLoad
         }
     }, [isLocalStorageLoaded])
 
-    return (
-        <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-            <div className="flex items-center gap-2">
-                {isLocalStorageLoaded ? (
-                    <>
-                        <Check className="h-4 w-4 text-green-500" />
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                            Auto-saved {lastSaved ? lastSaved.toLocaleTimeString() : ''}
-                        </span>
-                    </>
-                ) : (
-                    <>
-                        <Clock className="h-4 w-4 text-yellow-500 animate-pulse" />
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                            Loading saved data...
-                        </span>
-                    </>
-                )}
+    if (!isLocalStorageLoaded) {
+        return (
+            <div className="flex items-center gap-2 text-xs text-yellow-600 dark:text-yellow-400">
+                <Clock className="h-3 w-3 animate-pulse" />
+                <span>Loading saved data...</span>
             </div>
-            <button
-                type="button"
-                onClick={onClearData}
-                disabled={!isLocalStorageLoaded}
-                className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                title="Clear all saved data"
-            >
-                <Trash2 className="h-3 w-3" />
-                Clear Data
-            </button>
-        </div>
+        )
+    }
+
+    return (
+        <Menu as="div" className="relative inline-block">
+            <Menu.Button className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors cursor-pointer">
+                <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                <span className="font-medium">
+                    Auto-saved {lastSaved ? lastSaved.toLocaleTimeString() : ''}
+                </span>
+            </Menu.Button>
+
+            <Menu.Items className="absolute left-0 top-full mt-1 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-10">
+                <Menu.Item>
+                    {({ active }) => (
+                        <button
+                            onClick={onClearData}
+                            className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 ${active
+                                ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                                : 'text-gray-700 dark:text-gray-300'
+                                } transition-colors`}
+                            title="Clear all saved data"
+                        >
+                            <Trash2 className="h-3 w-3" />
+                            Clear Data
+                        </button>
+                    )}
+                </Menu.Item>
+            </Menu.Items>
+        </Menu>
     )
 } 

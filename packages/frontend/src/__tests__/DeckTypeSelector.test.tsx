@@ -122,8 +122,12 @@ describe('DeckTypeSelector', () => {
             onBackLanguageChange={mockOnBackLanguageChange}
         />)
 
-        const swapButton = screen.getByTitle('Swap front and back languages')
-        fireEvent.click(swapButton)
+        // There are now two swap buttons - one for desktop and one for mobile
+        const swapButtons = screen.getAllByTitle('Swap front and back languages')
+        expect(swapButtons).toHaveLength(2)
+
+        // Click the first swap button (either will work)
+        fireEvent.click(swapButtons[0])
 
         expect(mockOnFrontLanguageChange).toHaveBeenCalledWith('es')
         expect(mockOnBackLanguageChange).toHaveBeenCalledWith('en')

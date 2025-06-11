@@ -58,12 +58,13 @@ describe('DeckForm', () => {
             expect(screen.getByText('Deck Name')).toBeInTheDocument()
         })
 
-        it('renders save indicator with clear button', () => {
+        it('renders save indicator with compact badge design', () => {
             render(<DeckForm />)
 
             // Check for SaveIndicator elements that we know exist
             expect(screen.getByText(/auto-saved|saved/i)).toBeInTheDocument()
-            expect(screen.getByText('Clear Data')).toBeInTheDocument()
+            // Clear Data is now in a dropdown menu, not directly visible
+            expect(screen.queryByText('Clear Data')).not.toBeInTheDocument()
         })
     })
 }) 

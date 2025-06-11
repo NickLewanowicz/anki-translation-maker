@@ -325,7 +325,7 @@ export function DeckForm() {
                         )}
 
                         {/* Action Button */}
-                        <div className="flex justify-center">
+                        <div className="flex justify-center pt-4">
                             <MultiActionButton
                                 isGenerating={isGenerating}
                                 isTesting={isTesting}

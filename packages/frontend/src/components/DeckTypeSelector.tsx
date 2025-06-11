@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChevronDown, CreditCard, ArrowRightLeft, HelpCircle, Edit3, Volume2, VolumeX, RotateCcw } from 'lucide-react'
+import { ChevronDown, CreditCard, ArrowRightLeft, HelpCircle, Edit3, Volume2, VolumeX, ArrowLeftRight } from 'lucide-react'
 import { Menu } from '@headlessui/react'
 import { CardPreviewData } from './AnkiCardPreview'
 import { LANGUAGE_OPTIONS } from '../constants/languages'
@@ -178,27 +178,13 @@ export const DeckTypeSelector: React.FC<DeckTypeSelectorProps> = ({
                 </div>
 
                 {/* Card Preview Section */}
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-white/90">
+                <div className="mb-4">
+                    <h3 className="text-sm font-medium text-white/90 mb-4">
                         Card Preview
                     </h3>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            // Only swap front and back languages, not content selection
-                            const tempFront = frontLanguage
-                            onFrontLanguageChange(backLanguage)
-                            onBackLanguageChange(tempFront)
-                        }}
-                        className="flex items-center gap-1 px-3 py-1.5 text-xs text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-md transition-colors"
-                        title="Swap front and back languages"
-                    >
-                        <RotateCcw className="h-3 w-3" />
-                        <span className="hidden sm:inline">Swap</span>
-                    </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 relative">
                     {/* Front Flashcard */}
                     <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4 min-h-[140px] sm:min-h-[160px] flex flex-col">
                         <div className="flex items-center justify-between mb-3">
@@ -278,23 +264,52 @@ export const DeckTypeSelector: React.FC<DeckTypeSelectorProps> = ({
                             </div>
                         </div>
                     </div>
+
+                    {/* Swap Button - Positioned between cards on desktop */}
+                    <div className="hidden md:flex absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                // Only swap front and back languages, not content selection
+                                const tempFront = frontLanguage
+                                onFrontLanguageChange(backLanguage)
+                                onBackLanguageChange(tempFront)
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/50"
+                            title="Swap front and back languages"
+                        >
+                            <ArrowLeftRight className="h-4 w-4" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Mobile Swap Button */}
+                <div className="md:hidden mt-3 flex justify-center">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            // Only swap front and back languages, not content selection
+                            const tempFront = frontLanguage
+                            onFrontLanguageChange(backLanguage)
+                            onBackLanguageChange(tempFront)
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-md transition-colors"
+                        title="Swap front and back languages"
+                    >
+                        <ArrowLeftRight className="h-4 w-4" />
+                        <span>Swap Languages</span>
+                    </button>
                 </div>
             </div>
 
-            {/* Status Badge */}
-            <div className="mt-4 flex items-center justify-end">
-                {!selectedOption.available && (
+            {/* Status Badge - Only show "Coming Soon" for unavailable features */}
+            {!selectedOption.available && (
+                <div className="mt-4 flex items-center justify-end">
                     <span className="px-3 py-1 text-xs font-medium bg-amber-100/20 text-amber-200 rounded-full border border-amber-200/30">
                         Coming Soon
                     </span>
-                )}
-                {selectedOption.available && (
-                    <div className="flex items-center gap-2 text-xs text-green-200">
-                        <div className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>
-                        <span className="font-medium">Available Now</span>
-                    </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     )
 } 
