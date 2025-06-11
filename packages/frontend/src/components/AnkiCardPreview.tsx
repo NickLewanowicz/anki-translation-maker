@@ -1,5 +1,5 @@
 import React from 'react'
-import { Volume2, VolumeX, RotateCcw, Image, ImageOff } from 'lucide-react'
+import { Volume2, VolumeX, ArrowLeftRight, Image, ImageOff } from 'lucide-react'
 
 export interface CardPreviewData {
     frontText: string
@@ -207,7 +207,7 @@ export const AnkiCardPreview: React.FC<AnkiCardPreviewProps> = ({
                         className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
                         title="Swap front and back languages"
                     >
-                        <RotateCcw className="h-4 w-4" />
+                        <ArrowLeftRight className="h-4 w-4" />
                         Swap Languages
                     </button>
                 )}
