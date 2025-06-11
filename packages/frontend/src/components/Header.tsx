@@ -8,9 +8,14 @@ export function Header() {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Languages className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-                        <span className="text-xl font-semibold text-gray-900 dark:text-gray-100 transition-colors">
-                            Anki Translation Maker
-                        </span>
+                        <div>
+                            <div className="text-xl font-semibold text-gray-900 dark:text-gray-100 transition-colors">
+                                Anki Translation Maker
+                            </div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400 transition-colors">
+                                AI-powered flashcard generation
+                            </div>
+                        </div>
                     </div>
                     <ThemeToggle />
                 </div>

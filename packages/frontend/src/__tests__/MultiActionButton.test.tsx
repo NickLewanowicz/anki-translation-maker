@@ -108,9 +108,9 @@ describe('MultiActionButton', () => {
         render(<MultiActionButton {...defaultProps} />)
 
         const generateButton = screen.getByRole('button', { name: /generate deck/i })
-        expect(generateButton).toHaveClass('bg-blue-600', 'rounded-l-md')
+        expect(generateButton).toHaveClass('bg-gradient-to-r', 'from-blue-600', 'to-blue-700', 'rounded-l-lg')
 
         const dropdownToggle = screen.getAllByRole('button')[1]
-        expect(dropdownToggle).toHaveClass('bg-blue-600', 'rounded-r-md')
+        expect(dropdownToggle).toHaveClass('bg-gradient-to-r', 'from-blue-600', 'to-blue-700', 'rounded-r-lg')
     })
 }) 
