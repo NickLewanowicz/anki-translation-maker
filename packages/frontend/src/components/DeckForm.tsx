@@ -34,13 +34,12 @@ export function DeckForm() {
 
     // Create card preview data from form state
     const cardPreviewData: CardPreviewData = useMemo(() => {
-        let frontText = 'example'
-
-        // Get the appropriate word based on deck type
+        // Get the sample word based on deck type
+        let sampleWord = 'example'
         if (formData.deckType === 'ai-generated') {
-            frontText = 'AI-generated word'
+            sampleWord = 'AI-generated word'
         } else if (formData.deckType === 'custom') {
-            frontText = formData.words?.split(',')[0]?.trim() || 'example'
+            sampleWord = formData.words?.split(',')[0]?.trim() || 'example'
         } else {
             // Default deck - get words from the preset
             const DEFAULT_DECKS = [
@@ -49,18 +48,63 @@ export function DeckForm() {
                 { id: 'daily-phrases', words: 'hello,goodbye,thank you,please,excuse me,good morning,good night,see you later,sorry,you\'re welcome' }
             ]
             const selectedDeck = DEFAULT_DECKS.find(deck => deck.id === formData.deckType)
-            frontText = selectedDeck?.words.split(',')[0]?.trim() || formData.words?.split(',')[0]?.trim() || 'example'
+            sampleWord = selectedDeck?.words.split(',')[0]?.trim() || 'example'
+        }
+
+        // NEW: Calculate what should appear on front/back based on language architecture
+        let frontText = sampleWord
+        let backText = 'translation'
+
+        // Determine if we have content language set (new architecture)
+        if (formData.contentLanguage && formData.frontLanguage && formData.backLanguage) {
+            // New architecture: Use content language to determine placement
+            if (formData.frontLanguage === formData.contentLanguage) {
+                // Front shows the input language (content)
+                frontText = sampleWord
+                backText = `Translation in ${getLanguageName(formData.backLanguage)}`
+            } else {
+                // Front shows the translated language
+                frontText = `Translation in ${getLanguageName(formData.frontLanguage)}`
+                backText = sampleWord
+            }
+        } else {
+            // Legacy mode: Default to showing input on front
+            frontText = sampleWord
+            backText = `Translation in ${getLanguageName(formData.backLanguage)}`
+        }
+
+        // Audio mapping: Map UI audio controls to correct source/target
+        // "Front audio" = whatever language is on the front
+        // "Back audio" = whatever language is on the back
+        let frontAudio = false
+        let backAudio = false
+
+        if (formData.frontLanguage && formData.backLanguage && formData.contentLanguage) {
+            // Determine which source/target audio corresponds to front/back
+            if (formData.frontLanguage === formData.contentLanguage) {
+                // Front = content language = source
+                frontAudio = formData.generateSourceAudio
+                backAudio = formData.generateTargetAudio
+            } else {
+                // Front = translated language = target
+                frontAudio = formData.generateTargetAudio
+                backAudio = formData.generateSourceAudio
+            }
+        } else {
+            // Legacy mode
+            frontAudio = formData.generateTargetAudio  // Front typically shows target
+            backAudio = formData.generateSourceAudio   // Back typically shows source
         }
 
         return {
             frontText,
-            backText: `Translation in ${getLanguageName(formData.backLanguage)}`,
+            backText,
             frontLanguage: getLanguageName(formData.frontLanguage),
             backLanguage: getLanguageName(formData.backLanguage),
             frontLanguageCode: formData.frontLanguage,
             backLanguageCode: formData.backLanguage,
-            frontAudio: formData.generateSourceAudio,
-            backAudio: formData.generateTargetAudio
+            frontAudio,
+            backAudio
         }
     }, [formData])
 
@@ -185,8 +229,36 @@ export function DeckForm() {
                         deckType={deckType}
                         onChange={handleDeckTypeChange}
                         cardPreviewData={cardPreviewData}
-                        onFrontAudioToggle={(enabled) => updateFormData({ generateSourceAudio: enabled })}
-                        onBackAudioToggle={(enabled) => updateFormData({ generateTargetAudio: enabled })}
+                        onFrontAudioToggle={(enabled) => {
+                            // Map front audio toggle to correct source/target field
+                            if (formData.frontLanguage && formData.contentLanguage) {
+                                if (formData.frontLanguage === formData.contentLanguage) {
+                                    // Front = content language = source
+                                    updateFormData({ generateSourceAudio: enabled })
+                                } else {
+                                    // Front = translated language = target
+                                    updateFormData({ generateTargetAudio: enabled })
+                                }
+                            } else {
+                                // Legacy mode: front typically = target
+                                updateFormData({ generateTargetAudio: enabled })
+                            }
+                        }}
+                        onBackAudioToggle={(enabled) => {
+                            // Map back audio toggle to correct source/target field
+                            if (formData.backLanguage && formData.contentLanguage) {
+                                if (formData.backLanguage === formData.contentLanguage) {
+                                    // Back = content language = source
+                                    updateFormData({ generateSourceAudio: enabled })
+                                } else {
+                                    // Back = translated language = target
+                                    updateFormData({ generateTargetAudio: enabled })
+                                }
+                            } else {
+                                // Legacy mode: back typically = source
+                                updateFormData({ generateSourceAudio: enabled })
+                            }
+                        }}
                         deckName={formData.deckName}
                         frontLanguage={formData.frontLanguage}
                         backLanguage={formData.backLanguage}

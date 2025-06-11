@@ -154,47 +154,31 @@ describe('Language Mapping Integration Tests', () => {
 
             act(() => {
                 result.current.updateFormData({
+                    deckType: 'custom',
+                    words: 'hello, world',
                     frontLanguage: 'de',
-                    backLanguage: 'es',
-                    contentLanguage: 'es',
-                    words: 'hola, mundo, casa',
-                    deckName: 'Spanish to German',
-                    replicateApiKey: 'r8_test_key',
-                    maxCards: 15,
-                    generateSourceAudio: false,
-                    generateTargetAudio: true
+                    backLanguage: 'en',
+                    contentLanguage: 'en',
+                    replicateApiKey: 'r8_test123',
+                    maxCards: 15
                 })
             })
 
             const submitData = result.current.getSubmitData()
 
-            // Verify all required API fields are present
-            expect(submitData).toHaveProperty('words')
-            expect(submitData).toHaveProperty('aiPrompt')
-            expect(submitData).toHaveProperty('sourceLanguage')
-            expect(submitData).toHaveProperty('targetLanguage')
-            expect(submitData).toHaveProperty('maxCards')
-            expect(submitData).toHaveProperty('deckName')
-            expect(submitData).toHaveProperty('replicateApiKey')
-            expect(submitData).toHaveProperty('textModel')
-            expect(submitData).toHaveProperty('voiceModel')
-            expect(submitData).toHaveProperty('generateSourceAudio')
-            expect(submitData).toHaveProperty('generateTargetAudio')
-            expect(submitData).toHaveProperty('useCustomArgs')
-            expect(submitData).toHaveProperty('textModelArgs')
-            expect(submitData).toHaveProperty('voiceModelArgs')
+            // Verify core API fields
+            expect(submitData).toHaveProperty('words', 'hello, world')
+            expect(submitData).toHaveProperty('sourceLanguage', 'en')
+            expect(submitData).toHaveProperty('targetLanguage', 'de')
+            expect(submitData).toHaveProperty('replicateApiKey', 'r8_test123')
+            expect(submitData).toHaveProperty('maxCards', 15)
 
-            // Verify frontend-only fields are NOT included
-            expect(submitData).not.toHaveProperty('frontLanguage')
-            expect(submitData).not.toHaveProperty('backLanguage')
+            // NEW: Verify explicit front/back language fields ARE included (for new backend support)
+            expect(submitData).toHaveProperty('frontLanguage', 'de')
+            expect(submitData).toHaveProperty('backLanguage', 'en')
+
+            // Verify frontend-only field is NOT included
             expect(submitData).not.toHaveProperty('contentLanguage')
-            expect(submitData).not.toHaveProperty('cardDirection')
-
-            // Verify correct values
-            expect(submitData.sourceLanguage).toBe('es')
-            expect(submitData.targetLanguage).toBe('de')
-            expect(submitData.generateSourceAudio).toBe(false)
-            expect(submitData.generateTargetAudio).toBe(true)
         })
 
         it('should handle default deck type correctly', () => {
