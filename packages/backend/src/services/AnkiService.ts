@@ -17,7 +17,7 @@ export class AnkiService {
     /**
      * Creates a complete Anki deck package with cards and audio
      */
-    async createDeck(cards: DeckCard[], deckName: string): Promise<Buffer> {
+    async createDeck(cards: DeckCard[], deckName: string, frontLanguage?: string, backLanguage?: string, sourceLanguage?: string, targetLanguage?: string): Promise<Buffer> {
         try {
             console.log('📦 Creating Anki deck with proper SQLite database...')
 
@@ -26,8 +26,8 @@ export class AnkiService {
             const dbPath = path.join(tempDir, 'collection.anki2')
 
             try {
-                // Create SQLite database
-                await this.databaseService.createDatabase(dbPath, cards, deckName)
+                // Create SQLite database with language parameters
+                await this.databaseService.createDatabase(dbPath, cards, deckName, frontLanguage, backLanguage, sourceLanguage, targetLanguage)
 
                 // Create the .apkg package
                 const apkgBuffer = await this.packageBuilder.createApkgPackage(dbPath, cards)

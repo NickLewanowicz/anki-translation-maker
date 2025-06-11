@@ -251,6 +251,8 @@ export function useFormState() {
             deckName: formData.deckName,
             targetLanguage,
             sourceLanguage,
+            frontLanguage: formData.frontLanguage,
+            backLanguage: formData.backLanguage,
             replicateApiKey: formData.replicateApiKey,
             textModel: formData.textModel,
             voiceModel: formData.voiceModel,
