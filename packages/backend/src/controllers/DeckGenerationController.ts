@@ -3,6 +3,7 @@ import { TranslationService } from '../services/TranslationService.js'
 import { AnkiService } from '../services/AnkiService.js'
 import { RequestValidator } from '../middleware/RequestValidator.js'
 import type { DeckGenerationRequest } from '../middleware/RequestValidator.js'
+import { ResponseFormatter } from '../utils/ResponseFormatter.js'
 
 /**
  * Handles deck generation requests with comprehensive error handling
@@ -123,11 +124,7 @@ export class DeckGenerationController {
             console.log(`✅ Created Anki package with ${deckData.length} cards`)
 
             // 10. Return file download response
-            const safeFileName = finalDeckName.replace(/[^a-zA-Z0-9-_\s]/g, '').replace(/\s+/g, '-')
-            c.header('Content-Type', 'application/zip')
-            c.header('Content-Disposition', `attachment; filename="${safeFileName}.apkg"`)
-
-            return c.body(ankiPackage)
+            return ResponseFormatter.formatFileResponse(ankiPackage, finalDeckName)
 
         } catch (error) {
             console.error('❌ Error generating deck:', error)
@@ -184,6 +181,38 @@ export class DeckGenerationController {
         const errorMessage = error.message || 'An unknown error occurred'
         console.error('❌ Error details:', errorMessage)
 
+        // Check if it's a Zod validation error
+        if (error.constructor.name === 'ZodError' || errorMessage.includes('ZodError')) {
+            return c.json({
+                status: 'invalid',
+                error: 'Validation error',
+                message: 'Request validation failed. Please check all required fields.',
+                type: 'validation_error'
+            }, 400)
+        }
+
+        // JSON parsing errors (400)
+        if (errorMessage.includes('JSON') || errorMessage.includes('parse') || errorMessage.includes('Expected')) {
+            return c.json({
+                status: 'invalid',
+                error: 'JSON error',
+                message: errorMessage,
+                type: 'validation_error'
+            }, 400)
+        }
+
+        // Business rule validation errors (400)
+        if (errorMessage.includes('Either words or aiPrompt must be provided') ||
+            errorMessage.includes('must be provided') ||
+            errorMessage.includes('Required')) {
+            return c.json({
+                status: 'invalid',
+                error: 'Validation error',
+                message: errorMessage,
+                type: 'validation_error'
+            }, 400)
+        }
+
         // Authentication errors (401)
         if (errorMessage.includes('API key') || errorMessage.includes('authentication') || errorMessage.includes('unauthorized')) {
             return c.json({
@@ -211,9 +240,10 @@ export class DeckGenerationController {
             }, 429)
         }
 
-        // Validation errors (400)
+        // Generic validation errors (400)
         if (errorMessage.includes('validation') || errorMessage.includes('invalid') || errorMessage.includes('required')) {
             return c.json({
+                status: 'invalid',
                 error: 'Validation error',
                 message: errorMessage,
                 type: 'validation_error'
