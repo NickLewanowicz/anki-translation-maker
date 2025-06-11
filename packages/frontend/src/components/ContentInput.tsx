@@ -96,11 +96,6 @@ export const ContentInput: React.FC<ContentInputProps> = ({
                     {getFieldError('deckType')}
                 </p>
             )}
-            {!isEnglishSource && (
-                <p className="mt-1 text-sm text-amber-600 dark:text-amber-400">
-                    💡 Preset decks are only available when English is the source language. Use Custom Word List or AI Generated for other languages.
-                </p>
-            )}
         </div>
     )
 

@@ -35,20 +35,10 @@ describe('ContentInput', () => {
         it('renders with non-English source language', () => {
             const { container } = render(<ContentInput {...mockProps} sourceLanguage="es" />)
             expect(container.textContent).toContain('Content Selection')
-            expect(container.textContent).toContain('💡 Preset decks are only available when English is the source language')
         })
     })
 
     describe('Source Language Logic', () => {
-        it('shows warning for non-English source language', () => {
-            const { container } = render(<ContentInput {...mockProps} sourceLanguage="fr" />)
-            expect(container.textContent).toContain('💡 Preset decks are only available when English is the source language')
-        })
-
-        it('does not show warning for English source language', () => {
-            const { container } = render(<ContentInput {...mockProps} sourceLanguage="en" />)
-            expect(container.textContent).not.toContain('💡 Preset decks are only available when English is the source language')
-        })
 
         it('automatically switches to custom when non-English source is used with preset deck', () => {
             const onDeckTypeChangeMock = vi.fn()

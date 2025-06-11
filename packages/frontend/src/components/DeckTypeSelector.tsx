@@ -1,6 +1,7 @@
 import React from 'react'
 import { ChevronDown, CreditCard, ArrowRightLeft, HelpCircle, Edit3, Volume2, VolumeX, RotateCcw } from 'lucide-react'
 import { CardPreviewData } from './AnkiCardPreview'
+import { LANGUAGE_OPTIONS } from '../constants/languages'
 
 interface DeckTypeSelectorProps {
     deckType: 'basic' | 'bidirectional' | 'multipleChoice' | 'fillInBlank'
@@ -9,6 +10,14 @@ interface DeckTypeSelectorProps {
     onFrontAudioToggle?: (enabled: boolean) => void
     onBackAudioToggle?: (enabled: boolean) => void
     onLanguageSwap?: () => void
+    // New props for deck settings
+    deckName: string
+    sourceLanguage: string
+    targetLanguage: string
+    onDeckNameChange: (name: string) => void
+    onSourceLanguageChange: (language: string) => void
+    onTargetLanguageChange: (language: string) => void
+    getFieldError?: (field: string) => string | undefined
 }
 
 export const DeckTypeSelector: React.FC<DeckTypeSelectorProps> = ({
@@ -17,7 +26,14 @@ export const DeckTypeSelector: React.FC<DeckTypeSelectorProps> = ({
     cardPreviewData,
     onFrontAudioToggle,
     onBackAudioToggle,
-    onLanguageSwap
+    onLanguageSwap,
+    deckName,
+    sourceLanguage,
+    targetLanguage,
+    onDeckNameChange,
+    onSourceLanguageChange,
+    onTargetLanguageChange,
+    getFieldError
 }) => {
     const options = [
         {
@@ -92,8 +108,92 @@ export const DeckTypeSelector: React.FC<DeckTypeSelectorProps> = ({
                 </div>
             </div>
 
-            {/* Card Preview */}
+            {/* Deck Settings and Card Preview */}
             <div className="mt-6">
+                {/* Deck Name and Language Settings */}
+                <div className="mb-4 space-y-3">
+                    {/* Deck Name */}
+                    <div>
+                        <label htmlFor="deckName" className="block text-sm font-medium text-white/90 mb-2">
+                            Deck Name
+                        </label>
+                        <input
+                            type="text"
+                            id="deckName"
+                            name="deckName"
+                            value={deckName}
+                            onChange={(e) => onDeckNameChange(e.target.value)}
+                            className="w-full px-3 py-2 bg-white/10 backdrop-blur border border-white/30 text-white placeholder-white/50 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50"
+                            placeholder="My Spanish Vocabulary Deck"
+                        />
+                        {getFieldError && getFieldError('deckName') && (
+                            <p className="mt-1 text-sm text-red-300">
+                                {getFieldError('deckName')}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Language Selection */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label htmlFor="sourceLanguage" className="block text-sm font-medium text-white/90 mb-2">
+                                Source Language
+                            </label>
+                            <div className="relative">
+                                <select
+                                    id="sourceLanguage"
+                                    name="sourceLanguage"
+                                    value={sourceLanguage}
+                                    onChange={(e) => onSourceLanguageChange(e.target.value)}
+                                    className="w-full px-3 py-2 bg-white/10 backdrop-blur border border-white/30 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 appearance-none"
+                                >
+                                    {LANGUAGE_OPTIONS.filter(lang => lang.code !== 'other').map(lang => (
+                                        <option key={lang.code} value={lang.code} className="text-gray-900 bg-white">
+                                            {lang.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/70 pointer-events-none" />
+                            </div>
+                            {getFieldError && getFieldError('sourceLanguage') && (
+                                <p className="mt-1 text-sm text-red-300">
+                                    {getFieldError('sourceLanguage')}
+                                </p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label htmlFor="targetLanguage" className="block text-sm font-medium text-white/90 mb-2">
+                                Target Language
+                            </label>
+                            <div className="relative">
+                                <select
+                                    id="targetLanguage"
+                                    name="targetLanguage"
+                                    value={targetLanguage}
+                                    onChange={(e) => onTargetLanguageChange(e.target.value)}
+                                    className="w-full px-3 py-2 bg-white/10 backdrop-blur border border-white/30 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 appearance-none"
+                                    required
+                                >
+                                    <option value="" className="text-gray-900 bg-white">Select target language</option>
+                                    {LANGUAGE_OPTIONS.filter(lang => lang.code !== 'other').map(lang => (
+                                        <option key={lang.code} value={lang.code} className="text-gray-900 bg-white">
+                                            {lang.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/70 pointer-events-none" />
+                            </div>
+                            {getFieldError && getFieldError('targetLanguage') && (
+                                <p className="mt-1 text-sm text-red-300">
+                                    {getFieldError('targetLanguage')}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Card Preview Section */}
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-medium text-white/90">
                         Card Preview

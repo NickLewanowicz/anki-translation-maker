@@ -9,7 +9,7 @@ import { getLanguageName } from '../constants/languages'
 import { SaveIndicator } from './SaveIndicator'
 import { MultiActionButton } from './MultiActionButton'
 import { DeckTypeSelector } from './DeckTypeSelector'
-import { DeckSettings } from './DeckSettings'
+
 import { ContentInput } from './ContentInput'
 import { AdvancedSettings } from './AdvancedSettings'
 
@@ -195,24 +195,17 @@ export function DeckForm() {
                         onFrontAudioToggle={(enabled) => updateFormData({ generateSourceAudio: enabled })}
                         onBackAudioToggle={(enabled) => updateFormData({ generateTargetAudio: enabled })}
                         onLanguageSwap={handleLanguageSwap}
+                        deckName={formData.deckName}
+                        sourceLanguage={formData.sourceLanguage}
+                        targetLanguage={formData.targetLanguage}
+                        onDeckNameChange={(name) => updateFormData({ deckName: name })}
+                        onSourceLanguageChange={(language) => updateFormData({ sourceLanguage: language })}
+                        onTargetLanguageChange={(language) => updateFormData({ targetLanguage: language })}
+                        getFieldError={getFieldErrorWrapper}
                     />
 
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Deck Settings */}
-                        <DeckSettings
-                            deckName={formData.deckName}
-                            sourceLanguage={formData.sourceLanguage}
-                            targetLanguage={formData.targetLanguage}
-                            generateSourceAudio={formData.generateSourceAudio}
-                            generateTargetAudio={formData.generateTargetAudio}
-                            onDeckNameChange={(name) => updateFormData({ deckName: name })}
-                            onSourceLanguageChange={(language) => updateFormData({ sourceLanguage: language })}
-                            onTargetLanguageChange={(language) => updateFormData({ targetLanguage: language })}
-                            onLanguageSwap={handleLanguageSwap}
-                            onSourceAudioToggle={(enabled) => updateFormData({ generateSourceAudio: enabled })}
-                            onTargetAudioToggle={(enabled) => updateFormData({ generateTargetAudio: enabled })}
-                            getFieldError={getFieldErrorWrapper}
-                        />
+
 
                         {/* Content Input - Only show for basic cards since others are coming soon */}
                         {deckType === 'basic' && (
