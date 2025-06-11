@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Check, Clock, Trash2 } from 'lucide-react'
+import { Clock, Trash2 } from 'lucide-react'
 import { Menu } from '@headlessui/react'
 
 interface SaveIndicatorProps {
@@ -40,8 +40,8 @@ export const SaveIndicator: React.FC<SaveIndicatorProps> = ({ isLocalStorageLoad
                         <button
                             onClick={onClearData}
                             className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 ${active
-                                    ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                                    : 'text-gray-700 dark:text-gray-300'
+                                ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                                : 'text-gray-700 dark:text-gray-300'
                                 } transition-colors`}
                             title="Clear all saved data"
                         >
