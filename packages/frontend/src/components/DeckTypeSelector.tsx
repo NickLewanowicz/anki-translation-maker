@@ -1,7 +1,53 @@
 import React from 'react'
 import { ChevronDown, CreditCard, ArrowRightLeft, HelpCircle, Edit3, Volume2, VolumeX, RotateCcw } from 'lucide-react'
+import { Menu } from '@headlessui/react'
 import { CardPreviewData } from './AnkiCardPreview'
 import { LANGUAGE_OPTIONS } from '../constants/languages'
+
+// Language selector component that shows as clickable text
+const LanguageSelector: React.FC<{
+    value: string
+    onChange: (value: string) => void
+    className?: string
+}> = ({ value, onChange, className = '' }) => {
+    const selectedLanguage = LANGUAGE_OPTIONS.find(lang => lang.code === value)
+    const displayText = selectedLanguage?.name || 'Select language'
+    const textColorClass = selectedLanguage ? 'text-gray-900' : 'text-gray-400'
+
+    return (
+        <Menu as="div" className={`relative ${className}`}>
+            <Menu.Button className={`${textColorClass} hover:text-blue-600 underline decoration-dotted underline-offset-2 cursor-pointer transition-colors duration-200 text-xs focus:outline-none focus:text-blue-600`}>
+                {displayText}
+            </Menu.Button>
+            <Menu.Items className="absolute left-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
+                <Menu.Item>
+                    {({ active }) => (
+                        <button
+                            className={`w-full text-left px-3 py-2 text-xs ${active ? 'bg-blue-50 text-blue-600' : 'text-gray-500'
+                                }`}
+                            onClick={() => onChange('')}
+                        >
+                            Select language
+                        </button>
+                    )}
+                </Menu.Item>
+                {LANGUAGE_OPTIONS.filter(lang => lang.code !== 'other').map(lang => (
+                    <Menu.Item key={lang.code}>
+                        {({ active }) => (
+                            <button
+                                className={`w-full text-left px-3 py-2 text-xs ${active ? 'bg-blue-50 text-blue-600' : 'text-gray-900'
+                                    } ${lang.code === value ? 'bg-blue-100 text-blue-700 font-medium' : ''}`}
+                                onClick={() => onChange(lang.code)}
+                            >
+                                {lang.name}
+                            </button>
+                        )}
+                    </Menu.Item>
+                ))}
+            </Menu.Items>
+        </Menu>
+    )
+}
 
 interface DeckTypeSelectorProps {
     deckType: 'basic' | 'bidirectional' | 'multipleChoice' | 'fillInBlank'
@@ -178,32 +224,16 @@ export const DeckTypeSelector: React.FC<DeckTypeSelectorProps> = ({
                             )}
                         </div>
 
-                        {/* Language Selector */}
-                        <div className="mb-3">
-                            <div className="relative">
-                                <select
-                                    value={frontLanguage}
-                                    onChange={(e) => onFrontLanguageChange(e.target.value)}
-                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
-                                >
-                                    <option value="">Select language</option>
-                                    {LANGUAGE_OPTIONS.filter(lang => lang.code !== 'other').map(lang => (
-                                        <option key={lang.code} value={lang.code}>
-                                            {lang.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
-                            </div>
-                        </div>
-
                         <div className="flex-1 flex items-center justify-center">
                             <div className="text-center">
                                 <div className="text-base sm:text-lg font-medium text-gray-900 mb-1">
                                     {cardPreviewData.frontText || 'hello'}
                                 </div>
                                 <div className="text-xs text-gray-500">
-                                    {cardPreviewData.frontLanguage || 'English'}
+                                    <LanguageSelector
+                                        value={frontLanguage}
+                                        onChange={onFrontLanguageChange}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -234,32 +264,16 @@ export const DeckTypeSelector: React.FC<DeckTypeSelectorProps> = ({
                             )}
                         </div>
 
-                        {/* Language Selector */}
-                        <div className="mb-3">
-                            <div className="relative">
-                                <select
-                                    value={backLanguage}
-                                    onChange={(e) => onBackLanguageChange(e.target.value)}
-                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
-                                >
-                                    <option value="">Select language</option>
-                                    {LANGUAGE_OPTIONS.filter(lang => lang.code !== 'other').map(lang => (
-                                        <option key={lang.code} value={lang.code}>
-                                            {lang.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400 pointer-events-none" />
-                            </div>
-                        </div>
-
                         <div className="flex-1 flex items-center justify-center">
                             <div className="text-center">
                                 <div className="text-base sm:text-lg font-medium text-gray-900 mb-1">
                                     {cardPreviewData.backText || 'hola'}
                                 </div>
                                 <div className="text-xs text-gray-500">
-                                    {cardPreviewData.backLanguage || 'Spanish'}
+                                    <LanguageSelector
+                                        value={backLanguage}
+                                        onChange={onBackLanguageChange}
+                                    />
                                 </div>
                             </div>
                         </div>

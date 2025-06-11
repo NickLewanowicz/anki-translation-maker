@@ -129,11 +129,29 @@ describe('DeckTypeSelector', () => {
         expect(mockOnBackLanguageChange).toHaveBeenCalledWith('en')
     })
 
-    it('displays language dropdowns in flashcard previews', () => {
+    it('displays language selectors in flashcard previews', () => {
         render(<DeckTypeSelector {...defaultProps} />)
 
-        // Should have two language dropdowns (front and back)
-        const languageSelects = screen.getAllByDisplayValue('Select language')
-        expect(languageSelects).toHaveLength(2)
+        // Should have two language selector buttons (front and back)
+        const languageButtons = screen.getAllByText('English')
+        expect(languageButtons).toHaveLength(1) // Front card shows English
+
+        const spanishButton = screen.getByText('Spanish')
+        expect(spanishButton).toBeInTheDocument() // Back card shows Spanish
+    })
+
+    it('has clickable language selector buttons', () => {
+        render(<DeckTypeSelector {...defaultProps} />)
+
+        // Language selector buttons should be present and clickable
+        const englishButton = screen.getByText('English')
+        const spanishButton = screen.getByText('Spanish')
+
+        expect(englishButton).toBeInTheDocument()
+        expect(spanishButton).toBeInTheDocument()
+
+        // They should have proper button attributes
+        expect(englishButton).toHaveAttribute('type', 'button')
+        expect(spanishButton).toHaveAttribute('type', 'button')
     })
 }) 

@@ -46,11 +46,16 @@ describe('DeckForm', () => {
             expect(screen.getByText('Card Preview')).toBeInTheDocument()
         })
 
-        it('renders language selection fields', () => {
+        it('renders language selection in card preview', () => {
             render(<DeckForm />)
 
-            expect(screen.getByLabelText('Source Language')).toBeInTheDocument()
-            expect(screen.getByLabelText('Target Language *')).toBeInTheDocument()
+            // With the new integrated language selectors, languages show as clickable text
+            // in the card preview sections, default to "Select language" when empty
+            const languageSelectors = screen.getAllByText('Select language')
+            expect(languageSelectors.length).toBeGreaterThan(0) // Front and back card selectors
+
+            // The form includes deck sections
+            expect(screen.getByText('Deck Name')).toBeInTheDocument()
         })
 
         it('renders save indicator with clear button', () => {
