@@ -70,7 +70,11 @@ export function DeckForm() {
         setTestResult(null)
 
         try {
-            const submitData = getSubmitData()
+            const submitData = {
+                ...getSubmitData(),
+                // Override deckType based on our local state - for now all map to wordList since only basic works
+                deckType: 'wordList'
+            }
             console.log('Submitting deck generation request:', submitData)
 
             analyticsService.track('deck_generation_started', {
@@ -109,7 +113,11 @@ export function DeckForm() {
         setTestResult(null)
 
         try {
-            const submitData = getSubmitData()
+            const submitData = {
+                ...getSubmitData(),
+                // Override deckType based on our local state - for now all map to wordList since only basic works
+                deckType: 'wordList'
+            }
             console.log('Testing configuration with:', submitData)
 
             const result = await deckService.validateConfiguration(submitData)
@@ -133,15 +141,13 @@ export function DeckForm() {
         }
     }
 
-    // Map form data deck types to component types
-    const getDeckTypeFromFormData = (): 'wordList' | 'aiGenerated' => {
-        const currentDeckType = (formData as any).deckType || 'custom'
-        return currentDeckType === 'ai-generated' ? 'aiGenerated' : 'wordList'
-    }
+    // For now, we'll use a local state for deck type since only basic is available
+    const [deckType, setDeckType] = useState<'basic' | 'bidirectional' | 'multipleChoice' | 'fillInBlank'>('basic')
 
-    const handleDeckTypeChange = (type: 'wordList' | 'aiGenerated') => {
-        const deckType = type === 'aiGenerated' ? 'ai-generated' : 'custom'
-        updateFormData({ deckType } as any)
+    const handleDeckTypeChange = (type: 'basic' | 'bidirectional' | 'multipleChoice' | 'fillInBlank') => {
+        setDeckType(type)
+        // For now, only basic cards are functional, so we don't update the form data
+        // In the future, we'll map these types to the backend's expected format
     }
 
     // Wrapper for getFieldError to handle null vs undefined
@@ -167,8 +173,12 @@ export function DeckForm() {
                 <>
                     {/* Deck Type Selector */}
                     <DeckTypeSelector
-                        deckType={getDeckTypeFromFormData()}
+                        deckType={deckType}
                         onChange={handleDeckTypeChange}
+                        cardPreviewData={cardPreviewData}
+                        onFrontAudioToggle={(enabled) => updateFormData({ generateSourceAudio: enabled })}
+                        onBackAudioToggle={(enabled) => updateFormData({ generateTargetAudio: enabled })}
+                        onLanguageSwap={handleLanguageSwap}
                     />
 
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -190,37 +200,33 @@ export function DeckForm() {
                             getFieldError={getFieldErrorWrapper}
                         />
 
-                        {/* Content Input */}
-                        <ContentInput
-                            deckType={getDeckTypeFromFormData()}
-                            words={formData.words}
-                            aiPrompt={formData.aiPrompt}
-                            onWordsChange={(words) => updateFormData({ words })}
-                            onAiPromptChange={(prompt) => updateFormData({ aiPrompt: prompt })}
-                            getFieldError={getFieldErrorWrapper}
-                        />
+                        {/* Content Input - Only show for basic cards since others are coming soon */}
+                        {deckType === 'basic' && (
+                            <ContentInput
+                                deckType="wordList"
+                                words={formData.words}
+                                aiPrompt={formData.aiPrompt}
+                                onWordsChange={(words) => updateFormData({ words })}
+                                onAiPromptChange={(prompt) => updateFormData({ aiPrompt: prompt })}
+                                getFieldError={getFieldErrorWrapper}
+                            />
+                        )}
 
-                        {/* Advanced Settings */}
-                        <AdvancedSettings
-                            isOpen={showAdvancedSettings}
-                            onToggle={() => setShowAdvancedSettings(!showAdvancedSettings)}
-                            replicateApiKey={formData.replicateApiKey}
-                            textModel={formData.textModel}
-                            voiceModel={formData.voiceModel}
-                            useCustomArgs={formData.useCustomArgs}
-                            textModelArgs={formData.textModelArgs}
-                            voiceModelArgs={formData.voiceModelArgs}
-                            onInputChange={handleInputChange}
-                            getFieldError={getFieldErrorWrapper}
-                        />
-
-                        {/* Card Preview */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                                Card Preview
-                            </h3>
-                            <AnkiCardPreview cardData={cardPreviewData} />
-                        </div>
+                        {/* Advanced Settings - Only show for basic cards */}
+                        {deckType === 'basic' && (
+                            <AdvancedSettings
+                                isOpen={showAdvancedSettings}
+                                onToggle={() => setShowAdvancedSettings(!showAdvancedSettings)}
+                                replicateApiKey={formData.replicateApiKey}
+                                textModel={formData.textModel}
+                                voiceModel={formData.voiceModel}
+                                useCustomArgs={formData.useCustomArgs}
+                                textModelArgs={formData.textModelArgs}
+                                voiceModelArgs={formData.voiceModelArgs}
+                                onInputChange={handleInputChange}
+                                getFieldError={getFieldErrorWrapper}
+                            />
+                        )}
 
                         {/* Error Display */}
                         {error && (

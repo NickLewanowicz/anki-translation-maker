@@ -5,38 +5,55 @@ import '@testing-library/jest-dom'
 import { DeckTypeSelector } from '../components/DeckTypeSelector'
 
 describe('DeckTypeSelector', () => {
+    const mockCardPreviewData = {
+        frontText: 'example',
+        backText: 'Translation in Spanish',
+        frontLanguage: 'English',
+        backLanguage: 'Spanish',
+        frontLanguageCode: 'en',
+        backLanguageCode: 'es',
+        frontAudio: true,
+        backAudio: true
+    }
+
     const defaultProps = {
-        deckType: 'wordList' as const,
-        onChange: vi.fn()
+        deckType: 'basic' as const,
+        onChange: vi.fn(),
+        cardPreviewData: mockCardPreviewData
     }
 
     beforeEach(() => {
         vi.clearAllMocks()
     })
 
-    it('renders with word list deck selected by default', () => {
+    it('renders with basic deck selected by default', () => {
         render(<DeckTypeSelector {...defaultProps} />)
 
-        expect(screen.getByText('Word List Deck')).toBeInTheDocument()
-        expect(screen.getByText('Create cards from your own list of words')).toBeInTheDocument()
+        // Use getAllByText to handle multiple instances (header and dropdown option)
+        const basicCards = screen.getAllByText('Basic Translation Cards')
+        expect(basicCards.length).toBeGreaterThan(0)
+        expect(screen.getByText('Source language → Target language flashcards')).toBeInTheDocument()
     })
 
-    it('renders with AI generated deck when selected', () => {
-        render(<DeckTypeSelector {...defaultProps} deckType="aiGenerated" />)
+    it('renders with bidirectional deck when selected', () => {
+        render(<DeckTypeSelector {...defaultProps} deckType="bidirectional" />)
 
-        expect(screen.getByText('AI-Generated Deck')).toBeInTheDocument()
-        expect(screen.getByText('Let AI create a vocabulary deck for you')).toBeInTheDocument()
+        expect(screen.getByText('Bidirectional Translation Cards')).toBeInTheDocument()
+        expect(screen.getByText('Both directions: Source ↔ Target language flashcards')).toBeInTheDocument()
     })
 
-    it('shows dropdown with both options', () => {
+    it('shows dropdown with all card type options', () => {
         render(<DeckTypeSelector {...defaultProps} />)
 
         const select = screen.getByRole('combobox')
         expect(select).toBeInTheDocument()
 
-        // Check that both options are present
-        expect(screen.getByText('Word List Deck - Available Now')).toBeInTheDocument()
-        expect(screen.getByText('AI-Generated Deck - Available Now')).toBeInTheDocument()
+        // Check that all card type options are present
+        const basicCards = screen.getAllByText('Basic Translation Cards')
+        expect(basicCards.length).toBeGreaterThan(0)
+        expect(screen.getByText(/Bidirectional Translation Cards.*Coming Soon/)).toBeInTheDocument()
+        expect(screen.getByText(/Multiple Choice Questions.*Coming Soon/)).toBeInTheDocument()
+        expect(screen.getByText(/Fill in the Blank.*Coming Soon/)).toBeInTheDocument()
     })
 
     it('calls onChange when selection changes', () => {
@@ -44,9 +61,9 @@ describe('DeckTypeSelector', () => {
         render(<DeckTypeSelector {...defaultProps} onChange={mockOnChange} />)
 
         const select = screen.getByRole('combobox')
-        fireEvent.change(select, { target: { value: 'aiGenerated' } })
+        fireEvent.change(select, { target: { value: 'bidirectional' } })
 
-        expect(mockOnChange).toHaveBeenCalledWith('aiGenerated')
+        expect(mockOnChange).toHaveBeenCalledWith('bidirectional')
     })
 
     it('has proper styling and icons', () => {
@@ -56,20 +73,28 @@ describe('DeckTypeSelector', () => {
         const container = document.querySelector('.bg-gradient-to-r')
         expect(container).toHaveClass('bg-gradient-to-r', 'from-blue-600', 'to-blue-700')
 
-        // Check for file icon
-        const fileIcon = document.querySelector('.lucide-file-text')
-        expect(fileIcon).toBeInTheDocument()
+        // Check for credit card icon (basic type)
+        const creditCardIcon = document.querySelector('.lucide-credit-card')
+        expect(creditCardIcon).toBeInTheDocument()
     })
 
     it('shows correct icons for each deck type', () => {
         const { rerender } = render(<DeckTypeSelector {...defaultProps} />)
 
-        // Word list should show file-text icon
-        expect(document.querySelector('.lucide-file-text')).toBeInTheDocument()
+        // Basic should show credit-card icon
+        expect(document.querySelector('.lucide-credit-card')).toBeInTheDocument()
 
-        // AI generated should show sparkles icon (not brain)
-        rerender(<DeckTypeSelector {...defaultProps} deckType="aiGenerated" />)
-        expect(document.querySelector('.lucide-sparkles')).toBeInTheDocument()
+        // Bidirectional should show arrow-right-left icon
+        rerender(<DeckTypeSelector {...defaultProps} deckType="bidirectional" />)
+        expect(document.querySelector('.lucide-arrow-right-left')).toBeInTheDocument()
+
+        // Multiple choice should show help-circle icon
+        rerender(<DeckTypeSelector {...defaultProps} deckType="multipleChoice" />)
+        expect(document.querySelector('.lucide-help-circle')).toBeInTheDocument()
+
+        // Fill in blank should show Edit3 icon (which renders as pen-line)
+        rerender(<DeckTypeSelector {...defaultProps} deckType="fillInBlank" />)
+        expect(document.querySelector('.lucide-pen-line')).toBeInTheDocument()
     })
 
     it('maintains accessibility features', () => {

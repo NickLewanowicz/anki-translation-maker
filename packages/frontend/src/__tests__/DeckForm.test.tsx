@@ -39,11 +39,11 @@ describe('DeckForm', () => {
         it('renders the form with main sections', () => {
             render(<DeckForm />)
 
-            // Check for sections that exist in the refactored components
-            expect(screen.getByText('Word List Deck')).toBeInTheDocument()
+            // Check for sections that exist in the refactored components (handle multiple instances)
+            const basicCards = screen.getAllByText('Basic Translation Cards')
+            expect(basicCards.length).toBeGreaterThan(0)
             expect(screen.getByText('Generate Deck')).toBeInTheDocument()
-            // Use getAllByText to handle multiple "Card Preview" texts
-            expect(screen.getAllByText('Card Preview')).toHaveLength(2)
+            expect(screen.getByText('Card Preview')).toBeInTheDocument()
         })
 
         it('renders language selection fields', () => {
