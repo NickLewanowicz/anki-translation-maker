@@ -407,7 +407,22 @@ export class AnkiDatabaseService {
         }
 
         // Create decks structure with hierarchical naming
-        const decks: any = {
+        const decks: Record<string, {
+            id: number
+            name: string
+            desc: string
+            mod: number
+            usn: number
+            collapsed: boolean
+            newToday: [number, number]
+            revToday: [number, number]
+            lrnToday: [number, number]
+            timeToday: [number, number]
+            dyn: number
+            extendNew: number
+            extendRev: number
+            conf: number
+        }> = {
             "1": {
                 "id": 1,
                 "name": "Default",

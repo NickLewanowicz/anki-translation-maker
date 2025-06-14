@@ -6,7 +6,7 @@ mock.module('replicate', () => ({
     default: class MockReplicate {
         constructor() { }
 
-        async run(modelId: string, input: any) {
+        async run(modelId: string, _input: unknown) { // eslint-disable-line @typescript-eslint/no-unused-vars
             // Return mock response based on the model being called
             if (modelId.includes('gpt') || modelId.includes('text')) {
                 // Mock text generation response for deck naming
@@ -15,7 +15,7 @@ mock.module('replicate', () => ({
             return 'Mock response'
         }
 
-        async* stream(modelId: string, options: any) {
+        async* stream(modelId: string, _options: unknown) { // eslint-disable-line @typescript-eslint/no-unused-vars
             // Mock streaming response
             if (modelId.includes('gpt') || modelId.includes('text')) {
                 // Simulate streaming text generation

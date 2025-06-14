@@ -147,7 +147,7 @@ export const SET_TYPE_CONFIGS: Record<SetType, SetTypeConfig> = {
         description: 'Choose the correct translation from options',
         available: false,
         cardMultiplier: 1,
-        generateCards: (baseCards: DeckCard[]) => {
+        generateCards: (_baseCards: DeckCard[]) => { // eslint-disable-line @typescript-eslint/no-unused-vars
             // TODO: Implement multiple choice card generation
             throw new Error('Multiple choice cards not yet implemented')
         }
@@ -159,7 +159,7 @@ export const SET_TYPE_CONFIGS: Record<SetType, SetTypeConfig> = {
         description: 'Complete sentences with missing words',
         available: false,
         cardMultiplier: 1,
-        generateCards: (baseCards: DeckCard[]) => {
+        generateCards: (_baseCards: DeckCard[]) => { // eslint-disable-line @typescript-eslint/no-unused-vars
             // TODO: Implement fill-in-blank card generation
             throw new Error('Fill-in-blank cards not yet implemented')
         }
@@ -171,7 +171,7 @@ export const SET_TYPE_CONFIGS: Record<SetType, SetTypeConfig> = {
         description: 'Fill in missing parts of sentences',
         available: false,
         cardMultiplier: 1,
-        generateCards: (baseCards: DeckCard[]) => {
+        generateCards: (_baseCards: DeckCard[]) => { // eslint-disable-line @typescript-eslint/no-unused-vars
             // TODO: Implement cloze deletion card generation
             throw new Error('Cloze deletion cards not yet implemented')
         }
@@ -183,7 +183,7 @@ export const SET_TYPE_CONFIGS: Record<SetType, SetTypeConfig> = {
         description: 'Hide parts of images for memorization',
         available: false,
         cardMultiplier: 1,
-        generateCards: (baseCards: DeckCard[]) => {
+        generateCards: (_baseCards: DeckCard[]) => { // eslint-disable-line @typescript-eslint/no-unused-vars
             // TODO: Implement image occlusion card generation
             throw new Error('Image occlusion cards not yet implemented')
         }
