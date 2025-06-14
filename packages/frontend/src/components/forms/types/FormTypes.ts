@@ -9,6 +9,7 @@ export interface DeckFormData {
     frontLanguage: string      // Language displayed on front of cards
     backLanguage: string       // Language displayed on back of cards
     contentLanguage: string    // Language of input content (words/AI prompt)
+    setType: string            // Type of set: 'basic', 'bidirectional', etc.
     replicateApiKey: string
     textModel: string
     voiceModel: string

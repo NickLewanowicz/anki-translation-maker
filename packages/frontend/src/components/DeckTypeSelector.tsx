@@ -49,9 +49,66 @@ const LanguageSelector: React.FC<{
     )
 }
 
+// Frontend set type configuration (mirrors backend)
+export enum SetType {
+    BASIC = 'basic',
+    BIDIRECTIONAL = 'bidirectional',
+    MULTIPLE_CHOICE = 'multipleChoice',
+    FILL_IN_BLANK = 'fillInBlank'
+}
+
+export interface SetTypeOption {
+    value: SetType
+    label: string
+    description: string
+    icon: React.ComponentType<{ className?: string }>
+    status: string
+    available: boolean
+    cardMultiplier: number
+}
+
+const SET_TYPE_OPTIONS: SetTypeOption[] = [
+    {
+        value: SetType.BASIC,
+        label: 'Basic Translation Cards',
+        description: 'Source language → Target language flashcards',
+        icon: CreditCard,
+        status: 'Available Now',
+        available: true,
+        cardMultiplier: 1
+    },
+    {
+        value: SetType.BIDIRECTIONAL,
+        label: 'Bidirectional Translation Cards',
+        description: 'Both directions: Source ↔ Target language flashcards',
+        icon: ArrowRightLeft,
+        status: 'Available Now',
+        available: true,
+        cardMultiplier: 2
+    },
+    {
+        value: SetType.MULTIPLE_CHOICE,
+        label: 'Multiple Choice Questions',
+        description: 'Choose the correct translation from options',
+        icon: HelpCircle,
+        status: 'Coming Soon',
+        available: false,
+        cardMultiplier: 1
+    },
+    {
+        value: SetType.FILL_IN_BLANK,
+        label: 'Fill in the Blank',
+        description: 'Complete sentences with missing words',
+        icon: Edit3,
+        status: 'Coming Soon',
+        available: false,
+        cardMultiplier: 1
+    }
+]
+
 interface DeckTypeSelectorProps {
-    deckType: 'basic' | 'bidirectional' | 'multipleChoice' | 'fillInBlank'
-    onChange: (type: 'basic' | 'bidirectional' | 'multipleChoice' | 'fillInBlank') => void
+    deckType: SetType
+    onChange: (type: SetType) => void
     cardPreviewData: CardPreviewData
     onFrontAudioToggle?: (enabled: boolean) => void
     onBackAudioToggle?: (enabled: boolean) => void
@@ -81,40 +138,7 @@ export const DeckTypeSelector: React.FC<DeckTypeSelectorProps> = ({
     onBackLanguageChange,
     getFieldError
 }) => {
-    const options = [
-        {
-            value: 'basic' as const,
-            label: 'Basic Translation Cards',
-            description: 'Source language → Target language flashcards',
-            icon: CreditCard,
-            status: 'Available Now',
-            available: true
-        },
-        {
-            value: 'bidirectional' as const,
-            label: 'Bidirectional Translation Cards',
-            description: 'Both directions: Source ↔ Target language flashcards',
-            icon: ArrowRightLeft,
-            status: 'Coming Soon',
-            available: false
-        },
-        {
-            value: 'multipleChoice' as const,
-            label: 'Multiple Choice Questions',
-            description: 'Choose the correct translation from options',
-            icon: HelpCircle,
-            status: 'Coming Soon',
-            available: false
-        },
-        {
-            value: 'fillInBlank' as const,
-            label: 'Fill in the Blank',
-            description: 'Complete sentences with missing words',
-            icon: Edit3,
-            status: 'Coming Soon',
-            available: false
-        }
-    ]
+    const options = SET_TYPE_OPTIONS
 
     const selectedOption = options.find(opt => opt.value === deckType) || options[0]
 
@@ -133,7 +157,7 @@ export const DeckTypeSelector: React.FC<DeckTypeSelectorProps> = ({
                 <div className="relative flex-shrink-0">
                     <select
                         value={deckType}
-                        onChange={(e) => onChange(e.target.value as 'basic' | 'bidirectional' | 'multipleChoice' | 'fillInBlank')}
+                        onChange={(e) => onChange(e.target.value as SetType)}
                         className="appearance-none bg-white/20 backdrop-blur border border-white/30 text-white rounded-lg px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 cursor-pointer w-full sm:w-auto min-w-[200px]"
                         style={{
                             backgroundImage: 'none'

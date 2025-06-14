@@ -3,6 +3,7 @@ import { TranslationService } from '../services/TranslationService.js'
 import { AnkiService } from '../services/AnkiService.js'
 import { RequestValidator } from '../middleware/RequestValidator.js'
 import { ResponseFormatter } from '../utils/ResponseFormatter.js'
+import { getSetTypeConfig, calculateCardCount } from '../types/translation.js'
 
 /**
  * Handles deck generation requests with comprehensive error handling
@@ -88,15 +89,19 @@ export class DeckGenerationController {
                 targetAudio = new Array(translations.length).fill(Buffer.alloc(0))
             }
 
-            // 7. Convert to DeckCard format
-            const deckData = translations.map((translation, index) => ({
+            // 7. Convert to DeckCard format with set type support
+            const baseDeckData = translations.map((translation, index) => ({
                 source: translation.source,
                 target: translation.translation,
                 sourceAudio: sourceAudio[index],
                 targetAudio: targetAudio[index],
             }))
 
-            console.log(`✅ Translated ${deckData.length} cards successfully`)
+            // Apply set type transformation using the configured generator
+            const setTypeConfig = getSetTypeConfig(validatedData.setType)
+            const deckData = setTypeConfig.generateCards(baseDeckData)
+
+            console.log(`✅ Created ${baseDeckData.length} base words → ${deckData.length} cards (${setTypeConfig.name})`)
 
             // 8. Generate final deck name if not provided
             if (!finalDeckName) {
@@ -143,7 +148,8 @@ export class DeckGenerationController {
 
             // Determine deck type
             const deckType = validatedData.aiPrompt ? 'ai-generated' : 'word-list'
-            const wordCount = validatedData.aiPrompt ? validatedData.maxCards : wordList.length
+            const baseWordCount = validatedData.aiPrompt ? validatedData.maxCards : wordList.length
+            const finalCardCount = calculateCardCount(baseWordCount, validatedData.setType)
 
             console.log('✅ Validation completed successfully')
 
@@ -152,7 +158,9 @@ export class DeckGenerationController {
                 message: "All validations passed!",
                 summary: {
                     deckType,
-                    wordCount,
+                    wordCount: baseWordCount,
+                    cardCount: finalCardCount,
+                    setType: validatedData.setType,
                     deckName: validatedData.deckName || 'Auto-generated',
                     sourceLanguage: validatedData.sourceLanguage,
                     targetLanguage: validatedData.targetLanguage,

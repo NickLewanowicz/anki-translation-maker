@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 import { RequestValidator } from '../../middleware/RequestValidator.js'
+import { SetType } from '../../types/translation.js'
 
 describe('Front/Back Language Mapping Tests', () => {
     describe('API Schema Validation', () => {
@@ -8,6 +9,7 @@ describe('Front/Back Language Mapping Tests', () => {
                 words: 'hello, world',
                 sourceLanguage: 'en',
                 targetLanguage: 'vi',
+                setType: SetType.BASIC,
                 frontLanguage: 'vi',  // Vietnamese on front
                 backLanguage: 'en',   // English on back
                 replicateApiKey: 'r8_test_key_123456789',
@@ -26,6 +28,7 @@ describe('Front/Back Language Mapping Tests', () => {
                 words: 'hello, world',
                 sourceLanguage: 'en',
                 targetLanguage: 'vi',
+                setType: SetType.BASIC,
                 frontLanguage: 'fr',  // French not in source/target
                 backLanguage: 'en',
                 replicateApiKey: 'r8_test_key_123456789'
@@ -42,6 +45,7 @@ describe('Front/Back Language Mapping Tests', () => {
                 words: 'hello, world',
                 sourceLanguage: 'en',
                 targetLanguage: 'vi',
+                setType: SetType.BASIC,
                 frontLanguage: 'en',
                 backLanguage: 'en',  // Same as front
                 replicateApiKey: 'r8_test_key_123456789'
@@ -61,6 +65,7 @@ describe('Front/Back Language Mapping Tests', () => {
                 words: 'hello, world, good',
                 sourceLanguage: 'en',    // English input (content)
                 targetLanguage: 'vi',    // Translate TO Vietnamese
+                setType: SetType.BASIC,
                 frontLanguage: 'vi',     // Vietnamese on front of card
                 backLanguage: 'en',      // English on back of card
                 replicateApiKey: 'r8_test_key_123456789'
@@ -85,6 +90,7 @@ describe('Front/Back Language Mapping Tests', () => {
                 words: 'hello, world, good',
                 sourceLanguage: 'en',    // English input (content)
                 targetLanguage: 'vi',    // Translate TO Vietnamese
+                setType: SetType.BASIC,
                 frontLanguage: 'en',     // English on front of card
                 backLanguage: 'vi',      // Vietnamese on back of card
                 replicateApiKey: 'r8_test_key_123456789'
@@ -109,6 +115,7 @@ describe('Front/Back Language Mapping Tests', () => {
                 words: 'xin chào, thế giới',
                 sourceLanguage: 'vi',    // Vietnamese input (content)
                 targetLanguage: 'en',    // Translate TO English
+                setType: SetType.BASIC,
                 frontLanguage: 'en',     // English on front of card
                 backLanguage: 'vi',      // Vietnamese on back of card
                 replicateApiKey: 'r8_test_key_123456789'
@@ -134,6 +141,7 @@ describe('Front/Back Language Mapping Tests', () => {
                 words: 'hello, world',
                 sourceLanguage: 'en',
                 targetLanguage: 'vi',
+                setType: SetType.BASIC,
                 // No frontLanguage/backLanguage - should use legacy audio-based logic
                 replicateApiKey: 'r8_test_key_123456789'
             }
@@ -149,6 +157,7 @@ describe('Front/Back Language Mapping Tests', () => {
                 words: 'hello, world',
                 sourceLanguage: 'en',
                 targetLanguage: 'vi',
+                setType: SetType.BASIC,
                 frontLanguage: 'vi',
                 // No backLanguage - should fall back to legacy mode
                 replicateApiKey: 'r8_test_key_123456789'
@@ -167,6 +176,7 @@ describe('Front/Back Language Mapping Tests', () => {
                 aiPrompt: 'Generate 10 common greetings',
                 sourceLanguage: 'en',
                 targetLanguage: 'vi',
+                setType: SetType.BASIC,
                 frontLanguage: 'vi',
                 backLanguage: 'en',
                 replicateApiKey: 'r8_test_key_123456789'
@@ -183,6 +193,7 @@ describe('Front/Back Language Mapping Tests', () => {
                 words: 'hello, world',
                 sourceLanguage: 'en',
                 targetLanguage: 'vi',
+                setType: SetType.BASIC,
                 frontLanguage: 'vi',     // Vietnamese front
                 backLanguage: 'en',      // English back
                 generateSourceAudio: true,   // English audio

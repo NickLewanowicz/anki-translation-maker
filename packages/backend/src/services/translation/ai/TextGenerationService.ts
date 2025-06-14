@@ -133,6 +133,9 @@ export class TextGenerationService {
             // Remove quotes if present
             deckName = deckName.replace(/^["']|["']$/g, '')
 
+            // Remove any trailing underscores, dashes, or other punctuation
+            deckName = deckName.replace(/[_\-\s.,:;!?]+$/, '').trim()
+
             // Fallback if generation fails or is empty
             if (!deckName || deckName.length === 0) {
                 const langMap: Record<string, string> = {

@@ -8,6 +8,7 @@ export interface StoredFormData {
     deckName: string
     targetLanguage: string
     sourceLanguage: string
+    setType: string
     replicateApiKey: string
     textModel: string
     voiceModel: string
@@ -104,7 +105,7 @@ export const localStorageService = {
 
         const requiredFields = [
             'deckType', 'words', 'aiPrompt', 'maxCards', 'deckName',
-            'targetLanguage', 'sourceLanguage', 'replicateApiKey',
+            'targetLanguage', 'sourceLanguage', 'setType', 'replicateApiKey',
             'textModel', 'voiceModel', 'generateSourceAudio', 'generateTargetAudio',
             'useCustomArgs', 'textModelArgs', 'voiceModelArgs', 'timestamp'
         ]

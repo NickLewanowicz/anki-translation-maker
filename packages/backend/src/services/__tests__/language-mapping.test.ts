@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 import { RequestValidator } from '../../middleware/RequestValidator.js'
+import { SetType } from '../../types/translation.js'
 
 describe('Language Mapping Integration Tests', () => {
     describe('Frontend Language Architecture Scenarios', () => {
@@ -12,6 +13,7 @@ describe('Language Mapping Integration Tests', () => {
                 aiPrompt: '',
                 sourceLanguage: 'en',  // = contentLanguage
                 targetLanguage: 'es',  // = backLanguage (not content)
+                setType: SetType.BASIC,
                 replicateApiKey: 'r8_test_key',
                 textModel: 'openai/gpt-4o-mini',
                 voiceModel: 'minimax/speech-02-hd',
@@ -40,6 +42,7 @@ describe('Language Mapping Integration Tests', () => {
                 aiPrompt: '',
                 sourceLanguage: 'es',  // = contentLanguage
                 targetLanguage: 'en',  // = frontLanguage (not content)
+                setType: SetType.BASIC,
                 replicateApiKey: 'r8_test_key',
                 textModel: 'openai/gpt-4o-mini',
                 voiceModel: 'minimax/speech-02-hd',
@@ -68,6 +71,7 @@ describe('Language Mapping Integration Tests', () => {
                 aiPrompt: 'Mots français pour la cuisine et les ustensiles',
                 sourceLanguage: 'fr',  // = contentLanguage (AI prompt language)
                 targetLanguage: 'de',  // = frontLanguage (not content)
+                setType: SetType.BASIC,
                 replicateApiKey: 'r8_test_key',
                 textModel: 'openai/gpt-4o-mini',
                 voiceModel: 'minimax/speech-02-hd',
@@ -97,6 +101,7 @@ describe('Language Mapping Integration Tests', () => {
                 aiPrompt: '',
                 sourceLanguage: 'en',  // fallback when contentLanguage empty
                 targetLanguage: 'en',  // same as source - unusual but valid
+                setType: SetType.BASIC,
                 replicateApiKey: 'r8_test_key',
                 textModel: 'openai/gpt-4o-mini',
                 voiceModel: 'minimax/speech-02-hd',
@@ -120,6 +125,7 @@ describe('Language Mapping Integration Tests', () => {
                 aiPrompt: '',
                 sourceLanguage: 'en',
                 targetLanguage: 'fr',
+                setType: SetType.BASIC,
                 replicateApiKey: 'r8_test_key',
                 textModel: 'openai/gpt-4o-mini',
                 voiceModel: 'minimax/speech-02-hd',
@@ -150,6 +156,7 @@ describe('Language Mapping Integration Tests', () => {
                             aiPrompt: '',
                             sourceLanguage: source,
                             targetLanguage: target,
+                            setType: SetType.BASIC,
                             replicateApiKey: 'r8_test_key',
                             textModel: 'openai/gpt-4o-mini',
                             voiceModel: 'minimax/speech-02-hd',
@@ -174,6 +181,7 @@ describe('Language Mapping Integration Tests', () => {
                 aiPrompt: '',
                 sourceLanguage: 'invalid_lang',
                 targetLanguage: 'es',
+                setType: SetType.BASIC,
                 replicateApiKey: 'r8_test_key',
                 textModel: 'openai/gpt-4o-mini',
                 voiceModel: 'minimax/speech-02-hd',
@@ -204,6 +212,7 @@ describe('Language Mapping Integration Tests', () => {
                 // Mapped API fields (what actually gets sent)
                 sourceLanguage: 'es',  // = contentLanguage
                 targetLanguage: 'de',  // = frontLanguage (not content)
+                setType: SetType.BASIC,
                 words: 'hola, mundo, casa, agua',
                 aiPrompt: '',
                 maxCards: 20,
@@ -224,6 +233,7 @@ describe('Language Mapping Integration Tests', () => {
                 aiPrompt: frontendData.aiPrompt,
                 sourceLanguage: frontendData.sourceLanguage,
                 targetLanguage: frontendData.targetLanguage,
+                setType: frontendData.setType,
                 maxCards: frontendData.maxCards,
                 deckName: frontendData.deckName,
                 replicateApiKey: frontendData.replicateApiKey,
