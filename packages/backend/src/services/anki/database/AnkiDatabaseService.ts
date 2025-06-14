@@ -578,78 +578,77 @@ export class AnkiDatabaseService {
             let frontField: string
             let backField: string
 
-            // Determine card orientation logic (similar to existing logic)
-            if (frontLanguage === 'source' || backLanguage === 'target') {
-                // Forward orientation: source on front, target on back
-                frontField = card.source
-                backField = card.target
+            // Use the exact same logic as the working insertNotesAndCards method
+            if (frontLanguage && backLanguage && sourceLanguage && targetLanguage) {
+                // Determine which content goes on front/back based on language preferences
+                const frontContent = frontLanguage === sourceLanguage ? card.source : card.target
+                const backContent = backLanguage === sourceLanguage ? card.source : card.target
 
-                if (hasSourceAudio && mediaMapping.sourceAudio[globalIndex] !== undefined) {
-                    frontField += `[sound:${mediaMapping.sourceAudio[globalIndex]}.mp3]`
+                // Add audio to the appropriate side
+                if (frontLanguage === sourceLanguage && hasSourceAudio) {
+                    const sourceMediaIndex = mediaMapping.sourceAudio[globalIndex]
+                    frontField = `${frontContent}[sound:${sourceMediaIndex}.mp3]`
+                } else if (frontLanguage === targetLanguage && hasTargetAudio) {
+                    const targetMediaIndex = mediaMapping.targetAudio[globalIndex]
+                    frontField = `${frontContent}[sound:${targetMediaIndex}.mp3]`
+                } else {
+                    frontField = frontContent
                 }
-                if (hasTargetAudio && mediaMapping.targetAudio[globalIndex] !== undefined) {
-                    backField += `[sound:${mediaMapping.targetAudio[globalIndex]}.mp3]`
-                }
-            } else if (frontLanguage === 'target' || backLanguage === 'source') {
-                // Reverse orientation: target on front, source on back
-                frontField = card.target
-                backField = card.source
 
-                if (hasTargetAudio && mediaMapping.targetAudio[globalIndex] !== undefined) {
-                    frontField += `[sound:${mediaMapping.targetAudio[globalIndex]}.mp3]`
-                }
-                if (hasSourceAudio && mediaMapping.sourceAudio[globalIndex] !== undefined) {
-                    backField += `[sound:${mediaMapping.sourceAudio[globalIndex]}.mp3]`
+                if (backLanguage === sourceLanguage && hasSourceAudio) {
+                    const sourceMediaIndex = mediaMapping.sourceAudio[globalIndex]
+                    backField = `${backContent}[sound:${sourceMediaIndex}.mp3]`
+                } else if (backLanguage === targetLanguage && hasTargetAudio) {
+                    const targetMediaIndex = mediaMapping.targetAudio[globalIndex]
+                    backField = `${backContent}[sound:${targetMediaIndex}.mp3]`
+                } else {
+                    backField = backContent
                 }
             } else {
-                // Default logic based on language inference
-                const isSourceEnglish = sourceLanguage === 'en'
-                const isTargetEnglish = targetLanguage === 'en'
-
-                if (isSourceEnglish && !isTargetEnglish) {
-                    // English source, foreign target -> source front
-                    frontField = card.source
+                // LEGACY: Audio-based orientation (backwards compatibility) - EXACT SAME LOGIC
+                if (hasSourceAudio && !hasTargetAudio) {
+                    // Source audio only: Front = source + audio, Back = target
+                    const sourceMediaIndex = mediaMapping.sourceAudio[globalIndex]
+                    frontField = `${card.source}[sound:${sourceMediaIndex}.mp3]`
                     backField = card.target
-
-                    if (hasSourceAudio && mediaMapping.sourceAudio[globalIndex] !== undefined) {
-                        frontField += `[sound:${mediaMapping.sourceAudio[globalIndex]}.mp3]`
-                    }
-                    if (hasTargetAudio && mediaMapping.targetAudio[globalIndex] !== undefined) {
-                        backField += `[sound:${mediaMapping.targetAudio[globalIndex]}.mp3]`
-                    }
+                } else if (hasTargetAudio && !hasSourceAudio) {
+                    // Target audio only: Front = target + audio, Back = source  
+                    const targetMediaIndex = mediaMapping.targetAudio[globalIndex]
+                    frontField = `${card.target}[sound:${targetMediaIndex}.mp3]`
+                    backField = card.source
+                } else if (hasSourceAudio && hasTargetAudio) {
+                    // Both audio: Front = target + target audio, Back = source + source audio
+                    const targetMediaIndex = mediaMapping.targetAudio[globalIndex]
+                    const sourceMediaIndex = mediaMapping.sourceAudio[globalIndex]
+                    frontField = `${card.target}[sound:${targetMediaIndex}.mp3]`
+                    backField = `${card.source}[sound:${sourceMediaIndex}.mp3]`
                 } else {
-                    // Default: source front, target back
-                    frontField = card.source
-                    backField = card.target
-
-                    if (hasSourceAudio && mediaMapping.sourceAudio[globalIndex] !== undefined) {
-                        frontField += `[sound:${mediaMapping.sourceAudio[globalIndex]}.mp3]`
-                    }
-                    if (hasTargetAudio && mediaMapping.targetAudio[globalIndex] !== undefined) {
-                        backField += `[sound:${mediaMapping.targetAudio[globalIndex]}.mp3]`
-                    }
+                    // No audio: Front = target, Back = source (default behavior)
+                    frontField = card.target
+                    backField = card.source
                 }
             }
 
             const fieldsText = `${frontField}\x1f${backField}`
-            const checksum = this.calculateFieldChecksum(frontField)
+            // Simple checksum - just use the length of the target text (matches working method)
+            const checksum = card.target.length
 
-            // Insert note first
+            // Insert note first (match working method exactly)
             db.run(
                 `INSERT INTO notes (id, guid, mid, mod, usn, tags, flds, sfld, csum, flags, data) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [noteId, uuidv4(), modelId, now, 0, '', fieldsText, frontField, checksum, 0, ''],
+                [noteId, uuidv4(), modelId, now - globalIndex, 0, '', fieldsText, 0, checksum, 0, ''],
                 (noteErr) => {
                     if (noteErr) {
                         callback(new Error('Failed to insert note: ' + noteErr.message))
                         return
                     }
 
-                    // Insert card - note that cards belong to specific deck IDs
+                    // Insert card - note that cards belong to specific deck IDs (match working method)
                     db.run(
                         `INSERT INTO cards (id, nid, did, ord, mod, usn, type, queue, due, ivl, factor, reps, lapses, left, odue, odid, flags, data) 
                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                        [cardId, noteId, deckId, 0, now, 0, 0, 0, globalIndex + 1, 0, 2500, 0, 0, 1001, 0, 0, 0, ''],
+                        [cardId, noteId, deckId, 0, now - globalIndex - 1, 0, 0, 0, cardId % 1000, 0, 2500, 0, 0, 1, 0, 0, 0, ''],
                         (cardErr) => {
                             if (cardErr) {
                                 callback(new Error('Failed to insert card: ' + cardErr.message))
