@@ -35,6 +35,7 @@ const getDefaultFormData = (): DeckFormData => ({
     frontLanguage: 'en',         // Default front to English
     backLanguage: '',            // Default back to empty (user must choose)
     contentLanguage: '',         // Default to empty (user must choose)
+    setType: 'basic',            // Default to basic set type
     replicateApiKey: '',
     textModel: 'openai/gpt-4o-mini',
     voiceModel: 'minimax/speech-02-hd',
@@ -70,6 +71,7 @@ export function useFormState() {
                     frontLanguage: (savedData as typeof savedData & { frontLanguage?: string }).frontLanguage || 'en',
                     backLanguage: (savedData as typeof savedData & { backLanguage?: string }).backLanguage || '',
                     contentLanguage: (savedData as typeof savedData & { contentLanguage?: string }).contentLanguage || '',
+                    setType: (savedData as typeof savedData & { setType?: string }).setType || 'basic',
                     replicateApiKey: savedData.replicateApiKey,
                     textModel: savedData.textModel,
                     voiceModel: savedData.voiceModel,
@@ -106,6 +108,7 @@ export function useFormState() {
                 frontLanguage: data.frontLanguage,
                 backLanguage: data.backLanguage,
                 contentLanguage: data.contentLanguage,
+                setType: data.setType,
                 replicateApiKey: data.replicateApiKey,
                 textModel: data.textModel,
                 voiceModel: data.voiceModel,
@@ -252,6 +255,7 @@ export function useFormState() {
             sourceLanguage,
             frontLanguage: formData.frontLanguage,
             backLanguage: formData.backLanguage,
+            setType: formData.setType,
             replicateApiKey: formData.replicateApiKey,
             textModel: formData.textModel,
             voiceModel: formData.voiceModel,
@@ -260,7 +264,7 @@ export function useFormState() {
             useCustomArgs: formData.useCustomArgs,
             textModelArgs: formData.textModelArgs,
             voiceModelArgs: formData.voiceModelArgs
-            // Note: cardDirection is not sent to backend - it's only for frontend UI
+            // Note: cardDirection is deprecated in favor of frontLanguage/backLanguage
         }
     }, [formData])
 

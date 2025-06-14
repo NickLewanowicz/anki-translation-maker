@@ -1,78 +1,91 @@
-import { describe, it, expect, beforeAll, afterAll } from 'bun:test'
+import { describe, it, expect } from 'bun:test'
 import { Hono } from 'hono'
-import { translationRouter } from '../../routes/translation.js'
 import { cors } from 'hono/cors'
-import { serve } from 'bun'
+import { translationRouter } from '../../routes/translation.js'
+import { SetType } from '../../types/translation.js'
+import type { Env } from '../../types/env.js'
+
+// Create test app instance
+const app = new Hono<Env>()
+app.use('/api/*', cors())
+app.route('/api', translationRouter)
 
 describe('Integration Tests', () => {
-    let server: { stop?: () => void }
-    const testPort = 3001
-    const baseUrl = `http://localhost:${testPort}`
-
-    beforeAll(async () => {
-        // Create test app
-        const app = new Hono()
-        app.use('/*', cors())
-        app.route('/api', translationRouter)
-
-        server = serve({
-            port: testPort,
-            fetch: app.fetch,
-        })
-
-        // Wait for server to start
-        await new Promise(resolve => setTimeout(resolve, 100))
-    })
-
-    afterAll(() => {
-        if (server) {
-            server.stop?.()
-        }
-    })
-
     describe('/api/health', () => {
         it('should return health status', async () => {
-            const response = await fetch(`${baseUrl}/api/health`)
-            expect(response.status).toBe(200)
+            const res = await app.request('/api/health')
+            expect(res.status).toBe(200)
 
-            const data = await response.json()
-            expect(data).toHaveProperty('status', 'ok')
-            expect(data).toHaveProperty('timestamp')
+            const data = await res.json()
+            expect(data.status).toBe('ok')
+            expect(data.timestamp).toBeDefined()
         })
     })
 
     describe('/api/validate', () => {
         it('should validate a complete configuration', async () => {
-            const validConfig = {
+            const requestBody = {
                 words: 'hello, world, test',
-                aiPrompt: '',
-                targetLanguage: 'es',
                 sourceLanguage: 'en',
-                replicateApiKey: 'r8_fake_key_for_testing',
+                targetLanguage: 'es',
+                setType: SetType.BASIC,
+                replicateApiKey: 'r8_test_key_123456789',
                 textModel: 'openai/gpt-4o-mini',
                 voiceModel: 'minimax/speech-02-hd',
+                generateSourceAudio: true,
+                generateTargetAudio: true,
                 useCustomArgs: false,
                 textModelArgs: '{}',
                 voiceModelArgs: '{}'
             }
 
-            const response = await fetch(`${baseUrl}/api/validate`, {
+            const res = await app.request('/api/validate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(validConfig)
+                body: JSON.stringify(requestBody)
             })
 
-            // Should fail due to fake API key, but validation should pass
-            const data = await response.json()
-            expect(data).toHaveProperty('status')
+            expect(res.status).toBe(200)
+            const data = await res.json()
+            expect(data.status).toBe('valid')
+        })
+
+        it('should validate bidirectional set type configuration', async () => {
+            const requestBody = {
+                words: 'hello, world, test',
+                sourceLanguage: 'en',
+                targetLanguage: 'es',
+                setType: SetType.BIDIRECTIONAL,
+                replicateApiKey: 'r8_test_key_123456789',
+                textModel: 'openai/gpt-4o-mini',
+                voiceModel: 'minimax/speech-02-hd',
+                generateSourceAudio: true,
+                generateTargetAudio: true,
+                useCustomArgs: false,
+                textModelArgs: '{}',
+                voiceModelArgs: '{}'
+            }
+
+            const res = await app.request('/api/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            })
+
+            expect(res.status).toBe(200)
+            const data = await res.json()
+            expect(data.status).toBe('valid')
+            expect(data.summary.setType).toBe(SetType.BIDIRECTIONAL)
+            expect(data.summary.cardCount).toBe(6) // 3 words × 2 directions = 6 cards
         })
 
         it('should reject missing required fields', async () => {
             const invalidConfig = {
-                words: 'hello, world',
-                // Missing targetLanguage
+                words: 'hello, world, test',
                 sourceLanguage: 'en',
-                replicateApiKey: 'r8_fake_key',
+                // Missing targetLanguage
+                setType: SetType.BASIC,
+                replicateApiKey: 'r8_test_key_123456789',
                 textModel: 'openai/gpt-4o-mini',
                 voiceModel: 'minimax/speech-02-hd',
                 useCustomArgs: false,
@@ -80,50 +93,50 @@ describe('Integration Tests', () => {
                 voiceModelArgs: '{}'
             }
 
-            const response = await fetch(`${baseUrl}/api/validate`, {
+            const res = await app.request('/api/validate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(invalidConfig)
             })
 
-            expect(response.status).toBe(400)
-            const data = await response.json()
-            expect(data.status).toBe('invalid')
+            expect(res.status).toBe(400)
+            const data = await res.json()
+            expect(data.error).toBe('Validation error')
         })
 
         it('should reject invalid JSON in custom args', async () => {
             const invalidConfig = {
-                words: 'hello, world',
-                aiPrompt: '',
-                targetLanguage: 'es',
+                words: 'hello, world, test',
                 sourceLanguage: 'en',
-                replicateApiKey: 'r8_fake_key',
+                targetLanguage: 'es',
+                setType: SetType.BASIC,
+                replicateApiKey: 'r8_test_key_123456789',
                 textModel: 'openai/gpt-4o-mini',
                 voiceModel: 'minimax/speech-02-hd',
                 useCustomArgs: true,
-                textModelArgs: '{invalid json}',
+                textModelArgs: '{ invalid json',
                 voiceModelArgs: '{}'
             }
 
-            const response = await fetch(`${baseUrl}/api/validate`, {
+            const res = await app.request('/api/validate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(invalidConfig)
             })
 
-            expect(response.status).toBe(400)
-            const data = await response.json()
-            expect(data.status).toBe('invalid')
-            expect(data.error).toContain('JSON')
+            expect(res.status).toBe(400)
+            const data = await res.json()
+            expect(data.error).toBe('JSON error')
         })
 
         it('should reject empty word list and empty prompt', async () => {
             const invalidConfig = {
                 words: '',
                 aiPrompt: '',
-                targetLanguage: 'es',
                 sourceLanguage: 'en',
-                replicateApiKey: 'r8_fake_key',
+                targetLanguage: 'es',
+                setType: SetType.BASIC,
+                replicateApiKey: 'r8_test_key_123456789',
                 textModel: 'openai/gpt-4o-mini',
                 voiceModel: 'minimax/speech-02-hd',
                 useCustomArgs: false,
@@ -131,15 +144,15 @@ describe('Integration Tests', () => {
                 voiceModelArgs: '{}'
             }
 
-            const response = await fetch(`${baseUrl}/api/validate`, {
+            const res = await app.request('/api/validate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(invalidConfig)
             })
 
-            expect(response.status).toBe(400)
-            const data = await response.json()
-            expect(data.status).toBe('invalid')
+            expect(res.status).toBe(400)
+            const data = await res.json()
+            expect(data.error).toBe('Validation error')
         })
     })
 }) 

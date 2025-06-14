@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Context } from 'hono'
+import { SetType, getSetTypeConfig } from '../types/translation.js'
 
 export const generateDeckSchema = z.object({
     words: z.string().default(''),
@@ -12,6 +13,9 @@ export const generateDeckSchema = z.object({
     // NEW: Explicit card layout control
     frontLanguage: z.string().optional(),  // What language appears on front of card
     backLanguage: z.string().optional(),   // What language appears on back of card
+
+    // NEW: Scalable set type system (for single-set decks, this defines the set type)
+    setType: z.nativeEnum(SetType).default(SetType.BASIC),
 
     replicateApiKey: z.string().min(1, 'Replicate API key is required'),
     textModel: z.string().default('openai/gpt-4o-mini'),
@@ -71,6 +75,12 @@ export class RequestValidator {
             if (wordList.length === 0) {
                 throw new Error('No valid words found to translate')
             }
+        }
+
+        // Validate set type availability
+        const setTypeConfig = getSetTypeConfig(data.setType)
+        if (!setTypeConfig.available) {
+            throw new Error(`Set type '${setTypeConfig.name}' is not yet available`)
         }
 
         // Validate front/back language consistency

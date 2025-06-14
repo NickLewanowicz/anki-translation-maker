@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
-import type { DeckCard, DeckSet, MultiSetDeckConfig } from '../types/translation.js'
+import type { DeckCard, MultiSetDeckConfig } from '../types/translation.js'
 import { AnkiDatabaseService } from './anki/database/AnkiDatabaseService.js'
 import { AnkiPackageBuilder } from './anki/packaging/AnkiPackageBuilder.js'
 

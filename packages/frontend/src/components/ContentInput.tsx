@@ -1,6 +1,7 @@
 import React from 'react'
 import { ChevronDown } from 'lucide-react'
 import { LANGUAGE_OPTIONS } from '../constants/languages'
+import { SetType } from '../types/SetType'
 
 const DEFAULT_DECKS = [
     {
@@ -23,6 +24,17 @@ const DEFAULT_DECKS = [
     }
 ]
 
+// Helper function to get set type configuration
+function getSetTypeConfig(setType: SetType) {
+    const configs = {
+        [SetType.BASIC]: { name: 'Basic Translation Cards', cardMultiplier: 1 },
+        [SetType.BIDIRECTIONAL]: { name: 'Bidirectional Translation Cards', cardMultiplier: 2 },
+        [SetType.MULTIPLE_CHOICE]: { name: 'Multiple Choice Questions', cardMultiplier: 1 },
+        [SetType.FILL_IN_BLANK]: { name: 'Fill in the Blank', cardMultiplier: 1 }
+    }
+    return configs[setType] || configs[SetType.BASIC]
+}
+
 interface ContentInputProps {
     deckType: string
     words: string
@@ -38,6 +50,7 @@ interface ContentInputProps {
     onMaxCardsChange: (maxCards: number) => void
     onContentLanguageChange: (language: string) => void
     getFieldError: (field: string) => string | undefined
+    setType: SetType
 }
 
 export const ContentInput: React.FC<ContentInputProps> = ({
@@ -54,7 +67,8 @@ export const ContentInput: React.FC<ContentInputProps> = ({
     onAiPromptChange,
     onMaxCardsChange,
     onContentLanguageChange,
-    getFieldError
+    getFieldError,
+    setType
 }) => {
     const isEnglishSource = sourceLanguage === 'en'
     const isDefaultDeck = DEFAULT_DECKS.some(deck => deck.id === deckType)
@@ -264,6 +278,34 @@ export const ContentInput: React.FC<ContentInputProps> = ({
             {renderSelectedDeckInfo()}
             {isCustom && renderCustomWordsInput()}
             {isAiGenerated && renderAiPromptInput()}
+
+            {/* Set Type Preview */}
+            {setType === SetType.BIDIRECTIONAL && (
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                    <div className="flex items-center gap-2 mb-2">
+                        <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18m-4-4l4 4-4 4" />
+                        </svg>
+                        <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                            Bidirectional Cards Preview
+                        </span>
+                    </div>
+                    <div className="text-sm text-blue-700 dark:text-blue-300">
+                        {(() => {
+                            const setTypeConfig = getSetTypeConfig(setType)
+                            const baseCount = isCustom ?
+                                words.split(',').filter(w => w.trim()).length :
+                                (isAiGenerated ? maxCards : 0)
+                            const totalCards = baseCount * setTypeConfig.cardMultiplier
+
+                            return `${baseCount} unique words × ${setTypeConfig.cardMultiplier} directions = ${totalCards} total cards`
+                        })()}
+                    </div>
+                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                        Cards will be interleaved: Forward, Reverse, Forward, Reverse...
+                    </div>
+                </div>
+            )}
         </div>
     )
 } 

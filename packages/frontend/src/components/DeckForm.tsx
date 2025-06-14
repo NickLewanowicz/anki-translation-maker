@@ -1,6 +1,6 @@
 // StreamlinedDeckForm component
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useFormState } from './forms/hooks/useFormState'
 import { deckService } from '../services/deckService'
 import { analyticsService } from '../services/analyticsService'
@@ -9,6 +9,7 @@ import { getLanguageName } from '../constants/languages'
 import { SaveIndicator } from './SaveIndicator'
 import { MultiActionButton } from './MultiActionButton'
 import { DeckTypeSelector } from './DeckTypeSelector'
+import { SetType } from '../types/SetType'
 
 import { ContentInput } from './ContentInput'
 import { AdvancedSettings } from './AdvancedSettings'
@@ -195,13 +196,20 @@ export function DeckForm() {
     }
 
     // For now, we'll use a local state for deck type since only basic is available
-    const [deckType, setDeckType] = useState<'basic' | 'bidirectional' | 'multipleChoice' | 'fillInBlank'>('basic')
+    const [deckType, setDeckType] = useState<SetType>(SetType.BASIC)
 
-    const handleDeckTypeChange = (type: 'basic' | 'bidirectional' | 'multipleChoice' | 'fillInBlank') => {
+    const handleDeckTypeChange = (type: SetType) => {
         setDeckType(type)
-        // For now, only basic cards are functional, so we don't update the form data
-        // In the future, we'll map these types to the backend's expected format
+        // Update setType field in form data
+        updateFormData({ setType: type })
     }
+
+    // Sync deck type with form data on mount
+    useEffect(() => {
+        if (formData.setType) {
+            setDeckType(formData.setType as SetType)
+        }
+    }, [formData.setType])
 
     // Wrapper for getFieldError to handle null vs undefined
     const getFieldErrorWrapper = (field: string): string | undefined => {
@@ -271,8 +279,8 @@ export function DeckForm() {
                     <form onSubmit={handleSubmit} className="space-y-6">
 
 
-                        {/* Content Input - Only show for basic cards since others are coming soon */}
-                        {deckType === 'basic' && (
+                        {/* Content Input - Show for basic and bidirectional cards */}
+                        {(deckType === SetType.BASIC || deckType === SetType.BIDIRECTIONAL) && (
                             <ContentInput
                                 deckType={formData.deckType}
                                 words={formData.words}
@@ -284,15 +292,16 @@ export function DeckForm() {
                                 contentLanguage={formData.contentLanguage}
                                 onDeckTypeChange={(type) => updateFormData({ deckType: type })}
                                 onWordsChange={(words) => updateFormData({ words })}
-                                onAiPromptChange={(prompt) => updateFormData({ aiPrompt: prompt })}
+                                onAiPromptChange={(aiPrompt) => updateFormData({ aiPrompt })}
                                 onMaxCardsChange={(maxCards) => updateFormData({ maxCards })}
-                                onContentLanguageChange={(language: string) => updateFormData({ contentLanguage: language })}
+                                onContentLanguageChange={(contentLanguage) => updateFormData({ contentLanguage })}
                                 getFieldError={getFieldErrorWrapper}
+                                setType={deckType}
                             />
                         )}
 
-                        {/* Advanced Settings - Only show for basic cards */}
-                        {deckType === 'basic' && (
+                        {/* Advanced Settings - Show for basic and bidirectional cards */}
+                        {(deckType === SetType.BASIC || deckType === SetType.BIDIRECTIONAL) && (
                             <AdvancedSettings
                                 isOpen={showAdvancedSettings}
                                 onToggle={() => setShowAdvancedSettings(!showAdvancedSettings)}
