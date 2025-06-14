@@ -1,7 +1,7 @@
 import React from 'react'
 import { ChevronDown } from 'lucide-react'
 import { LANGUAGE_OPTIONS } from '../constants/languages'
-import { SetType } from './DeckTypeSelector'
+import { SetType } from '../types/SetType'
 
 const DEFAULT_DECKS = [
     {
