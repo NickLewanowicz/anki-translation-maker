@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import '@testing-library/jest-dom'
 import { DeckTypeSelector } from '../components/DeckTypeSelector'
+import { SetType } from '../types/SetType'
 
 describe('DeckTypeSelector', () => {
     const mockCardPreviewData = {
@@ -17,7 +18,7 @@ describe('DeckTypeSelector', () => {
     }
 
     const defaultProps = {
-        deckType: 'basic' as const,
+        deckType: SetType.BASIC,
         onChange: vi.fn(),
         cardPreviewData: mockCardPreviewData,
         deckName: 'Test Deck',
@@ -43,9 +44,11 @@ describe('DeckTypeSelector', () => {
     })
 
     it('renders with bidirectional deck when selected', () => {
-        render(<DeckTypeSelector {...defaultProps} deckType="bidirectional" />)
+        render(<DeckTypeSelector {...defaultProps} deckType={SetType.BIDIRECTIONAL} />)
 
-        expect(screen.getByText('Bidirectional Translation Cards')).toBeInTheDocument()
+        // Use getAllByText to handle multiple instances (header and dropdown option)
+        const bidirectionalCards = screen.getAllByText('Bidirectional Translation Cards')
+        expect(bidirectionalCards.length).toBeGreaterThan(0)
         expect(screen.getByText('Both directions: Source ↔ Target language flashcards')).toBeInTheDocument()
     })
 
@@ -58,7 +61,8 @@ describe('DeckTypeSelector', () => {
         // Check that all card type options are present
         const basicCards = screen.getAllByText('Basic Translation Cards')
         expect(basicCards.length).toBeGreaterThan(0)
-        expect(screen.getByText(/Bidirectional Translation Cards.*Coming Soon/)).toBeInTheDocument()
+        // Bidirectional is now available, so no "Coming Soon"
+        expect(screen.getByText('Bidirectional Translation Cards')).toBeInTheDocument()
         expect(screen.getByText(/Multiple Choice Questions.*Coming Soon/)).toBeInTheDocument()
         expect(screen.getByText(/Fill in the Blank.*Coming Soon/)).toBeInTheDocument()
     })
@@ -92,15 +96,15 @@ describe('DeckTypeSelector', () => {
         expect(document.querySelector('.lucide-credit-card')).toBeInTheDocument()
 
         // Bidirectional should show arrow-right-left icon
-        rerender(<DeckTypeSelector {...defaultProps} deckType="bidirectional" />)
+        rerender(<DeckTypeSelector {...defaultProps} deckType={SetType.BIDIRECTIONAL} />)
         expect(document.querySelector('.lucide-arrow-right-left')).toBeInTheDocument()
 
         // Multiple choice should show help-circle icon
-        rerender(<DeckTypeSelector {...defaultProps} deckType="multipleChoice" />)
+        rerender(<DeckTypeSelector {...defaultProps} deckType={SetType.MULTIPLE_CHOICE} />)
         expect(document.querySelector('.lucide-help-circle')).toBeInTheDocument()
 
         // Fill in blank should show Edit3 icon (which renders as pen-line)
-        rerender(<DeckTypeSelector {...defaultProps} deckType="fillInBlank" />)
+        rerender(<DeckTypeSelector {...defaultProps} deckType={SetType.FILL_IN_BLANK} />)
         expect(document.querySelector('.lucide-pen-line')).toBeInTheDocument()
     })
 
