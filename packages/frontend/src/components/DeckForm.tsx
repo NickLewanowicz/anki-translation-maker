@@ -21,7 +21,6 @@ export function DeckForm() {
         isLocalStorageLoaded,
         handleInputChange,
         clearStoredData,
-        isFormValid,
         getFieldError,
         getSubmitData,
         updateFormData
@@ -117,7 +116,7 @@ export function DeckForm() {
     }
 
     const handleGenerate = async () => {
-        if (!isFormValid() || isGenerating || isTesting) return
+        if (errors.length > 0 || isGenerating || isTesting) return
 
         setIsGenerating(true)
         setError(null)
@@ -160,7 +159,7 @@ export function DeckForm() {
     }
 
     const handleTestConfiguration = async () => {
-        if (!isFormValid() || isGenerating || isTesting) return
+        if (errors.length > 0 || isGenerating || isTesting) return
 
         setIsTesting(true)
         setError(null)
@@ -200,8 +199,21 @@ export function DeckForm() {
 
     const handleDeckTypeChange = (type: SetType) => {
         setDeckType(type)
+
         // Update setType field in form data
-        updateFormData({ setType: type })
+        const updates: { setType: SetType; contentLanguage?: string } = { setType: type }
+
+        // For bidirectional decks, ensure contentLanguage is set if not already
+        if (type === SetType.BIDIRECTIONAL) {
+            if (!formData.contentLanguage && formData.frontLanguage) {
+                updates.contentLanguage = formData.frontLanguage
+            }
+            if (!formData.contentLanguage && formData.sourceLanguage) {
+                updates.contentLanguage = formData.sourceLanguage
+            }
+        }
+
+        updateFormData(updates)
     }
 
     // Sync deck type with form data on mount
@@ -335,6 +347,18 @@ export function DeckForm() {
 
                         {/* Action Button */}
                         <div className="flex justify-center pt-4">
+                            {/* Debug info - remove in production */}
+                            {process.env.NODE_ENV === 'development' && errors.length > 0 && (
+                                <div className="mb-4 p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded text-sm">
+                                    <strong>Validation Errors:</strong>
+                                    <ul className="list-disc list-inside">
+                                        {errors.map((error, idx) => (
+                                            <li key={idx}>{error.field}: {error.message}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
                             <MultiActionButton
                                 isGenerating={isGenerating}
                                 isTesting={isTesting}

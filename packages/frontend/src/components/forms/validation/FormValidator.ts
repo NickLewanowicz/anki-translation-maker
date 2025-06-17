@@ -134,6 +134,13 @@ export class FormValidator {
             })
         }
 
+        if (!formData.setType.trim()) {
+            errors.push({
+                field: 'setType',
+                message: 'Set type is required'
+            })
+        }
+
         if (!formData.replicateApiKey.trim()) {
             errors.push({
                 field: 'replicateApiKey',

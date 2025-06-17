@@ -37,6 +37,7 @@ describe('localStorageService', () => {
         deckName: 'Test Deck',
         targetLanguage: 'es',
         sourceLanguage: 'en',
+        setType: 'basic',
         replicateApiKey: 'r8_test_key',
         textModel: 'openai/gpt-4o-mini',
         voiceModel: 'minimax/speech-02-hd',

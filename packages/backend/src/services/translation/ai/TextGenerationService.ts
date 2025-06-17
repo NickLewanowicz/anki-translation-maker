@@ -67,11 +67,11 @@ export class TextGenerationService {
             // Batch translate for efficiency
             const wordList = words.join(', ')
             const defaultInput = {
-                prompt: `Translate these words from ${sourceLanguage} to ${targetLanguage}:
+                prompt: `Translate these words/phrases from ${sourceLanguage} to ${targetLanguage}:
                          ${wordList}
                          
-                         Return ONLY the translations in the same order, separated by commas, no explanations:`,
-                system_prompt: `You are a professional translator. Translate each word accurately from ${sourceLanguage} to ${targetLanguage}. Return only the translations separated by commas, maintaining the exact same order.`
+                         Return ONLY the translations in the same order, separated by " | " (pipe with spaces), no explanations:`,
+                system_prompt: `You are a professional translator. Translate each word/phrase accurately from ${sourceLanguage} to ${targetLanguage}. Return only the translations separated by " | " (pipe with spaces), maintaining the exact same order. Do not use commas as separators.`
             }
 
             const input = { ...defaultInput, ...this.textModelArgs }
@@ -84,7 +84,7 @@ export class TextGenerationService {
 
             const translatedWords = fullResponse
                 .trim()
-                .split(',')
+                .split(' | ')
                 .map(word => word.trim())
 
             // Pair original words with translations
