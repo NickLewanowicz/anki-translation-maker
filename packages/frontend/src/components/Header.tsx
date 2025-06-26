@@ -1,6 +1,10 @@
 import { Languages } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
 
+/**
+ * Header component with app branding and theme toggle
+ * Demonstrates the coverage system in action
+ */
 export function Header() {
     return (
         <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors">

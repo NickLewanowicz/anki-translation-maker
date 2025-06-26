@@ -128,6 +128,7 @@ function main() {
 
     if (changedFiles.length === 0) {
         console.log('✅ No source files changed, coverage check passed');
+        console.log('💡 This PR contains only configuration, documentation, or tooling changes');
         process.exit(0);
     }
 
