@@ -78,12 +78,16 @@ function runFrontendCoverage(files) {
     console.log('🧪 Running frontend coverage...');
     console.log(`📁 Changed frontend files: ${files.join(', ')}`);
 
+    // Detect package manager - use bun in CI, pnpm locally
+    const packageManager = process.env.CI ? 'bun' : 'pnpm';
+    console.log(`📦 Using package manager: ${packageManager}`);
+
     // Run full frontend coverage when any frontend files change
-    // Note: Vitest file filtering is complex, so we run full coverage and check thresholds
-    const coverageCommand = `cd packages/frontend && pnpm run test:coverage`;
+    const coverageCommand = `cd packages/frontend && ${packageManager} run test:coverage`;
 
     try {
-        runCommand(coverageCommand);
+        // Run coverage but ignore thresholds (we handle them manually)
+        runCommand(coverageCommand, { allowFailure: true });
 
         // Check coverage thresholds from the generated report
         const coverageFile = 'packages/frontend/coverage/coverage-summary.json';
@@ -116,8 +120,10 @@ function runBackendCoverage(files) {
     }
 
     console.log('🧪 Running backend coverage...');
+    console.log(`📁 Changed backend files: ${files.join(', ')}`);
 
     try {
+        // Backend always uses bun
         runCommand('cd packages/backend && bun test --coverage');
 
         // Check if coverage report exists and parse it
@@ -126,12 +132,15 @@ function runBackendCoverage(files) {
             const coverage = JSON.parse(fs.readFileSync(coverageFile, 'utf8'));
             const branches = coverage.total.branches.pct;
 
+            console.log(`📊 Backend coverage: ${branches}% branches`);
+
             if (branches < COVERAGE_THRESHOLD) {
                 console.error(`❌ Backend branch coverage (${branches}%) below threshold (${COVERAGE_THRESHOLD}%)`);
+                console.log('💡 Add tests for the changed backend files to improve coverage');
                 return false;
             }
 
-            console.log(`✅ Backend coverage: ${branches}% branches`);
+            console.log(`✅ Backend coverage meets threshold (${branches}% >= ${COVERAGE_THRESHOLD}%)`);
         }
 
         return true;
