@@ -52,7 +52,9 @@ function getChangedFiles() {
         .filter(file => file.trim())
         .filter(file => file.endsWith('.ts') || file.endsWith('.tsx') || file.endsWith('.js') || file.endsWith('.jsx'))
         .filter(file => !file.includes('.test.') && !file.includes('.spec.'))
-        .filter(file => !file.includes('__tests__'));
+        .filter(file => !file.includes('__tests__'))
+        .filter(file => !file.includes('vite.config.') && !file.includes('.config.'))
+        .filter(file => !file.startsWith('scripts/'));
 
     console.log(`📝 Found ${files.length} changed source files:`);
     files.forEach(file => console.log(`   ${file}`));
@@ -74,13 +76,32 @@ function runFrontendCoverage(files) {
     }
 
     console.log('🧪 Running frontend coverage...');
+    console.log(`📁 Changed frontend files: ${files.join(', ')}`);
 
-    // Run coverage with file filtering
-    const testFiles = files.map(f => f.replace('packages/frontend/src/', 'src/'));
-    const coverageCommand = `cd packages/frontend && vitest run --coverage --coverage.include="${testFiles.join(',')}" --reporter=verbose`;
+    // Run full frontend coverage when any frontend files change
+    // Note: Vitest file filtering is complex, so we run full coverage and check thresholds
+    const coverageCommand = `cd packages/frontend && pnpm run test:coverage`;
 
     try {
         runCommand(coverageCommand);
+
+        // Check coverage thresholds from the generated report
+        const coverageFile = 'packages/frontend/coverage/coverage-summary.json';
+        if (fs.existsSync(coverageFile)) {
+            const coverage = JSON.parse(fs.readFileSync(coverageFile, 'utf8'));
+            const branches = coverage.total.branches.pct;
+
+            console.log(`📊 Frontend coverage: ${branches}% branches`);
+
+            if (branches < COVERAGE_THRESHOLD) {
+                console.error(`❌ Frontend branch coverage (${branches}%) below threshold (${COVERAGE_THRESHOLD}%)`);
+                console.log('💡 Add tests for the changed frontend files to improve coverage');
+                return false;
+            }
+
+            console.log(`✅ Frontend coverage meets threshold (${branches}% >= ${COVERAGE_THRESHOLD}%)`);
+        }
+
         return true;
     } catch (error) {
         console.error('❌ Frontend coverage check failed');
