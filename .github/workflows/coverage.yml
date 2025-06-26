@@ -53,7 +53,7 @@ jobs:
         if: always()
         run: |
           echo "📊 Generating full coverage reports..."
-          pnpm run test:coverage || true
+          bun run test:coverage || true
         continue-on-error: true
 
       - name: Upload frontend coverage reports
