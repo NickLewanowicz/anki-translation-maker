@@ -1,0 +1,124 @@
+name: Code Coverage
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  coverage:
+    name: Coverage Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Need full history for git diff
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-bun-coverage-${{ hashFiles('**/bun.lockb', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-coverage-
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run differential coverage check
+        run: |
+          echo "🚀 Starting differential coverage check..."
+          node scripts/check-coverage-diff.js
+        env:
+          CI: true
+
+      - name: Generate full coverage reports (for artifacts)
+        if: always()
+        run: |
+          echo "📊 Generating full coverage reports..."
+          bun run test:coverage || true
+        continue-on-error: true
+
+      - name: Upload frontend coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: packages/frontend/coverage/
+          retention-days: 30
+
+      - name: Upload backend coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: packages/backend/coverage/
+          retention-days: 30
+
+      - name: Comment coverage results on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            let comment = '## 📊 Coverage Report\n\n';
+
+            // Try to read frontend coverage
+            try {
+              const frontendCoverage = JSON.parse(fs.readFileSync('packages/frontend/coverage/coverage-summary.json', 'utf8'));
+              const branches = frontendCoverage.total.branches.pct;
+              const functions = frontendCoverage.total.functions.pct;
+              const lines = frontendCoverage.total.lines.pct;
+              
+              comment += `### Frontend Coverage\n`;
+              comment += `- **Branches:** ${branches}% ${branches >= 70 ? '✅' : '❌'}\n`;
+              comment += `- **Functions:** ${functions}% ${functions >= 70 ? '✅' : '❌'}\n`;
+              comment += `- **Lines:** ${lines}% ${lines >= 70 ? '✅' : '❌'}\n\n`;
+            } catch (e) {
+              comment += '### Frontend Coverage\n*No coverage data available*\n\n';
+            }
+
+            // Try to read backend coverage  
+            try {
+              const backendCoverage = JSON.parse(fs.readFileSync('packages/backend/coverage/coverage-summary.json', 'utf8'));
+              const branches = backendCoverage.total.branches.pct;
+              const functions = backendCoverage.total.functions.pct;
+              const lines = backendCoverage.total.lines.pct;
+              
+              comment += `### Backend Coverage\n`;
+              comment += `- **Branches:** ${branches}% ${branches >= 70 ? '✅' : '❌'}\n`;
+              comment += `- **Functions:** ${functions}% ${functions >= 70 ? '✅' : '❌'}\n`;
+              comment += `- **Lines:** ${lines}% ${lines >= 70 ? '✅' : '❌'}\n\n`;
+            } catch (e) {
+              comment += '### Backend Coverage\n*No coverage data available*\n\n';
+            }
+
+            comment += `### 🎯 Coverage Rules\n`;
+            comment += `- **Threshold:** 70% branch coverage required\n`;
+            comment += `- **Scope:** Only files changed in this PR\n`;
+            comment += `- **Download:** Full coverage reports available as artifacts\n`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
