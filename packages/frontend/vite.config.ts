@@ -16,7 +16,33 @@ export default defineConfig({
             '**/.{idea,git,cache,output,temp}/**',
             '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*',
             '**/analyticsService.test.ts' // Temporarily exclude to debug
-        ]
+        ],
+        coverage: {
+            provider: 'v8',
+            reporter: ['text', 'json', 'html', 'lcov'],
+            reportsDirectory: './coverage',
+            exclude: [
+                'coverage/**',
+                'dist/**',
+                '**/[.]**',
+                'src/__tests__/**',
+                '**/*.d.ts',
+                '**/virtual:*',
+                '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*',
+                'src/main.tsx', // Entry file
+                'src/vite-env.d.ts', // Type definitions
+                '**/*.test.{ts,tsx}', // Test files themselves
+                '**/*.spec.{ts,tsx}' // Spec files
+            ],
+            thresholds: {
+                branches: 70,
+                functions: 70,
+                lines: 70,
+                statements: 70
+            },
+            // Only check coverage on changed files in CI
+            skipFull: process.env.CI === 'true'
+        }
     },
     server: {
         port: 5173,
