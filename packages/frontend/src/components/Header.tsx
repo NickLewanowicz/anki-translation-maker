@@ -1,9 +1,10 @@
+import React from 'react'
 import { Languages } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
 
 /**
- * Header component with app branding and theme toggle
- * Demonstrates the coverage system in action
+ * Header component for the Anki Translation Maker application
+ * Provides navigation and branding for the app
  */
 export function Header() {
     return (
